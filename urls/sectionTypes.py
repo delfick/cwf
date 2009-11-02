@@ -180,7 +180,7 @@ class cwf_Site(cwf_Section, cwf_SectParentBase):
         section.site = self
         self.addExistingBase(section, root)
         
-    def addPart(self, obj, base=False, root=False, includeAs=None):
+    def addPart(self, obj, base=False, root=False, includeAs=None, active=True):
         if type(obj) in (unicode, str):
             obj = obj.split('.')
             pkg = __import__('.'.join(obj[:-1]), globals(), locals(), [obj[-1]], -1)
