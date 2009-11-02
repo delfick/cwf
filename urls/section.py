@@ -5,7 +5,7 @@ class cwf_Section(object):
     def __init__(self, name, obj=None, target=None, redirectTo=None,
         match=None, values=None, new=None, valuesAsSet=True, compareFunc=None, 
         needsAuth=False, perms=None, display=True, alias=None,
-        parent=None, package=None, root=False):
+        parent=None, package=None, root=False, active=True):
             
         self.contents = []
         self.contentsDict = {}
