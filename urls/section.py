@@ -101,9 +101,11 @@ class cwf_Section(object):
         if len(path) != 0:
             url = '%s/%s' % (used, path[0])
             
-            if not self.parent:        
-                for p in self.getChildrenMenu(request, path[1:], url):
-                    yield p
+            if not self.parent:
+                gen = self.getChildrenMenu(request, path[1:], url)
+                if gen:
+                    for p in gen:
+                        yield p
     
     def singleFillMenu(self, request, path, used):
         url = '%s/%s' % (used, self.name)
