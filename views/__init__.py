@@ -158,4 +158,18 @@ class cwf_StaffView(cwf_View):
             return getattr(self, target)(request, *args, **kwargs)
         
         return staff_member_required(view)(request, *args, **kwargs)
+
     
+########################
+### 
+###   LOCAL ONLY
+### 
+######################## 
+
+class cwf_LocalOnlyView(cwf_View):
+    def getResult(self, request, target, *args, **kwargs):  
+        ip = request.META.get('REMOTE_ADDR')
+        if ip == '127.0.0.1':
+            return getattr(self, target)(request, *args, **kwargs)
+        else:
+            self.raise404()
