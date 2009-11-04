@@ -5,7 +5,7 @@ class cwf_Section(object):
     def __init__(self, name, obj=None, target=None, redirectTo=None,
         match=None, values=None, new=None, valuesAsSet=True, compareFunc=None, 
         needsAuth=False, perms=None, display=True, alias=None,
-        parent=None, package=None, root=False, active=True):
+        parent=None, package=None, root=False, active=True, sortByAlias=True):
             
         self.contents = []
         self.contentsDict = {}
@@ -60,17 +60,27 @@ class cwf_Section(object):
         if valuesToUse and any(value for value in valuesToUse):
             if self.valuesAsSet:
                 valuesToUse = set(valuesToUse)
+            
+            def getValues(values):
+                if self.new:
+                    values = [self.new(path, value) for value in values]
+                else:
+                    values = [(value, value) for value in values]
+                
+                return values
                 
             if self.compareFunc:
-                valuesToUse = sorted(valuesToUse, self.compareFunc)
+                if self.sortByAlias:
+                    valuesToUse = getValues(valuesToUse)
+                    valuesToUse = sorted(valuesToUse, self.compareFunc)
+                else:
+                    valuesToUse = sorted(valuesToUse, self.compareFunc)
+                    valuesToUse = getValues(valuesToUse)
+            else:
+                valuesToUse = getValues(valuesToUse)
             
             #for all values, create items in the menu
-            for value in valuesToUse:
-            
-                if self.new:
-                    alias, match = self.new(path, value)
-                else:
-                    alias, match = value, value
+            for alias, match in valuesToUse:
                     
                 url = '%s/%s' % (used, match)
                 args = [alias, url, self]
