@@ -2,8 +2,10 @@ from django.template import loader, RequestContext, Context, Template
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render_to_response
+from django.utils import simplejson
 from django.conf import settings
 from datetime import datetime
+
 
 if hasattr(settings, 'SITE'):
     try:
@@ -173,3 +175,16 @@ class cwf_LocalOnlyView(cwf_View):
             return getattr(self, target)(request, *args, **kwargs)
         else:
             self.raise404()
+            
+########################
+### 
+###   JAVASCRIPT
+### 
+######################## 
+
+class cwf_JSView(cwf_View):
+    def getResult(self, request, target, *args, **kwargs):  
+        result = super(cwf_JSView, self).getResult(request, target, *args, **kwargs)
+        File, extra = result
+        return HttpResponse(simplejson.dumps(extra), mimetype='application/javascript')
+
