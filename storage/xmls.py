@@ -92,7 +92,8 @@ class Xml(object):
         """Used to generate xml for everything in the given query"""
         everything = query.all()
         xml = self.getXml(everything, 0, xml)
-        if xml:
+        
+        if xml is not None:
             if allInOne:
                 #Everything is in one xml, it is safe to clear everything if there is too much in it
                 if len(xml) > len(everything):

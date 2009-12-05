@@ -2,6 +2,7 @@ from django.template import loader, RequestContext, Context, Template
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render_to_response
+from django.core import urlresolvers
 from django.utils import simplejson
 from django.conf import settings
 from datetime import datetime
@@ -83,6 +84,9 @@ class cwf_View(object):
             else:
                 raise Exception, "View object doesn't have a target : %s" % target
         
+        if not result:
+            self.raise404()
+            
         try:
             File, extra = result
         except:
@@ -147,6 +151,15 @@ class cwf_View(object):
             self.monthNums = months
         
         return self.monthNums[month.lower()]
+        
+    ########################
+    ###   OTHER
+    ########################    
+    
+    def getAdminChangeView(self, obj):
+        #address = 'admin:%s_%s_change' % (obj._meta.app_label, obj._meta.module_name)
+        #return urlresolvers.reverse(address , args=(obj.id,))
+        return '/admin/%s/%s/%s' % (obj._meta.app_label, obj._meta.module_name, obj.id)
     
 ########################
 ### 
