@@ -123,6 +123,11 @@ class Xml(object):
                 item.generate(xml, section)
                 count += 1
         
+        countdown = len(everything)+1 - (count-1)
+        for _ in range(countdown):
+            xml[count].getparent().remove(xml[count])
+            count += 1
+            
         xml.save()
                 
     def restore(self, model, identity, numberedAttr=None, xml=None, finder=None, active=None, 
