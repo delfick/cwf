@@ -36,7 +36,7 @@ class Xml(object):
         self.path = path
         self._tree = None
         self.default = default
-        self.xpath = xpath
+        self.Xpath = xpath
 
     def clear(self):
         File = open(self.path, 'w')
@@ -55,18 +55,18 @@ class Xml(object):
             except:
                 self._tree = None
         
-        if not self._tree:
+        if self._tree is None:
             try:
                 os.makedirs(os.sep.join(self.path.split(os.sep)[:-1]))
             except OSError:
                 pass
                 
             self._tree = etree.Element("all")
+            
+            if self.default:
+                self._tree.append(self.default.section())
+                
             self.save()
-        
-        if self.xpath:
-            active = etree.XPath(self.xpath)
-            self._tree = active(self._tree)
             
     ########################
     ###   GENERATION & RESTORATION
@@ -74,7 +74,7 @@ class Xml(object):
     
     def getXml(self, everything, count, xml, new=None):
         """Used to find an xml file for generation or restoration"""
-        if xml:
+        if xml is not None:
             return xml
         else:
             xml = None
@@ -88,7 +88,7 @@ class Xml(object):
         
         return xml
     
-    def generate(self, query, xml=None, allInOne=True):
+    def generate(self, query, xml=None, allInOne=True, numberedAttr=None, xpath=None, many=False):
         """Used to generate xml for everything in the given query"""
         everything = query.all()
         xml = self.getXml(everything, 0, xml)
@@ -99,10 +99,35 @@ class Xml(object):
                 if len(xml) > len(everything):
                     xml.clear()
             
-            for item in everything:
-                item.generate()
+            count = 1
                 
-    def restore(self, model, identity, numberedAttr=None, xml=None, finder=None, active=None, zeroBased=False):
+            for item in everything:
+                #Make sure xml has correct default
+                if hasattr(item, 'xmlStructure'):
+                    default = item.xmlStructure
+                    if callable(default):
+                        xml.default = default()
+                    else:
+                        xml.default = default
+                
+                xmlPass = xml
+                if xpath and many:
+                    xmlPass = xml.xpath(xpath)
+                    
+                #Make sure we have correct section                
+                section = xml.get(count, xmlPass)
+                if numberedAttr:
+                    section = xml.get(getattr(item, numberedAttr), xmlPass)
+                
+                #Generate
+                item.generate(xml, section)
+                count += 1
+        
+        xml.save()
+                
+    def restore(self, model, identity, numberedAttr=None, xml=None, finder=None, active=None, 
+        zeroBased=False, xpath=None, oneOnly=False, debug=False
+    ):
         """Used to restore database objects for all models with the specified identity"""
         
         #######################################################
@@ -136,7 +161,10 @@ class Xml(object):
         
         query = model.objects.filter(**identity)
         everything = query.all()
-        sortedAll = sorted([(getattr(obj, numberedAttr), obj) for obj in everything])
+        if numberedAttr:
+            sortedAll = sorted([(getattr(obj, numberedAttr), obj) for obj in everything])
+        else:
+            sortedAll = everything
         
         count = startCount()
         
@@ -148,15 +176,26 @@ class Xml(object):
         #######################################################
         # Determine if there are objects to be added or deleted
         
-        if active:
-            objDiff = len([x for x in xml if active(x)]) - len(everything)
-        else:
-            objDiff = len(xml) - len(everything)
+        xmlPass = xml
+        if xpath:
+            xmlPass = xml.xpath(xpath)
         
+        if not oneOnly:
+            if active:
+                objDiff = len([x for x in xmlPass if active(x)]) - len(everything)
+            else:
+                objDiff = len(xmlPass) - len(everything)
+        else:
+            objDiff = 0
+            if active and not active(xmlPass):
+                objDiff = 1
+            else:
+                if len(everything) == 0:
+                    objDiff = 1
         
         #######################################################
         # Add any new objects
-        
+            
         if objDiff > 0:
             diff = getDiff(objDiff, count)
             for i in range(diff):
@@ -167,7 +206,10 @@ class Xml(object):
         # create query again incase any objects have been added
         
         query = model.objects.filter(**identity)
-        length = max(len(query), len(xml))
+        if oneOnly:
+            length = 1
+        else:
+            length = max(len(query), len(xmlPass))
         
         #######################################################
         # Determine how many objects to ultimately restore
@@ -180,22 +222,24 @@ class Xml(object):
         
         #######################################################
         # Restore objects
-        
         def getObjs():
             """Used to get section, item tuples where section refers to part of xml"""
             count = 0
-            for item in xml:
-                if active and active(item) or not active:
-                    yield item, query[count]
-                    count += 1
-                else:
-                    yield item, None
+            if not oneOnly:
+                for item in xmlPass:
+                    if active and active(item) or not active:
+                        yield item, query[count]
+                        count += 1
+                    else:
+                        yield item, None
+            else:
+                yield xmlPass, query[count]
             
-            if count < len(query):
-                for item in query[count:]:
-                    yield None, item
-                
-        
+            if not oneOnly:
+                if count < len(query):
+                    for item in query[count:]:
+                        yield None, item
+                    
         count = startCount()
         for section, item in getObjs():
             if item:
@@ -205,7 +249,8 @@ class Xml(object):
                 else:
                     if numberedAttr:
                         setattr(item, numberedAttr, count)
-                    item.restore()
+                    
+                    item.restore(xml, section)
                     countdown -= 1
             
             #some sections may not be active and thus must be ignored
@@ -220,7 +265,14 @@ class Xml(object):
     ########################
     ###   USEFUL
     ########################
-        
+    
+    def xpath(self, path):
+        result = self.tree.xpath(path)
+        if result and len(result) == 1:
+            return result[0]
+        else:
+            return result
+    
     def indent(self, elem, level=0):
         """Borrowed by http://infix.se/2007/02/06/gentlemen-indent-your-xml"""
         i = "\n" + level*"  "
@@ -236,7 +288,35 @@ class Xml(object):
         else:
             if level and (not elem.tail or not elem.tail.strip()):
                 elem.tail = i
-                
+    
+    ########################
+    ###   IO
+    ########################
+    
+        ###   BOOLEANS
+        
+    def getBool(self, section, attr):
+        result = section.get(attr, '')
+        if result.lower() in ("yes", "true", 'y'):
+            return True
+        else:
+            return False
+    
+    def writeBool(self, section, attr, value):
+        section.set(attr, unicode(value).lower())
+
+        ###   INTEGERS
+    
+    def getInt(self, section, attr, default=None):
+        result = section.get(attr, default)
+        if result.isdigit():
+            return int(result)
+        else:
+            return default
+        
+    def writeInt(self, section, attr, value):
+        section.set(attr, unicode(value))
+        
     ########################
     ###   OTHER
     ########################
@@ -258,6 +338,9 @@ class Xml(object):
     
     def __getitem__(self, key):
         """Key assumes 1-based instead of 0-based"""
+        return self.getitem(key, self.tree, True)
+    
+    def getitem(self, key, tree, doSave=False):
         if type(key) is not int:
             try:
                 key = int(key)
@@ -266,18 +349,29 @@ class Xml(object):
         
         if key and key > 0:
             key = key - 1
-            diff = len(self.tree) - key
+            diff = len(tree) - key
             if diff < -2:
                 raise ValueError("Key is out of range")
             
             elif 0 >= diff >= -2:
                 for i in range(abs(diff)+1):
                     if self.default:
-                        self.tree.append(self.default.section())
+                        tree.append(self.default.section())
                     else:
-                        self.tree.append(etree.Element("item"))
-                self.save()
+                        tree.append(etree.Element("item"))
+                
+                if doSave:
+                    self.save()
                     
-            return self.tree[key]
+            return tree[key]
         else:
             raise IndexError("Array access must be done with integers greater than 0")
+        
+    def get(self, index, xml=None):
+        if xml is not None and xml is self:
+            return self[index]
+        else:
+            if type(xml) is Xml:
+                return xml[index]
+            else:
+                return self.getitem(index, xml)
