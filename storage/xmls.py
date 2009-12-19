@@ -67,6 +67,12 @@ class Xml(object):
                 self._tree.append(self.default.section())
                 
             self.save()
+    
+    def removeFile(self):
+        os.remove(self.path)
+        
+    def pathParts(self, beginning):
+        return self.path[len(beginning):].replace('%s%s' % (os.sep, os.sep), os.sep).split(os.sep)[1:]
             
     ########################
     ###   GENERATION & RESTORATION
@@ -99,9 +105,10 @@ class Xml(object):
                 if len(xml) > len(everything):
                     xml.clear()
             
-            count = 1
+            count = 0
                 
             for item in everything:
+                count += 1
                 #Make sure xml has correct default
                 if hasattr(item, 'xmlStructure'):
                     default = item.xmlStructure
@@ -121,17 +128,22 @@ class Xml(object):
                 
                 #Generate
                 item.generate(xml, section)
-                count += 1
         
-        countdown = len(everything)+1 - (count-1)
-        for _ in range(countdown):
-            xml[count].getparent().remove(xml[count])
-            count += 1
-            
         xml.save()
+        xmlPass = xml
+        if xpath and many:
+            xmlPass = xml.xpath(xpath)
+        
+        countdown = len(xmlPass) - len(everything)
+        if countdown > 0:
+            for _ in range(countdown):
+                xmlPass[count].getparent().remove(xmlPass[count])
+                count += 1
+                
+            xml.save()
                 
     def restore(self, model, identity, numberedAttr=None, xml=None, finder=None, active=None, 
-        zeroBased=False, xpath=None, oneOnly=False, debug=False
+        zeroBased=False, xpath=None, oneOnly=False, extraInit=None, debug=False
     ):
         """Used to restore database objects for all models with the specified identity"""
         
@@ -140,7 +152,24 @@ class Xml(object):
         
         def createNew(count):
             """Function used to create a new model"""
-            next = model(**identity)
+            use = {}
+            use.update(identity)
+            if extraInit:
+                use.update(extraInit)
+            
+            next = None
+            try:
+                next = model(**use)
+            except TypeError:
+                try:
+                    if extraInit:
+                        next = model(**extraInit)
+                except TypeError:
+                    pass
+            
+            if not next:
+                next = model()
+                
             if numberedAttr:
                 setattr(next, numberedAttr, count)
             return next
