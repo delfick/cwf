@@ -94,12 +94,16 @@ class Xml(object):
         
         return xml
     
-    def generate(self, query, xml=None, allInOne=True, numberedAttr=None, xpath=None, many=False):
+    def generate(self, query, xml=None, allInOne=True, numberedAttr=None, xpath=None, many=False, withDeletion=True):
         """Used to generate xml for everything in the given query"""
         everything = query.all()
-        xml = self.getXml(everything, 0, xml)
+        if numberedAttr:
+            everything = everything.order_by(numberedAttr)
         
-        if xml is not None:
+        if allInOne:
+            xml = self.getXml(everything, 0, xml)
+        
+        if xml is not None or not allInOne:
             if allInOne:
                 #Everything is in one xml, it is safe to clear everything if there is too much in it
                 if len(xml) > len(everything):
@@ -108,6 +112,14 @@ class Xml(object):
             count = 0
                 
             for item in everything:
+                if not allInOne:
+                    xmlNew = item.infoXml()
+                    if xml is not None:
+                        if xmlNew.path != xml.path:
+                            count = 0
+                            xml.save()
+                    xml = xmlNew
+                    
                 count += 1
                 #Make sure xml has correct default
                 if hasattr(item, 'xmlStructure'):
@@ -125,22 +137,25 @@ class Xml(object):
                 section = xml.get(count, xmlPass)
                 if numberedAttr:
                     section = xml.get(getattr(item, numberedAttr), xmlPass)
-                
+                    
                 #Generate
                 item.generate(xml, section)
         
-        xml.save()
-        xmlPass = xml
-        if xpath and many:
-            xmlPass = xml.xpath(xpath)
-        
-        countdown = len(xmlPass) - len(everything)
-        if countdown > 0:
-            for _ in range(countdown):
-                xmlPass[count].getparent().remove(xmlPass[count])
-                count += 1
-                
+        if xml is not None:
             xml.save()
+            
+            if withDeletion and allInOne:
+                xmlPass = xml
+                if xpath and many:
+                    xmlPass = xml.xpath(xpath)
+                
+                countdown = len(xmlPass) - len(everything)
+                if countdown > 0:
+                    for _ in range(countdown):
+                        xmlPass[count].getparent().remove(xmlPass[count])
+                        count += 1
+                        
+                    xml.save()
                 
     def restore(self, model, identity, numberedAttr=None, xml=None, finder=None, active=None, 
         zeroBased=False, xpath=None, oneOnly=False, extraInit=None, debug=False
