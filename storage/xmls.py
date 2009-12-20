@@ -69,7 +69,8 @@ class Xml(object):
             self.save()
     
     def removeFile(self):
-        os.remove(self.path)
+        if os.path.exists(self.path):
+            os.remove(self.path)
         
     def pathParts(self, beginning):
         return self.path[len(beginning):].replace('%s%s' % (os.sep, os.sep), os.sep).split(os.sep)[1:]
