@@ -79,6 +79,20 @@ class Xml(object):
     ###   GENERATION & RESTORATION
     ########################
     
+    def find(self, model):
+        m = model()
+        base = m.folderBase()
+        xmlName = m.xmlName()
+        for xml in self.lookFor(base, xmlName):
+            #We assume getModelFromPath calls restoreBackup where appropiate
+            obj = m.getFromPath(xml)
+    
+    def lookFor(self, base, xmlName):
+        for root, dirs, files in os.walk(base):
+           for name in files:
+               if name == xmlName:
+                   yield self.__class__(os.path.join(root, name))
+        
     def getXml(self, everything, count, xml, new=None):
         """Used to find an xml file for generation or restoration"""
         if xml is not None:
@@ -145,7 +159,7 @@ class Xml(object):
         if xml is not None:
             xml.save()
             
-            if withDeletion and allInOne:
+            if withDeletion and allInOne and count > 0:
                 xmlPass = xml
                 if xpath and many:
                     xmlPass = xml.xpath(xpath)
@@ -188,6 +202,7 @@ class Xml(object):
                 
             if numberedAttr:
                 setattr(next, numberedAttr, count)
+            
             return next
         
         def getDiff(first, second):

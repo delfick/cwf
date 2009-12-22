@@ -161,6 +161,11 @@ class cwf_View(object):
         #return urlresolvers.reverse(address , args=(obj.id,))
         return '/admin/%s/%s/%s' % (obj._meta.app_label, obj._meta.module_name, obj.id)
     
+    def getAdminChangeList(self, obj):
+        #address = 'admin:%s_%s_change' % (obj._meta.app_label, obj._meta.module_name)
+        #return urlresolvers.reverse(address , args=(obj.id,))
+        return '/admin/%s/%s' % (obj._meta.app_label, obj._meta.module_name)
+    
 ########################
 ### 
 ###   STAFF VIEW
