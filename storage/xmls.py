@@ -83,13 +83,33 @@ class Xml(object):
         m = model()
         base = m.folderBase()
         xmlName = m.xmlName()
-        for xml in self.lookFor(base, xmlName):
-            #We assume getModelFromPath calls restoreBackup where appropiate
-            obj = m.getFromPath(xml)
-            if callable(obj):
-                for number in range(1, len(xml)+1):
-                    obj(number)
+        if self.inManyXml(model):
+            for xml in self.lookFor(base, xmlName):
+                #We assume getModelFromPath calls restoreBackup where appropiate
+                obj = m.getFromPath(xml)
+                if callable(obj):
+                    for number in range(1, len(xml)+1):
+                        obj(number)
+        else:
+            xml = m.infoXml()
+            xml.restore(model, {}, xml=xml)
     
+    def backup(self, model):
+        if self.inManyXml(model):
+            for thing in model.objects.all():
+                thing.create()
+        else:
+            xml = model().infoXml()
+            xml.generate(model.objects, xml=xml)
+    
+    def delete(self, model):
+        if self.inManyXml(model):
+            for thing in model.objects.all():
+                thing.infoXml().removeFile()
+        else:
+            xml = model().infoXml()
+            xml.removeFile()
+        
     def lookFor(self, base, xmlName):
         for root, dirs, files in os.walk(base):
            for name in files:
@@ -332,6 +352,13 @@ class Xml(object):
     ###   USEFUL
     ########################
     
+    def inManyXml(self, model):
+        m = model()
+        if hasattr(m, 'getDataFromInfoPath'):
+            return True
+        else:
+            return False
+        
     def xpath(self, path):
         result = self.tree.xpath(path)
         if result and len(result) == 1:
