@@ -86,6 +86,9 @@ class Xml(object):
         for xml in self.lookFor(base, xmlName):
             #We assume getModelFromPath calls restoreBackup where appropiate
             obj = m.getFromPath(xml)
+            if callable(obj):
+                for number in range(1, len(xml)+1):
+                    obj(number)
     
     def lookFor(self, base, xmlName):
         for root, dirs, files in os.walk(base):
@@ -252,11 +255,8 @@ class Xml(object):
                 objDiff = len(xmlPass) - len(everything)
         else:
             objDiff = 0
-            if active and not active(xmlPass):
+            if active and active(xmlPass) and len(everything) == 0:
                 objDiff = 1
-            else:
-                if len(everything) == 0:
-                    objDiff = 1
         
         #######################################################
         # Add any new objects
@@ -298,13 +298,14 @@ class Xml(object):
                     else:
                         yield item, None
             else:
-                yield xmlPass, query[count]
+                if active and active(xmlPass) or not active:
+                    yield xmlPass, query[count]
             
             if not oneOnly:
                 if count < len(query):
                     for item in query[count:]:
                         yield None, item
-                    
+
         count = startCount()
         for section, item in getObjs():
             if item:
