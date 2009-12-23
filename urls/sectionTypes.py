@@ -159,9 +159,12 @@ class cwf_Page(cwf_Section, cwf_NormalMixin):
                         regex = self.parent.url
                 else:
                     regex = self.regex
-            yield ('^%s/?$' % regex, dispatch, {
-                'obj' : self.obj, 'target' : self.target, 'section' : self.parent
-            })
+            
+            extra = {'obj' : self.obj, 'target' : self.target, 'section' : self.parent}
+            if self.extraContext:
+                extra.update(self.extraContext)
+                
+            yield ('^%s/?$' % regex, dispatch, extra)
 
 ########################
 ###
