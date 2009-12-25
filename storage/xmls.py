@@ -195,7 +195,9 @@ class Xml(object):
                         count += 1
                         
                     xml.save()
-                
+            
+
+    @transaction.commit_manually    
     def restore(self, model, identity, numberedAttr=None, xml=None, finder=None, active=None, 
         zeroBased=False, xpath=None, oneOnly=False, extraInit=None, debug=False
     ):
@@ -327,33 +329,30 @@ class Xml(object):
                     for item in query[count:]:
                         yield None, item
         
-        @transaction.commit_manually
-        def doRestore(toDelete, countdown):
-            count = startCount()
-            for section, item in getObjs():
-                if item:
-                    if countdown <= 0 or section is None:
-                        #if we delete them now, it puts the query out of sync
-                        toDelete.append(item)
-                    else:
-                        if numberedAttr:
-                            setattr(item, numberedAttr, count)
-                        
-                        item.restore(xml, section)
-                        countdown -= 1
-                
-                #some sections may not be active and thus must be ignored
-                count += 1
+        count = startCount()
+        for section, item in getObjs():
+            if item:
+                if countdown <= 0 or section is None:
+                    #if we delete them now, it puts the query out of sync
+                    toDelete.append(item)
+                else:
+                    if numberedAttr:
+                        setattr(item, numberedAttr, count)
+                    
+                    item.restore(xml, section)
+                    countdown -= 1
             
-            transaction.commit()
-        
-        doRestore(toDelete, countdown)
+            #some sections may not be active and thus must be ignored
+            count += 1
         
         #######################################################
         # Delete objects
         
         for item in toDelete:
             item.delete()
+        
+        transaction.commit()
+        
     
     ########################
     ###   USEFUL
