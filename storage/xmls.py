@@ -1,3 +1,4 @@
+from django.db import transaction
 from lxml import etree
 import os
 
@@ -325,22 +326,28 @@ class Xml(object):
                 if count < len(query):
                     for item in query[count:]:
                         yield None, item
-
-        count = startCount()
-        for section, item in getObjs():
-            if item:
-                if countdown <= 0 or section is None:
-                    #if we delete them now, it puts the query out of sync
-                    toDelete.append(item)
-                else:
-                    if numberedAttr:
-                        setattr(item, numberedAttr, count)
-                    
-                    item.restore(xml, section)
-                    countdown -= 1
+        
+        @transaction.commit_manually
+        def doRestore(toDelete, countdown):
+            count = startCount()
+            for section, item in getObjs():
+                if item:
+                    if countdown <= 0 or section is None:
+                        #if we delete them now, it puts the query out of sync
+                        toDelete.append(item)
+                    else:
+                        if numberedAttr:
+                            setattr(item, numberedAttr, count)
+                        
+                        item.restore(xml, section)
+                        countdown -= 1
+                
+                #some sections may not be active and thus must be ignored
+                count += 1
             
-            #some sections may not be active and thus must be ignored
-            count += 1
+            transaction.commit()
+        
+        doRestore(toDelete, countdown)
         
         #######################################################
         # Delete objects
