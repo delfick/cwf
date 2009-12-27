@@ -128,7 +128,7 @@ class Xml(object):
                 xml = o.infoXml()
             else:
                 if new:
-                    next = new(count)
+                    next, created = new(count)
                     xml = next.infoXml()
         
         return xml
@@ -201,157 +201,176 @@ class Xml(object):
     def restore(self, model, identity, numberedAttr=None, xml=None, finder=None, active=None, 
         zeroBased=False, xpath=None, oneOnly=False, extraInit=None, debug=False
     ):
-        """Used to restore database objects for all models with the specified identity"""
-        
-        #######################################################
-        # Useful functions
-        
-        def createNew(count):
-            """Function used to create a new model"""
-            use = {}
-            use.update(identity)
-            if extraInit:
-                use.update(extraInit)
+        try:
+            """Used to restore database objects for all models with the specified identity"""
             
-            next = None
-            try:
-                next = model(**use)
-            except TypeError:
-                try:
-                    if extraInit:
-                        next = model(**extraInit)
-                except TypeError:
-                    pass
+            #######################################################
+            # Useful functions
             
-            if not next:
-                next = model()
-                
-            if numberedAttr:
-                setattr(next, numberedAttr, count)
-            
-            return next
-        
-        def getDiff(first, second):
-            """Get's the difference between two numbers whilst taking into account
-            whether the numbers are zerobased or not"""
-            if zeroBased:
-                diff = first - second
-            else:
-                diff = first + 1 - second
-            return diff
-        
-        def startCount():
-            """Creates starting count depending on zero based or not"""
-            count = 1
-            if zeroBased:
-                count = 0
-            return count
-        
-        #######################################################
-        # Initialise the query and xml files to be used
-        
-        query = model.objects.filter(**identity)
-        everything = query.all()
-        if numberedAttr:
-            sortedAll = sorted([(getattr(obj, numberedAttr), obj) for obj in everything])
-        else:
-            sortedAll = everything
-        
-        count = startCount()
-        
-        if finder:
-            #finder is used to find all xml files, assuming all objects aren't in the same xml file
-            xml = finder()
-        xml = self.getXml(everything, count, xml, createNew)
-        
-        #######################################################
-        # Determine if there are objects to be added or deleted
-        
-        xmlPass = xml
-        if xpath:
-            xmlPass = xml.xpath(xpath)
-        
-        if not oneOnly:
-            if active:
-                objDiff = len([x for x in xmlPass if active(x)]) - len(everything)
-            else:
-                objDiff = len(xmlPass) - len(everything)
-        else:
-            objDiff = 0
-            if active and active(xmlPass) and len(everything) == 0:
-                objDiff = 1
-        
-        #######################################################
-        # Add any new objects
-            
-        if objDiff > 0:
-            diff = getDiff(objDiff, count)
-            for i in range(diff):
-                next = createNew(count+i)
-                next.save()
-        
-        #######################################################
-        # create query again incase any objects have been added
-        
-        query = model.objects.filter(**identity)
-        if oneOnly:
-            length = 1
-        else:
-            length = max(len(query), len(xmlPass))
-        
-        #######################################################
-        # Determine how many objects to ultimately restore
-        
-        countdown = length
-        if objDiff < 0:
-            countdown = length + objDiff
-            
-        toDelete = []
-        
-        #######################################################
-        # Restore objects
-        def getObjs():
-            """Used to get section, item tuples where section refers to part of xml"""
-            count = 0
-            if not oneOnly:
-                for item in xmlPass:
-                    if active and active(item) or not active:
-                        yield item, query[count]
-                        count += 1
-                    else:
-                        yield item, None
-            else:
-                if active and active(xmlPass) or not active:
-                    yield xmlPass, query[count]
-            
-            if not oneOnly:
-                if count < len(query):
-                    for item in query[count:]:
-                        yield None, item
-        
-        count = startCount()
-        for section, item in getObjs():
-            if item:
-                if countdown <= 0 or section is None:
-                    #if we delete them now, it puts the query out of sync
-                    toDelete.append(item)
-                else:
-                    if numberedAttr:
-                        setattr(item, numberedAttr, count)
+            def createNew(count):
+                """Function used to create a new model"""
+                created = True
+                use = {}
+                use.update(identity)
+                if extraInit:
+                    use.update(extraInit)
                     
-                    item.restore(xml, section)
-                    countdown -= 1
+                if numberedAttr:
+                    use.update({numberedAttr : count})
+                    
+                try:
+                    next = model.objects.get(**use)
+                    created = False
+                except (model.DoesNotExist, model.MultipleObjectsReturned):
+                    next = None
+                    try:
+                        next = model(**use)
+                    except TypeError:
+                        try:
+                            if extraInit:
+                                next = model(**extraInit)
+                        except TypeError:
+                            pass
+                
+                if not next:
+                    next = model()
+                        
+                    if numberedAttr:
+                        setattr(next, numberedAttr, count)
+                
+                return next, created
             
-            #some sections may not be active and thus must be ignored
-            count += 1
-        
-        #######################################################
-        # Delete objects
-        
-        for item in toDelete:
-            item.delete()
-        
-        transaction.commit()
+            def getDiff(first, second):
+                """Get's the difference between two numbers whilst taking into account
+                whether the numbers are zerobased or not"""
+                if zeroBased:
+                    diff = first - second
+                else:
+                    diff = first + 1 - second
+                return diff
+            
+            def startCount():
+                """Creates starting count depending on zero based or not"""
+                count = 1
+                if zeroBased:
+                    count = 0
+                return count
+            
+            #######################################################
+            # Initialise the query and xml files to be used
+            
+            query = model.objects.filter(**identity)
+            everything = query.all()
+            if numberedAttr:
+                sortedAll = sorted([(getattr(obj, numberedAttr), obj) for obj in everything])
+            else:
+                sortedAll = everything
+            
+            count = startCount()
+            
+            if finder:
+                #finder is used to find all xml files, assuming all objects aren't in the same xml file
+                xml = finder()
+            xml = self.getXml(everything, count, xml, createNew)
+            
+            #######################################################
+            # Determine if there are objects to be added or deleted
+            
+            xmlPass = xml
+            if xpath:
+                xmlPass = xml.xpath(xpath)
+            
+            if not oneOnly:
+                if active:
+                    objDiff = len([x for x in xmlPass if active(x)]) - len(everything)
+                else:
+                    objDiff = len(xmlPass) - len(everything)
+            else:
+                objDiff = 0
+                if active and active(xmlPass) and len(everything) == 0:
+                    objDiff = 1
+            
+            #######################################################
+            # Add any new objects
+                
+            if objDiff > 0:
+                diff = getDiff(objDiff, count)
+                i = 0
+                while diff > 0:
+                    next, created = createNew(count+i)
+                    if created:
+                        next.save()
+                        diff -= 1
+                    i += 1
+            
+            #######################################################
+            # create query again incase any objects have been added
+            
+            query = model.objects.filter(**identity)
+            if oneOnly:
+                length = 1
+            else:
+                length = max(len(query), len(xmlPass))
+            
+            #######################################################
+            # Determine how many objects to ultimately restore
+            
+            countdown = length
+            if objDiff < 0:
+                countdown = length + objDiff
+                
+            toDelete = []
+            
+            #######################################################
+            # Restore objects
+            def getObjs():
+                """Used to get section, item tuples where section refers to part of xml"""
+                count = 0
+                if not oneOnly:
+                    for item in xmlPass:
+                        if active and active(item) or not active:
+                            yield item, query[count]
+                            count += 1
+                        else:
+                            yield item, None
+                else:
+                    if active and active(xmlPass) or not active:
+                        yield xmlPass, query[count]
+                
+                if not oneOnly:
+                    if count < len(query):
+                        for item in query[count:]:
+                            yield None, item
+            
+            count = startCount()
+            for section, item in getObjs():
+                if item:
+                    if countdown <= 0 or section is None:
+                        #if we delete them now, it puts the query out of sync
+                        toDelete.append(item)
+                    else:
+                        if numberedAttr:
+                            setattr(item, numberedAttr, count)
+                        
+                        item.restore(xml, section)
+                        countdown -= 1
+                
+                #some sections may not be active and thus must be ignored
+                count += 1
+            
+            #######################################################
+            # Delete objects
+            
+            for item in toDelete:
+                item.delete()
+            
+            
+            transaction.commit()
+        finally:
+            transaction.rollback()
+            #import traceback
+            #raise Exception, traceback.format_exc()
+            #raise e
         
     
     ########################
