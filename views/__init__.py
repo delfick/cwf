@@ -21,6 +21,19 @@ if hasattr(settings, 'PROJECTDIR'):
     projectDir = settings.PROJECTDIR
 else:
     projectDir = '/var/www'
+
+class Logger(object):
+    def __init__(self):
+        self.messages = []
+    
+    def addList(self, lst):
+        self.messages.append("<ul>\n\t%s\n</ul>" % "\n\t<li>%s</li>".join(lst)
+        
+    def __add__(self, value):
+        self.messages.append("<p>%s</p>" % value)
+        
+    def __unicode__(self):
+        return '\n'.join(self.messages)
     
 class cwf_View(object):
     def __init__(self, request):   
@@ -128,6 +141,20 @@ class cwf_View(object):
     def xml(self, address):
         return render_to_response(address, mimetype="application/xml")   
     
+    def logToAdmin(self, request, File, url=None):
+        extra = {
+            'message' : self.log,
+            'needsConfirmation' : False,
+        }
+        
+        if request.GET and request.GET.get("yes"):
+            extra['needsConfirmation'] = True
+        
+        if url:
+            request['goBack'] = url
+            
+        return File, extra
+    
     ########################
     ###   MONTH STUFF
     ########################    
@@ -165,6 +192,9 @@ class cwf_View(object):
         #address = 'admin:%s_%s_change' % (obj._meta.app_label, obj._meta.module_name)
         #return urlresolvers.reverse(address , args=(obj.id,))
         return '/admin/%s/%s' % (obj._meta.app_label, obj._meta.module_name)
+
+    def startLog(self):
+        self.log = Logger()
     
 ########################
 ### 
