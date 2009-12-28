@@ -27,7 +27,7 @@ class Logger(object):
         self.messages = []
     
     def addList(self, lst):
-        self.messages.append("<ul>\n\t%s\n</ul>" % "\n\t<li>%s</li>".join(lst)
+        self.messages.append("<ul>\n\t%s\n</ul>" % "\n\t<li>%s</li>".join(lst))
         
     def __add__(self, value):
         self.messages.append("<p>%s</p>" % value)
