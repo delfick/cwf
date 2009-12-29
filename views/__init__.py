@@ -2,6 +2,7 @@ from django.template import loader, RequestContext, Context, Template
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render_to_response
+from django.utils.safestring import mark_safe
 from django.core import urlresolvers
 from django.utils import simplejson
 from django.conf import settings
@@ -143,15 +144,15 @@ class cwf_View(object):
     
     def logToAdmin(self, request, File, url=None):
         extra = {
-            'message' : self.log,
-            'needsConfirmation' : False,
+            'message' : mark_safe(unicode(self.log)),
+            'needsConfirmation' : True,
         }
         
         if request.GET and request.GET.get("yes"):
-            extra['needsConfirmation'] = True
+            extra['needsConfirmation'] = False
         
         if url:
-            request['goBack'] = url
+            extra['goBack'] = url
             
         return File, extra
     
