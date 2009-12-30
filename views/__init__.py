@@ -126,6 +126,9 @@ class cwf_View(object):
 
     def raise404(self):
         raise Http404
+    
+    def Http(self, *args, **kwargs):
+        return HttpResponse(*args, **kwargs)
 
     def redirect(self, request, address, relative=True):
         address = unicode(address)
