@@ -6,7 +6,7 @@ class cwf_Section(object):
         match=None, values=None, new=None, valuesAsSet=True, compareFunc=None, 
         needsAuth=False, perms=None, display=True, alias=None,
         parent=None, package=None, root=False, active=True, sortByAlias=True,
-        extraContext=None):
+        extraContext=None, condition=None):
             
         self.contents = []
         self.contentsDict = {}
@@ -23,7 +23,6 @@ class cwf_Section(object):
             
         if hasattr(self, 'setup'):
             self.setup()
-            
         
     def rootAncestor(self):
         if self.parent:
@@ -31,6 +30,43 @@ class cwf_Section(object):
         else:
             return self
     
+    ########################
+    ###   UTILITY
+    ########################
+    
+    def show(self):
+        parentShow = True
+        if self.parent:
+            parentShow = self.parent.show()
+        
+        if parentShow:
+            if self.condition:
+                if callable(self.condition):
+                    return self.condition()
+                else:
+                    return self.condition
+            else:
+                return True
+        else:
+            return False
+    
+    def appear(self):
+        return self.display and self.show()
+        
+    def getSects(self, section):
+        if callable(section):
+            for sect in section():
+                if sect:
+                    yield sect
+                
+        elif type(section) in (list, tuple):
+            for sect in section:
+                if sect:
+                    yield sect
+        else:
+            if section:
+                yield section
+        
     ########################
     ###   MENU STUFF
     ########################

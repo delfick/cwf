@@ -47,8 +47,6 @@ class cwf_NormalMixin(object):
         
         if not self.obj:
             self.obj = 'views.%s' % self.target
-        
-        
 
 ########################
 ###
@@ -110,12 +108,13 @@ class cwf_SectParent(cwf_Section, cwf_SectParentBase):
         else:
             section = obj
         
-        section.parent = self
-        
-        if base:
-            self.addExistingBase(section, root)
-        else:
-            self.addExistingSection(section, root, includeAs)
+        for sect in self.getSects(section):
+            sect.parent = self
+            
+            if base:
+                self.addExistingBase(sect, root)
+            else:
+                self.addExistingSection(sect, root, includeAs)
         
         return section
     
@@ -147,7 +146,13 @@ class cwf_Page(cwf_Section, cwf_NormalMixin):
     """Can't add anything to a page, and this yields the actuall patterns for urlpatterns"""
     def getPatternList(self, isBase=False):
         if self.redirectTo:
-            yield ('^$', redirect_to, {'url' : str(self.redirectTo)})
+            def redirect(request):
+                if self.show():
+                    return redirect_to(request, url=unicode(self.redirectTo))
+                else:
+                    self.raise404()
+                
+            yield ('^$', redirect)
         else:
             if self.parent and not hasattr(self.parent, 'getInclude') and not isBase:
                 regex = '%s/%s' % (self.parent.url, self.regex)
@@ -160,7 +165,7 @@ class cwf_Page(cwf_Section, cwf_NormalMixin):
                 else:
                     regex = self.regex
             
-            extra = {'obj' : self.obj, 'target' : self.target, 'section' : self.parent}
+            extra = {'obj' : self.obj, 'target' : self.target, 'section' : self.parent, 'condition' : self.show}
             if self.extraContext:
                 extra.update(self.extraContext)
                 
@@ -191,14 +196,15 @@ class cwf_Site(cwf_Section, cwf_SectParentBase):
         else:
             section = obj
         
-        if hasattr(section, 'base'):
-            for part in section:
-                part.site = self
-            
-        if base:
-            self.addBase(section, root)
-        else:
-            self.addSection(section, root, includeAs)
+        for sect in self.getSects(section):
+            if hasattr(sect, 'base'):
+                for part in sect:
+                    part.site = self
+                
+            if base:
+                self.addBase(sect, root)
+            else:
+                self.addSection(sect, root, includeAs)
         
         return section
 

@@ -1,3 +1,5 @@
+from django.http import Http404
+
 class cwf_Dispatch(object):
     def __init__(self):
         self.viewObjs = {}
@@ -17,8 +19,11 @@ class cwf_Dispatch(object):
         
         return view
         
-    def __call__(self, request, obj, target, section, *args, **kwargs):
-        self.request = request
-        return self[obj](request, target, section=section, *args, **kwargs)
+    def __call__(self, request, obj, target, section, condition, *args, **kwargs):
+        if condition():
+            self.request = request
+            return self[obj](request, target, section=section, *args, **kwargs)
+        else:
+            raise Http404
     
 dispatch = cwf_Dispatch()
