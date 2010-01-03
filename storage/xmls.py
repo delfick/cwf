@@ -84,6 +84,10 @@ class Xml(object):
         m = model()
         base = m.folderBase()
         xmlName = m.xmlName()
+        if hasattr(model, 'unifiedXmlName'):
+            if model.unifiedXmlName == False:
+                xmlName = None
+                
         if self.inManyXml(model):
             for xml in self.lookFor(base, xmlName):
                 #We assume getModelFromPath calls restoreBackup where appropiate
@@ -113,9 +117,17 @@ class Xml(object):
         
     def lookFor(self, base, xmlName):
         for root, dirs, files in os.walk(base):
-           for name in files:
-               if name == xmlName:
-                   yield self.__class__(os.path.join(root, name))
+            for name in files:
+                doYield = False
+                if xmlName:
+                    if name == xmlName:
+                        doYield = True
+                else:
+                    if name.endswith(".xml"):
+                        doYield = True
+                
+                if doYield:
+                    yield self.__class__(os.path.join(root, name))
         
     def getXml(self, everything, count, xml, new=None):
         """Used to find an xml file for generation or restoration"""
@@ -133,7 +145,7 @@ class Xml(object):
         
         return xml
     
-    def generate(self, query, xml=None, allInOne=True, numberedAttr=None, xpath=None, many=False, withDeletion=True):
+    def generate(self, query, xml=None, allInOne=True, numberedAttr=None, xpath=None, many=False, withDeletion=True, zeroBased=False):
         """Used to generate xml for everything in the given query"""
         everything = query.all()
         if numberedAttr:
@@ -175,7 +187,10 @@ class Xml(object):
                 #Make sure we have correct section                
                 section = xml.get(count, xmlPass)
                 if numberedAttr:
-                    section = xml.get(getattr(item, numberedAttr), xmlPass)
+                    number = getattr(item, numberedAttr)
+                    if zeroBased:
+                        number += 1
+                    section = xml.get(number, xmlPass)
                     
                 #Generate
                 item.generate(xml, section)
@@ -183,7 +198,7 @@ class Xml(object):
         if xml is not None:
             xml.save()
             
-            if withDeletion and allInOne and count > 0:
+            if withDeletion and allInOne and count >= 0:
                 xmlPass = xml
                 if xpath and many:
                     xmlPass = xml.xpath(xpath)
@@ -429,6 +444,19 @@ class Xml(object):
             return default
         
     def writeInt(self, section, attr, value):
+        section.set(attr, unicode(value))
+
+        ###   DECIMALS
+    
+    def getDecimal(self, section, attr, default=None):
+        result = section.get(attr, default)
+        try:
+            res = float(result)
+            return result
+        except ValueError:
+            return default
+        
+    def writeDecimal(self, section, attr, value):
         section.set(attr, unicode(value))
         
     ########################
