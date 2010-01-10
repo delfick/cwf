@@ -1,7 +1,7 @@
-from cwf.views import cwf_StaffView
+from cwf.views import StaffView
 from cwf.storage import Xml
 
-class FinderView(cwf_StaffView):
+class FinderView(StaffView):
     def can(self, request, needsSuperUser):
         if needsSuperUser and request.user.is_superuser:
             return True

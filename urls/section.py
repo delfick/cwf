@@ -1,7 +1,7 @@
 from django.conf.urls.defaults import include, patterns
 from django.views.generic.simple import redirect_to
 
-class cwf_Section(object):
+class Section(object):
     def __init__(self, name, obj=None, target=None, redirectTo=None,
         match=None, values=None, new=None, valuesAsSet=True, compareFunc=None, 
         needsAuth=False, perms=None, display=True, alias=None,

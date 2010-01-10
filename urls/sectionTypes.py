@@ -1,4 +1,4 @@
-from cwf.urls.section import cwf_Section
+from cwf.urls.section import Section
 from cwf.urls.dispatch import dispatch
 from django.conf.urls.defaults import include
 from django.views.generic.simple import redirect_to
@@ -9,7 +9,7 @@ from django.views.generic.simple import redirect_to
 ###
 ########################
 
-class cwf_IncludeMixin(object):
+class IncludeMixin(object):
     """Provides a means to get includes in urlpatterns"""
     def getInclude(self, includeAs=None, base=False):
         
@@ -25,7 +25,7 @@ class cwf_IncludeMixin(object):
         
         yield (regex, include('%s.urls' % self.package))
 
-class cwf_NormalMixin(object):
+class NormalMixin(object):
     """Provides init type functionality for a section/page that has a parent"""
     def setup(self):
         
@@ -54,7 +54,7 @@ class cwf_NormalMixin(object):
 ###
 ########################
 
-class cwf_SectParentBase(object):
+class SectParentBase(object):
     
     def addExistingSection(self, section, root=False, includeAs=None):
         if hasattr(section, 'getInclude'):
@@ -75,14 +75,14 @@ class cwf_SectParentBase(object):
             
         self.contentsDict[base.name] = base
         
-class cwf_SectParent(cwf_Section, cwf_SectParentBase):
+class SectParent(Section, SectParentBase):
     """Provides functions to be able to easily add children"""
     def addBase(self, root=False, *args, **kwargs):
-        base = cwf_Page(self.name,  parent=self, match=self.match, *args, **kwargs)
+        base = Page(self.name,  parent=self, match=self.match, *args, **kwargs)
         self.addExistingBase(base, root)
         
     def addPage(self, *args, **kwargs):
-        page = cwf_Page(parent=self, *args, **kwargs)
+        page = Page(parent=self, *args, **kwargs)
         self.contents.append(page)
             
     def addSect(self, kls, name, root=False, includeAs=None, *args, **kwargs):
@@ -92,10 +92,10 @@ class cwf_SectParent(cwf_Section, cwf_SectParentBase):
         return next
     
     def addSection(self, *args, **kwargs):
-        return self.addSect(cwf_SectNormal, *args, **kwargs)
+        return self.addSect(SectNormal, *args, **kwargs)
     
     def addInclude(self, *args, **kwargs):
-        return self.addSect(cwf_SectNormalInclude, *args, **kwargs)
+        return self.addSect(SectNormalInclude, *args, **kwargs)
     
     def addExternal(self, section, root=False, includeAs=None, base=False):
         self.addExistingSection(section, root, includeAs)    
@@ -124,7 +124,7 @@ class cwf_SectParent(cwf_Section, cwf_SectParentBase):
 ###
 ########################
 
-class cwf_SectRoot(cwf_SectParent):
+class SectRoot(SectParent):
     """A Parental section that  doesn't have a parent"""
     def setup(self):
         if self.match:
@@ -142,7 +142,7 @@ class cwf_SectRoot(cwf_SectParent):
 ###
 ########################
     
-class cwf_Page(cwf_Section, cwf_NormalMixin):
+class Page(Section, NormalMixin):
     """Can't add anything to a page, and this yields the actuall patterns for urlpatterns"""
     def getPatternList(self, isBase=False):
         if self.redirectTo:
@@ -177,7 +177,7 @@ class cwf_Page(cwf_Section, cwf_NormalMixin):
 ###
 ########################
 
-class cwf_Site(cwf_Section, cwf_SectParentBase):
+class Site(Section, SectParentBase):
     """A site is a section but you can only add sections you've already created"""
         
     def addSection(self, section, root=False, includeAs=None):
@@ -208,7 +208,7 @@ class cwf_Site(cwf_Section, cwf_SectParentBase):
         
         return section
 
-class cwf_SitePart(cwf_Site, cwf_IncludeMixin):
+class SitePart(Site, IncludeMixin):
     def setup(self):
         self.package = self.name
         self.part = True
@@ -219,13 +219,13 @@ class cwf_SitePart(cwf_Site, cwf_IncludeMixin):
 ###
 ########################
 
-class cwf_SectNormal(cwf_SectParent, cwf_NormalMixin):
+class SectNormal(SectParent, NormalMixin):
     """A parental section that does have a parent itself"""
     pass
 
-class cwf_SectNormalInclude(cwf_SectNormal, cwf_IncludeMixin):
+class SectNormalInclude(SectNormal, IncludeMixin):
     pass
 
-class cwf_SectRootInclude(cwf_SectRoot, cwf_IncludeMixin):
+class SectRootInclude(SectRoot, IncludeMixin):
     pass
 

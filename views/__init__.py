@@ -36,7 +36,7 @@ class Logger(object):
     def __unicode__(self):
         return '\n'.join(self.messages)
     
-class cwf_View(object):
+class View(object):
     def __init__(self, request):   
         if request:
             self.request = request
@@ -206,7 +206,7 @@ class cwf_View(object):
 ### 
 ######################## 
 
-class cwf_StaffView(cwf_View):
+class StaffView(View):
     def getResult(self, request, target, *args, **kwargs):  
         def view(request, *args, **kwargs):
             return getattr(self, target)(request, *args, **kwargs)
@@ -220,7 +220,7 @@ class cwf_StaffView(cwf_View):
 ### 
 ######################## 
 
-class cwf_LocalOnlyView(cwf_View):
+class LocalOnlyView(View):
     def getResult(self, request, target, *args, **kwargs):  
         ip = request.META.get('REMOTE_ADDR')
         if ip == '127.0.0.1':
@@ -234,9 +234,9 @@ class cwf_LocalOnlyView(cwf_View):
 ### 
 ######################## 
 
-class cwf_JSView(cwf_View):
+class JSView(View):
     def getResult(self, request, target, *args, **kwargs):  
-        result = super(cwf_JSView, self).getResult(request, target, *args, **kwargs)
+        result = super(JSView, self).getResult(request, target, *args, **kwargs)
         File, extra = result
         return HttpResponse(simplejson.dumps(extra), mimetype='application/javascript')
 

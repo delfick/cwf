@@ -1,5 +1,5 @@
 from utils.logger import tracer
-class cwf_MiddleWare(object):
+class cwfMiddleWare(object):
 	
 	def process_view(self, request, view, args, kwargs):
 		"""Use this if you have more than one site object, otherwise use settings.SITE"""

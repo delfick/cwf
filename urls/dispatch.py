@@ -1,6 +1,6 @@
 from django.http import Http404
 
-class cwf_Dispatch(object):
+class Dispatcher(object):
     def __init__(self):
         self.viewObjs = {}
     
@@ -26,4 +26,4 @@ class cwf_Dispatch(object):
         else:
             raise Http404
     
-dispatch = cwf_Dispatch()
+dispatch = Dispatcher()
