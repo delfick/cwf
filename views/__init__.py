@@ -1,13 +1,13 @@
 from django.template import loader, RequestContext, Context, Template
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import render_to_response
 from django.utils.safestring import mark_safe
 from django.core import urlresolvers
 from django.utils import simplejson
 from django.conf import settings
 from datetime import datetime
-
 
 if hasattr(settings, 'SITE'):
     try:
@@ -188,14 +188,12 @@ class View(object):
     ########################    
     
     def getAdminChangeView(self, obj):
-        #address = 'admin:%s_%s_change' % (obj._meta.app_label, obj._meta.module_name)
-        #return urlresolvers.reverse(address , args=(obj.id,))
-        return '/admin/%s/%s/%s' % (obj._meta.app_label, obj._meta.module_name, obj.id)
+        content_type = ContentType.objects.get_for_model(obj.__class__)
+        return urlresolvers.reverse("admin:%s_%s_change" % (content_type.app_label, content_type.model), args=(obj.id,))
     
     def getAdminChangeList(self, obj):
-        #address = 'admin:%s_%s_change' % (obj._meta.app_label, obj._meta.module_name)
-        #return urlresolvers.reverse(address , args=(obj.id,))
-        return '/admin/%s/%s' % (obj._meta.app_label, obj._meta.module_name)
+        content_type = ContentType.objects.get_for_model(obj)
+        return urlresolvers.reverse("admin:%s_%s_changelist" % (content_type.app_label, content_type.model))
 
     def startLog(self):
         self.log = Logger()
