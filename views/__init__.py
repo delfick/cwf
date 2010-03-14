@@ -130,7 +130,7 @@ class View(object):
     def Http(self, *args, **kwargs):
         return HttpResponse(*args, **kwargs)
 
-    def redirect(self, request, address, relative=True):
+    def redirect(self, request, address, relative=True, carryGET=False, ignoreGET=None):
         address = unicode(address)
         
         if address[0] == '/':
@@ -140,6 +140,9 @@ class View(object):
             if relative:
                 address = "%s/%s" % (request.path, address)
         
+        if carryGET:
+            address = "%s?%s" % (address, self.getGETString(request, ignoreGET))
+            
         return HttpResponseRedirect(address)
 
     def xml(self, address):
@@ -185,7 +188,20 @@ class View(object):
         
     ########################
     ###   OTHER
-    ########################    
+    ########################
+    
+    def getGETString(self, request, ignoreGET=None):
+        if ignoreGET is None:
+            ignoreGET = []
+        options = []
+        for key, value in request.GET.items():
+            if key not in ignoreGET:
+                if value:
+                    options.append('%s=%s' % (key, value))
+                else:
+                    options.append('%s' % key)
+                    
+        return ';'.join(options)
     
     def getAdminChangeView(self, obj):
         content_type = ContentType.objects.get_for_model(obj.__class__)
