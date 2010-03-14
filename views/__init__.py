@@ -206,6 +206,10 @@ class View(object):
     def getAdminChangeView(self, obj):
         content_type = ContentType.objects.get_for_model(obj.__class__)
         return urlresolvers.reverse("admin:%s_%s_change" % (content_type.app_label, content_type.model), args=(obj.id,))
+        
+    def getAdminAddView(self, obj):
+        content_type = ContentType.objects.get_for_model(obj)
+        return urlresolvers.reverse("admin:%s_%s_add" % (content_type.app_label, content_type.model))
     
     def getAdminChangeList(self, obj):
         content_type = ContentType.objects.get_for_model(obj)
