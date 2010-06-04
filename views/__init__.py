@@ -162,6 +162,21 @@ class View(object):
             
         return File, extra
     
+    def render(self, request, File, extra, mime="text/plain", modify=None):
+        t = loader.get_template(File)
+        c = RequestContext(request, extra)
+        
+        try:
+            render = t.render(c)
+        except Exception, error:
+            import traceback
+            raise Exception, (error, traceback.format_exc())
+        
+        if modify and callable(modify):
+            render = modify(render)
+            
+        return HttpResponse(render, mime)
+    
     ########################
     ###   MONTH STUFF
     ########################    
