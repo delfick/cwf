@@ -15,15 +15,19 @@ class Dispatcher(object):
             else:
                 view = key
                 key = key.__module__
-            self.viewObjs[key] = view = view(self.request)
+            self.viewObjs[key] = view = view()
         
         return view
         
     def __call__(self, request, obj, target, section, condition, *args, **kwargs):
-        if condition():
-            self.request = request
-            return self[obj](request, target, section=section, *args, **kwargs)
-        else:
-            raise Http404
+        if callable(condition):
+            condition = condition():
+        
+        if not condition:
+            view = self[obj]
+            state = view.getState(request)
+            return self[obj](state, target, section=section, *args, **kwargs)
+        
+        raise Http404
     
 dispatch = Dispatcher()

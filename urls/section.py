@@ -1,273 +1,498 @@
 from django.conf.urls.defaults import include, patterns
 from django.views.generic.simple import redirect_to
+from django.http import Http404
+from itertools import chain
+
+########################
+###
+###   SECTION
+###
+########################
 
 class Section(object):
-    def __init__(self, name, obj=None, target=None, redirectTo=None,
-        match=None, values=None, new=None, valuesAsSet=True, compareFunc=None, 
-        needsAuth=False, perms=None, display=True, alias=None,
-        parent=None, package=None, root=False, active=True, sortByAlias=True,
-        extraContext=None, condition=None):
-            
-        self.contents = []
-        self.contentsDict = {}
-        self.url = '/'
-            
-        #set everything passed in to a self.xxx attribute
-        import inspect
-        args, _, _, _ = inspect.getargvalues(inspect.currentframe())
-        for arg in args:
-            setattr(self, arg, locals()[arg])
+    def __init__(self, url='/', name=None, parent=None):
+        self.url  = url
+        self.name = name
         
-        if not self.alias:
-            self.alias = self.name.capitalize()
-            
+        self.parent   = parent
+        self.options  = None
+        self.children = []
+        
+        self._pattern  = None
+        
         if hasattr(self, 'setup'):
             self.setup()
+    
+    def add(self, url, match, name=None):
+        """Adds a child to self.children"""
+        if url == '':
+            raise ValueError("Use section.first() to add a section with same url as parent")
         
+        section = Section(url=url, name=name, parent=self)
+        section.giveOptions(self.options.clone(match=match))
+        self.children.append(section)
+        
+        return section
+
+    def first(self, match, name=None):
+        """Adds a child with the same url as the parent at the beginning of self.children"""
+        section = Section(url="", name=name, parent=self)
+        section.giveOptions(self.options.clone(match=match))
+        self.children.insert(0, section)
+        
+        return section
+        
+    def base(self, **kwargs):
+        """Extends self.options with the given keywords"""
+        self.options = Options(**kwargs)
+        return self
+        
+    ########################
+    ###   SPECIAL
+    ########################
+    
+    def __getattr__(self, key):
+        if key == 'options':
+            if not object.__getattribute__(self, key):
+                return Options()
+        
+        return super(Section, self).__getattr__(key)
+    
+    def __iter__(self):
+        yield self
+        for section in self.children:
+            for sect in section:
+                yield sect
+    
+    def __unicode__(self):
+        template = "<CWF Section %s>"
+        if self.name:
+            return template % '%s : %s' % (self.name, self.url)
+        else:
+            return template % self.url
+
+    def __repr__(self):
+        return unicode(self)
+        
+    ########################
+    ###   UTILITY
+    ########################
+    
     def rootAncestor(self):
         if self.parent:
             return self.parent.rootAncestor()
         else:
             return self
-    
-    ########################
-    ###   UTILITY
-    ########################
-    
+        
     def show(self):
         parentShow = True
         if self.parent:
             parentShow = self.parent.show()
         
         if parentShow:
-            if self.condition:
-                if callable(self.condition):
-                    return self.condition()
-                else:
-                    return self.condition
-            else:
-                return True
-        else:
-            return False
-    
+            return self.options.show()
+        
+        return False
+        
     def appear(self):
-        return self.display and self.show()
-        
-    def getSects(self, section):
-        if callable(section):
-            for sect in section():
-                if sect:
-                    yield sect
-                
-        elif type(section) in (list, tuple):
-            for sect in section:
-                if sect:
-                    yield sect
-        else:
-            if section:
-                yield section
-        
-    ########################
-    ###   MENU STUFF
-    ########################
+        return self.options.display and self.show()
     
-    def getChildrenMenu(self, *args, **kwargs):
-        if any(part for part in self.contents):
-            return self.childrenMenuGen(*args, **kwargs)
-        else:
-            return None
-        
-    def childrenMenuGen(self, request, path, used):
-        for part in self.contents:
-            if type(part) is tuple:
-                part, _ = part
-            for p in part.getMenu(request, path, used):
-                yield p
-                
-    def getMenu(self, request, path, used):    
-        selected = False
-        resultUsed = used
-        
-        if self.values:
-            #determine values
-            valuesToUse = list(value for value in self.values(used.split('/')))
-        else:
-            valuesToUse = None
-            
-        if valuesToUse and any(value for value in valuesToUse):
-            if self.valuesAsSet:
-                valuesToUse = set(valuesToUse)
-            
-            def getValues(values):
-                if self.new:
-                    values = [self.new(path, value) for value in values]
-                else:
-                    values = [(value, value) for value in values]
-                
-                return values
-                
-            if self.compareFunc:
-                if self.sortByAlias:
-                    valuesToUse = getValues(valuesToUse)
-                    valuesToUse = sorted(valuesToUse, self.compareFunc)
-                else:
-                    valuesToUse = sorted(valuesToUse, self.compareFunc)
-                    valuesToUse = getValues(valuesToUse)
-            else:
-                valuesToUse = getValues(valuesToUse)
-            
-            #for all values, create items in the menu
-            for alias, match in valuesToUse:
+    def getInfo(self, path, parentUrl=None, gen=None):
+        if self.options.active and self.options.exists and self.appear():
+            def get(path, url=None):
+                """Helper to get children, fullUrl and determine if selected"""
+                if not url:
+                    url = self.url
                     
-                url = '%s/%s' % (used, match)
-                args = [alias, url, self]
+                path, selected = determineSelection(path, url)
                 
-                #determine if this item has been selected
-                if len(path) != 0:
-                    if unicode(match).lower() == path[0].lower():
-                        selected = True
-                        resultUsed += '/%s' % path[0]
-                    else:
-                        selected = False
                 
-                args += [selected]
-                
-                #If there is a chance of children, add the generator function, otherwise add nothing
-                if any(part for part in self):
-                    args += [self.getChildrenMenu(request, path[1:], resultUsed)]
+                if not parentUrl:
+                    fullUrl = []
                 else:
-                    args += [None]
+                    fullUrl = parentUrl[:]
                     
-                yield args
-                
-        else:
-            if not self.values:
-                for p in self.singleFillMenu(request, path, used):
-                    yield p
-        
-        if len(path) != 0:
-            url = '%s/%s' % (used, path[0])
-            
-            if not self.parent:
-                gen = self.getChildrenMenu(request, path[1:], url)
+                if url:
+                    fullUrl.append(url)
+                    
+                children = self.children
                 if gen:
-                    for p in gen:
-                        yield p
-    
-    def singleFillMenu(self, request, path, used):
-        url = '%s/%s' % (used, self.name)
-        selected = False
-            
-        if hasattr(self, 'base'):
-            args = [self.base.alias, url, self.base]
-            
-            if len(path) != 0:
-                if unicode(self.name) == path[0]:    
-                    selected = True
+                    # Make it a lambda, so that template can remake the generator
+                    # Generator determines how to deliver info about the children
+                    children = lambda : gen(self.children, fullUrl, path)()
                     
-                    #Make sure the base item isn't selected unnecessarily
-                    if not self.parent:
-                        if path[-1] == '' and len(path) > 2:
-                            selected = False
-                        elif path[-1] != '' and len(path) > 1:
-                            selected = False
-            
-            args += [selected]
-                                                
-            if self.parent:
-                args += [self.getChildrenMenu(request, path[1:], url)]
-            else:
-                args += [[]]
-            
-        else:
-            if len(path) != 0:
-                if unicode(self.name) == path[0]:
-                    selected = True
-            
-            args = [self.alias, url, self, selected]
-            
-            if selected:
-                args += [self.getChildrenMenu(request, path[1:], url)]
-            else:
-                args += [[]]
-            
-        yield args
+                return selected, children, fullUrl
                 
+            if self.options.values:
+                for alias, url in self.values.getInfo(path, gen):
+                    selected, children, fullUrl = get(path, url)
+                    yield (url, fullUrl, alias, selected, children, self.options)
+            else:
+                selected, children, fullUrl = get(path)
+                yield (self.url, fullUrl, self.options.alias, selected, children, self.options)
+    
+    def determineSelection(path, url=None):
+        if not url:
+            url = self.url
+            
+        if self.showBase:
+            selected = path[0] == url
+            return path[1:], selected
+        
+        elif self.parent:
+            path, parentSelected = self.parent.determineSelection(path)
+            selected = parentSelected and path[0] == url
+            return selected, path[1:]
+        
+        return False, path
         
     ########################
     ###   URL PATTERNS
     ########################
 
-    def getPatterns(self, includesOnly=False):
-        l = []
-        
-        for part in self.getPatternList():
-            l.append(part)
+    def patterns(self):
+        l = [part for part in self.patternList()]
         return patterns('', *l)
+        
+    def patternList(self):
+        if section.showBase or not self.children:
+            # If not showing base, then there is no direct url to that section
+            # But it's part of the url will be respected by the children
+            for urlPattern in self.urlPattern():
+                yield urlPattern
+        
+        for child in self.children:
+            for urlPattern in child.getPatternList():
+                yield urlPattern
+    
+    def urlPattern(self):
+        for urlPattern in self.options.urlPattern(self.getPattern(), self.name):
+            yield urlPattern
 
-    def getPattern(self, name, includeAs=None):
-        l = []
+    def getPattern(self):
+        if self._pattern:
+            return self._pattern
         
-        for p in self.contentsDict[name].getInclude(includeAs):
-            l.append(p)
+        pattern = []
+        if self.parent:
+            pattern = [p for p in self.parent.getPattern()]
         
-        return patterns('', *l)
-        
-    def getPatternList(self, isBase=False):
-        
-        if self.redirectTo:
-            yield ('^%s$' % self.url, redirect_to, {'url' : str(self.redirectTo)})
+        match = self.options.match
+        if match:
+            pattern.append("(?P<%s>%s)" % (match, self.url))
         else:
-            if hasattr(self, 'base'):
-                if hasattr(self.base, 'getInclude'):
-                    for p in self.base.getInclude(base=True):
-                        yield p
-                else:
-                    for p in self.base.getPatternList(isBase=True):
-                        yield p
+            pattern.append(self.url)
         
-        for part in self.contents:    
-            if type(part) is tuple:
-                part, includeAs = part
-                                
-            if hasattr(part, 'getInclude'):
-                for p in part.getInclude(includeAs):
-                    yield p
-            else:
-                for p in part.getPatternList():
-                    yield p    
-        
-    ########################
-    ###   SPECIAL
-    ########################
-    
-    def __iter__(self):
-        if hasattr(self, 'base'):
-                
-            if hasattr(self.base, 'part'):
-                for s in self.base:
-                    yield s
-            else:
-                yield self.base
-                
-        for sect in self.contents:
-            if type(sect) is tuple:
-                section, _ = sect
-            else:
-                section = sect
-                
-            if hasattr(section, 'part'):
-                for s in section:
-                    yield s
-            else:
-                yield section
-    
-    def __getitem__(self, key):
-        return self.contentsDict[key]
-    
-    def __unicode__(self):
-        return "<CWF Section %s : %s : %s>" % (self.name, self.alias, self.url)
+        self.pattern = pattern
+        return self.pattern
+            
+########################
+###
+###   OPTIONS
+###
+########################
 
-    def __repr__(self):
-        return unicode(self)
+class Options(object):
+    def __init__(self
+        , active   = True  # says whether we should consider it at all (overrides exists and display)
+        , exists   = True  # says whether the section gives a 404 when visited (overrides display)
+        , display  = True  # says whether there should be a physical link
+        , showBase = True  # says whether there should be a physical link for this. Doesn't effect children
+        
+        , alias    = None  # Says what this section will appear as in the menu
+        , match    = None  # says what to match this part of the url as or if at all
+        , values   = None  # Values object determining possible values for this section
+        
+        , kls    = "Views" # The view class. Can be an actual class, which will override module, or a string
+        , module   = None  # Determines module that view class should exist in. Can be string or actual module
+        , target   = None  # Name of the function to call
+        
+        , redirect = None  # Overrides module, kls and target
+        
+        , condition    = False # says whether something stands in the way of this section being shown
+        , extraContext = None  # Extra context to put into url pattern
+        ):
+            
+        #set everything passed in to a self.xxx attribute
+        import inspect
+        args, _, _, _ = inspect.getargvalues(inspect.currentframe())
+        for arg in args:
+            setattr(self, arg, locals()[arg])
+            
+        if not self.alias:
+            self.alias = self.name.capitalize()
+        
+        self._obj = None
+        
+        # Want to store all the values minus self for the clone method
+        self.args = args[1:]
+    
+    def getObj(self):
+        if type(self.kls) not in (str, unicode):
+            obj = self.kls
+        
+        elif type(self.module) not in (str, unicode):
+            kls = self.kls
+            if kls.startswith('.'):
+                kls = kls[1:]
+            
+            if kls.endswith('.'):
+                kls = kls[:-1]
+                
+            if '.' not in self.kls:
+                obj = getattr(self.module, self.kls)
+            else:
+                obj = '%s.%s' % (self.module.__name__, self.kls)
+        else:
+            obj = '%s.%s' % (self.module, self.kls)
+        
+        return obj
+        
+    def clone(self, **kwargs):
+        settings = dict(key == getattr(self, key) for key in self.args)
+        settings.update(kwargs)
+        return Options(**settings)
+
+    def show(self):
+        condition = self.condition
+        if callable(condition):
+            condition = condition()
+        
+        if condition:
+            return True
+        
+        return False
+    
+    def urlPattern(self, pattern, name=None):
+        if self.active and self.exists:
+            pattern = '^%s/?$' % '/'.join(pattern)
+            
+            if self.redirect:
+                view = redirect_to
+                kwargs = {'url' : str(self.redirect)}
+                yield (pattern, view, kwargs, name)
+        
+            else:
+                view = dispatch
+                section = self
+                if self.parent:
+                    section = self.parent
+                
+                target = self.target
+                if callable(target):
+                    target = target()
+                    
+                kwargs = {'obj' : self.getObj(), 'target' : target, 'section' : section, 'condition' : self.show}
+                if self.extraContext:
+                    kwargs.update(self.extraContext)
+                    
+                yield (pattern, view, kwargs, name)
+            
+########################
+###
+###   VALUES
+###
+########################
+
+class Values(object):
+    def __init__(self
+        , values   # lambda path : []
+        , each     # lambda path, value : (alias, urlPart)
+        , asSet         = False  # says whether to remove duplicates from values
+        , compareWith   = None   # function to be used for sorting values
+        , sortWithAlias = True   # sort values by alias or the values themselves
+        ):
+            
+        #set everything passed in to a self.xxx attribute
+        import inspect
+        args, _, _, _ = inspect.getargvalues(inspect.currentframe())
+        for arg in args:
+            setattr(self, arg, locals()[arg])
+    
+    def getValues(self, values):
+        if self.each and callable(self.each):
+            return [self.each(path, value) for value in values]
+        
+        return [(value, value) for value in values]
+        
+    def getInfo(self, path):
+        if callable(self.values):
+            values = list(value for value in self.values(path))
+        else:
+            values = self.values
+            
+        if values and any(v is not None for v in values):
+            # Remove duplicates
+            if self.asSet:
+                values = set(values)
+            
+            # Do some sorting
+            if self.compareWith and callable(self.compareWith):
+                if self.sortByAlias:
+                    values = self.getValues(values)
+                    values = sorted(values, self.compareWith)
+                else:
+                    values = sorted(values, self.compareWith)
+                    values = self.getValues(values)
+            else:
+                values = self.getValues(values)
+            
+            # Yield some information
+            for alias, url in values:
+                yield alias, url
+        
+########################
+###
+###   SITE
+###
+########################
+
+class Site(object):
+    def __init__(self, name):
+        self.name = name
+        self._base = None
+        
+        self.menu = []
+        self.merged = []
+        self.sections = []
+        self.patterns = []
+    
+    def merge(site, includeAs=None, namespace=None, app_name=None, base=False, inMenu=False):
+        if type(site) in (str, unicode):
+            site = __import__('.'.join(site[:-1]), globals(), locals(), [site[-1]], -1)
+            
+        self.merged.eppend(site)
+        if inMenu:
+            self.menu.extend(site.menu)
+        self.sections.extend(site.sections)
+        
+        pattern = '^%s$'
+        if base:
+            pattern = pattern % ''
+        else:
+            if includeAs:
+                pattern = pattern % includeAs
+            else:
+                pattern = pattern % site.name
+                
+        self.patterns.append((pattern, include(site.urls(), namespace=namespace, app_name=app_name)))
+    
+    def add(section, includeAs=None, namespace=None, app_name=None, base=False, inMenu=False):
+        if type(section) in (str, unicode):
+            section = __import__('.'.join(section[:-1]), globals(), locals(), [section[-1]], -1)
+        
+        self.sections.append(section)
+        if inMenu:
+            self.menu.append(section)
+        
+        pattern = '^%s/?$'
+        if base:
+            pattern = pattern % ''
+        else:
+            if includeAs:
+                pattern = pattern % includeAs
+            else:
+                pattern = pattern % section.url
+        
+        l = [part for pat in section.patternList()]
+        self.patterns.append((pattern, include(l, namespace=namespace, app_name=app_name)))
+    
+    def makeBase(self):
+        if self._base:
+            return self._base
+        
+        self._base = Section('', site.name)
+        self.patterns.append(
+            lambda : (pattern, include([part for pat in self._base.patternList()], app_name=self.name, namespace=self.name))
+        )
+        
+        return self._base
+        
+    def urls(self):
+        l = []
+        for pattern in self.patterns:
+            if callable(pattern):
+                l.append(pattern())
+            else:
+                l.append(pattern)
+                
+        return patterns('', *l)
+        
+########################
+###
+###   MENU
+###
+########################
+
+class Menu(object):
+    def __init__(self, site, selectedSection, remainingUrl):
+        self.site = site
+        self.remainingUrl = remainingUrl
+        self.selectedSection = selectedSection
+    
+    def getGlobal(self):
+        for section in self.site:
+            if section == self.selectedSection:
+                section.selected = True
+            else:
+                section.selected = False
+            yield section.getInfo(self.remainingUrl)
+        
+    def heirarchial(self, section=None, path=None, parentUrl=None):
+        if not section:
+            section = self.selectedSection
+            
+        if not path:
+            path = [p for p in self.remainingUrl]
+        
+        if parentUrl is None:
+            parentUrl = []
+            
+        if section.options.showBase:
+            for info in section.getInfo(path, parentUrl, self.heirarchial):
+                yield info
+            
+        else:
+            if section.url:
+                parentUrl.append(section.url)
+                
+            for child in section.children:
+                yield child.getInfo(path, parentUrl, self.hierarchial)
+                
+    def layered(self, selected=None, path=None, parentUrl = None):
+        if not selected:
+            selected = self.selectedSection
+        
+        if not path:
+            path = [p for p in self.remainingUrl]
+            
+        if parentUrl is None:
+            parentUrl = []
+            
+        while selected:
+            l = []
+            anySelected = False
+            for part in self.getLayer(selected, path, parentUrl):
+                l.append(part)
+                _, _, _, isSelected, _, _ = part
+                if isSelected:
+                    selected = part
+                    anySelected = True
+            
+            if not anySelected:
+                selected = None
+        
+        yield l
+    
+    def getLayer(self, section, path, parentUrl):
+        if section.options.showBase:
+            yield section.getInfo(path, parenturl, self.layered)
+        
+        else:
+            if section.url:
+                parentUrl.append(section.url)
+                
+            l = [child.getLayer(child, path) for child in section.children]
+            for part in chain.from_iterable(l):
+                yield part.getInfo(path, parentUrl, self.layered)
     
