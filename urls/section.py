@@ -2,6 +2,7 @@ from django.conf.urls.defaults import include, patterns
 from django.views.generic.simple import redirect_to
 from django.http import Http404
 from itertools import chain
+from dispatch import dispatch
 
 ########################
 ###
@@ -166,7 +167,7 @@ class Section(object):
                 yield urlPattern
     
     def urlPattern(self):
-        for urlPattern in self.options.urlPattern(self.getPattern(), self.name):
+        for urlPattern in self.options.urlPattern(self.getPattern(), self, self.name):
             yield urlPattern
 
     def getPattern(self):
@@ -204,8 +205,8 @@ class Options(object):
         , values   = None  # Values object determining possible values for this section
         
         , kls    = "Views" # The view class. Can be an actual class, which will override module, or a string
-        , module   = None  # Determines module that view class should exist in. Can be string or actual module
-        , target   = None  # Name of the function to call
+        , module = None    # Determines module that view class should exist in. Can be string or actual module
+        , target = 'base'  # Name of the function to call
         
         , redirect = None  # Overrides module, kls and target
         
@@ -227,33 +228,18 @@ class Options(object):
         # Want to store all the values minus self for the clone method
         self.args = args[1:]
     
-    def getObj(self):
-        if type(self.kls) not in (str, unicode):
-            obj = self.kls
-        
-        elif type(self.module) not in (str, unicode):
-            kls = self.kls
-            if kls.startswith('.'):
-                kls = kls[1:]
-            
-            if kls.endswith('.'):
-                kls = kls[:-1]
-                
-            if '.' not in self.kls:
-                obj = getattr(self.module, self.kls)
-            else:
-                obj = '%s.%s' % (self.module.__name__, self.kls)
-        else:
-            obj = '%s.%s' % (self.module, self.kls)
-        
-        return obj
         
     def clone(self, **kwargs):
+        """Return a copy of this object with new options.
+        It Determines current options, updates with new options
+        And returns a new Options object with these options
+        """
         settings = dict(key == getattr(self, key) for key in self.args)
         settings.update(kwargs)
         return Options(**settings)
 
     def show(self):
+        """Determine if any dynamic conditions stand in the way of actually showing the section"""
         condition = self.condition
         if callable(condition):
             condition = condition()
@@ -262,10 +248,48 @@ class Options(object):
             return True
         
         return False
+        
+    def getObj(self):
+        """Look at module and kls to determine either an object or string representation"""
+        
+        if type(self.kls) not in (str, unicode):
+            # If kls is an object, we already have what we want
+            obj = self.kls
+        
+        else:
+            # Remove any dots at begninning and end of kls string
+            kls = self.kls
+            if kls.startswith('.'):
+                kls = kls[1:]
+            
+            if kls.endswith('.'):
+                kls = kls[:-1]
+                
+            if  type(self.module) in (str, unicode):
+                # Both module and kls are strings, just return a string
+                obj = '%s.%s' % (self.module, self.kls)
+            
+            else:
+                if '.' not in self.kls:
+                    # Kls is just an attribute of the module
+                    obj = getattr(self.module, self.kls)
+                else:
+                    # Kls is more than just an attribute, so return a string
+                    obj = '%s.%s' % (self.module.__name__, self.kls)
+        
+        return obj
     
-    def urlPattern(self, pattern, name=None):
+    def urlPattern(self, pattern, section, name=None):
+        """Return url pattern for this section"""
         if self.active and self.exists:
-            pattern = '^%s/?$' % '/'.join(pattern)
+            if type(pattern) in (tuple, list):
+                pattern = '/'.join(pattern)
+                
+            # Remove duplicate slashes
+            pattern = pattern.replace('//', '/')
+            
+            # Turn pattern into regex
+            pattern = '^%s/?$' % pattern
             
             if self.redirect:
                 view = redirect_to
@@ -274,9 +298,6 @@ class Options(object):
         
             else:
                 view = dispatch
-                section = self
-                if self.parent:
-                    section = self.parent
                 
                 target = self.target
                 if callable(target):
@@ -296,10 +317,10 @@ class Options(object):
 
 class Values(object):
     def __init__(self
-        , values   # lambda path : []
-        , each     # lambda path, value : (alias, urlPart)
-        , asSet         = False  # says whether to remove duplicates from values
-        , compareWith   = None   # function to be used for sorting values
+        , values = None   # lambda path : []
+        , each   = None   # lambda path, value : (alias, urlPart)
+        , asSet  = False  # says whether to remove duplicates from values
+        , sorter = None   # function to be used for sorting values
         , sortWithAlias = True   # sort values by alias or the values themselves
         ):
             
@@ -308,36 +329,64 @@ class Values(object):
         args, _, _, _ = inspect.getargvalues(inspect.currentframe())
         for arg in args:
             setattr(self, arg, locals()[arg])
+        
+        if not values:
+            self.values = []
     
-    def getValues(self, values):
-        if self.each and callable(self.each):
-            return [self.each(path, value) for value in values]
+    def sort(self, values):
+        """Determine if values can be sorted and sort appropiately"""
+        # If allowed to sort
+        if self.sorter:
+            # Sort with a function
+            # Or if not a function, just sort
+            if callable(self.sorter):
+                return sorted(values, self.sorter)
+            else:
+                return sorted(values)
         
-        return [(value, value) for value in values]
+        # Not allowed to sort, so just return as is
+        return values
         
-    def getInfo(self, path):
-        if callable(self.values):
-            values = list(value for value in self.values(path))
-        else:
-            values = self.values
+    def getValues(self, path, sortWithAlias=None):
+        """Get transformed, sorted values"""
+        # If we have values
+        if self.values is not None:
+            if sortWithAlias is None:
+                sortWithAlias = self.sortWithAlias
             
-        if values and any(v is not None for v in values):
+            # Get a list of values
+            if callable(self.values):
+                values = list(value for value in self.values(path))
+            else:
+                values = self.values
+            
+            # Sort if we have to
+            if not sortWithAlias:
+                values = self.sort(values)
+                
+            # Tranform if we can
+            if self.each and callable(self.each):
+                ret = [self.each(path, value) for value in values]
+            else:
+                ret = [(value, value) for value in values]
+                
+            # Sort if we haven't yet
+            if sortWithAlias:
+                ret = self.sort(ret)
+                
             # Remove duplicates
             if self.asSet:
-                values = set(values)
+                ret = set(ret)
+                
+            return ret
+        
+    def getInfo(self, path):
+        """Generator for (alias, url) pairs for each value"""
+        # Get sorted values
+        values = self.getValues(path)
             
-            # Do some sorting
-            if self.compareWith and callable(self.compareWith):
-                if self.sortByAlias:
-                    values = self.getValues(values)
-                    values = sorted(values, self.compareWith)
-                else:
-                    values = sorted(values, self.compareWith)
-                    values = self.getValues(values)
-            else:
-                values = self.getValues(values)
-            
-            # Yield some information
+        # Yield some information
+        if values and any(v is not None for v in values):
             for alias, url in values:
                 yield alias, url
         

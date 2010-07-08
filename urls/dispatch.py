@@ -21,7 +21,7 @@ class Dispatcher(object):
         
     def __call__(self, request, obj, target, section, condition, *args, **kwargs):
         if callable(condition):
-            condition = condition():
+            condition = condition()
         
         if not condition:
             view = self[obj]
