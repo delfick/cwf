@@ -1,8 +1,16 @@
 from django.conf.urls.defaults import include, patterns
 from django.views.generic.simple import redirect_to
 from django.http import Http404
-from itertools import chain
+
 from dispatch import dispatch
+
+from types import FunctionType
+from itertools import chain
+import re
+
+regexes = {
+    'multiSlash' : re.compile('/+'),
+}
 
 ########################
 ###
@@ -129,8 +137,11 @@ class Section(object):
                     selected, children, fullUrl = get(path, url)
                     yield (url, fullUrl, alias, selected, children, self.options)
             else:
+                alias = self.options.alias
+                if not alias:
+                    alias = self.name.capitalize()
                 selected, children, fullUrl = get(path)
-                yield (self.url, fullUrl, self.options.alias, selected, children, self.options)
+                yield (self.url, fullUrl, alias, selected, children, self.options)
     
     def determineSelection(path, url=None):
         if not url:
@@ -219,9 +230,6 @@ class Options(object):
         args, _, _, _ = inspect.getargvalues(inspect.currentframe())
         for arg in args:
             setattr(self, arg, locals()[arg])
-            
-        if not self.alias:
-            self.alias = self.name.capitalize()
         
         self._obj = None
         
@@ -234,7 +242,7 @@ class Options(object):
         It Determines current options, updates with new options
         And returns a new Options object with these options
         """
-        settings = dict(key == getattr(self, key) for key in self.args)
+        settings = dict((key, getattr(self, key)) for key in self.args)
         settings.update(kwargs)
         return Options(**settings)
 
@@ -245,69 +253,93 @@ class Options(object):
             condition = condition()
         
         if condition:
-            return True
+            return False
         
-        return False
+        return True
         
     def getObj(self):
         """Look at module and kls to determine either an object or string representation"""
         
-        if type(self.kls) not in (str, unicode):
+        if self.kls is not None and type(self.kls) not in (str, unicode):
             # If kls is an object, we already have what we want
             obj = self.kls
         
         else:
             # Remove any dots at begninning and end of kls string
             kls = self.kls
+            if self.kls is None:
+                kls = ''
+                
             if kls.startswith('.'):
                 kls = kls[1:]
             
             if kls.endswith('.'):
                 kls = kls[:-1]
-                
-            if  type(self.module) in (str, unicode):
+               
+            if  self.module is None:
+                if kls == '':
+                    # If module and kls are none, return None
+                    return None
+                else:
+                    # Module is none, but kls is something, so just return kls
+                    return kls
+            
+            if type(self.module) in (str, unicode):
                 # Both module and kls are strings, just return a string
+                obj = self.module
                 obj = '%s.%s' % (self.module, self.kls)
             
             else:
-                if '.' not in self.kls:
-                    # Kls is just an attribute of the module
-                    obj = getattr(self.module, self.kls)
-                else:
-                    # Kls is more than just an attribute, so return a string
-                    obj = '%s.%s' % (self.module.__name__, self.kls)
+                obj = self.module
+                for next in kls.split('.'):
+                    obj = getattr(obj, next)
         
         return obj
     
-    def urlPattern(self, pattern, section, name=None):
+    def urlPattern(self, pattern, section=None, name=None):
         """Return url pattern for this section"""
         if self.active and self.exists:
             if type(pattern) in (tuple, list):
                 pattern = '/'.join(pattern)
                 
             # Remove duplicate slashes
-            pattern = pattern.replace('//', '/')
+            pattern = regexes['multiSlash'].sub('/', pattern)
             
             # Turn pattern into regex
-            pattern = '^%s/?$' % pattern
+            if pattern.endswith('/'):
+                pattern = '^%s$' % pattern
+            else:
+                pattern = '^%s/?$' % pattern
             
-            if self.redirect:
-                view = redirect_to
-                kwargs = {'url' : str(self.redirect)}
+            # Get redirect and call if can
+            redirect = self.redirect
+            if callable(self.redirect):
+                redirect = self.redirect()
+            
+            if redirect and type(redirect) in (str, unicode):
+                # Only redirect if we have a string to redirect to
+                view = redirect_to                    
+                kwargs = {'url' : unicode(redirect)}
                 yield (pattern, view, kwargs, name)
         
             else:
-                view = dispatch
-                
                 target = self.target
-                if callable(target):
-                    target = target()
+                
+                if type(target) is FunctionType:
+                    # Target is callable and not part of a class
+                    # So bypass the dispatcher
+                    yield (pattern, target, self.extraContext, name)
+                else:
+                    view = dispatch
+                        
+                    kwargs = {
+                        'obj' : self.getObj(), 'target' : target, 'section' : section, 'condition' : self.show
+                    }
                     
-                kwargs = {'obj' : self.getObj(), 'target' : target, 'section' : section, 'condition' : self.show}
-                if self.extraContext:
-                    kwargs.update(self.extraContext)
-                    
-                yield (pattern, view, kwargs, name)
+                    if self.extraContext:
+                        kwargs.update(self.extraContext)
+                        
+                    yield (pattern, view, kwargs, name)
             
 ########################
 ###
