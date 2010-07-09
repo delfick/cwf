@@ -24,36 +24,41 @@ class Section(object):
         self.name = name
         
         self.parent   = parent
-        self.options  = None
+        self._options = None
         self.children = []
         
         self._pattern  = None
         
         if hasattr(self, 'setup'):
-            self.setup()
+            if callable(self.setup):    
+                self.setup()
     
-    def add(self, url, match, name=None):
+    def add(self, url, match=None, name=None):
         """Adds a child to self.children"""
         if url == '':
             raise ValueError("Use section.first() to add a section with same url as parent")
         
         section = Section(url=url, name=name, parent=self)
-        section.giveOptions(self.options.clone(match=match))
+        section.options = self.options.clone(match=match)
         self.children.append(section)
         
         return section
 
-    def first(self, match, name=None):
+    def first(self, match=None, name=None):
         """Adds a child with the same url as the parent at the beginning of self.children"""
+        if self.children and self.children[0].url == '':
+            # Override if we already have a first section
+            self.children.pop(0)
+        
         section = Section(url="", name=name, parent=self)
-        section.giveOptions(self.options.clone(match=match))
+        section.options = self.options.clone(match=match)
         self.children.insert(0, section)
         
         return section
         
     def base(self, **kwargs):
         """Extends self.options with the given keywords"""
-        self.options = Options(**kwargs)
+        self.options.update(**kwargs)
         return self
         
     ########################
@@ -62,12 +67,30 @@ class Section(object):
     
     def __getattr__(self, key):
         if key == 'options':
-            if not object.__getattribute__(self, key):
-                return Options()
+            # Always want to have an options object
+            # To avoid creating one unecessarily, we lazily create it
+            current = object.__getattribute__(self, '_options')
+            if not current:
+                opts = Options()
+                self._options = opts
+                return opts
+            else:
+                return current
         
         return super(Section, self).__getattr__(key)
     
+    def __setattr__(self, key, value):
+        if key == 'options':
+            # So I don't need a try..except in __getattr__, I put options under self._options
+            # This is so I can have self._options = None in __init__
+            # If I have self.options = None in __init__, __getattr__ is never called for self.options
+            self._options = value
+        
+        else:
+            super(Section, self).__setattr__(key, value)
+            
     def __iter__(self):
+        """Return self followed by all children"""
         yield self
         for section in self.children:
             for sect in section:
@@ -88,12 +111,14 @@ class Section(object):
     ########################
     
     def rootAncestor(self):
+        """Recursively get ancestor that has no parent"""
         if self.parent:
             return self.parent.rootAncestor()
         else:
             return self
         
     def show(self):
+        """Can only show if options say this section can show and parent can show"""
         parentShow = True
         if self.parent:
             parentShow = self.parent.show()
@@ -104,17 +129,17 @@ class Section(object):
         return False
         
     def appear(self):
+        """Can only appear if allowed to be displayed and shown"""
         return self.options.display and self.show()
     
-    def getInfo(self, path, parentUrl=None, gen=None):
-        if self.options.active and self.options.exists and self.appear():
+    def getInfo(self, path, parentUrl=None, parentSelected=False, gen=None):
+        if self.options.active and self.options.exists and self.show():
             def get(path, url=None):
                 """Helper to get children, fullUrl and determine if selected"""
                 if not url:
                     url = self.url
                     
-                path, selected = determineSelection(path, url)
-                
+                path, selected = self.determineSelection(path, parentSelected, url)
                 
                 if not parentUrl:
                     fullUrl = []
@@ -128,7 +153,7 @@ class Section(object):
                 if gen:
                     # Make it a lambda, so that template can remake the generator
                     # Generator determines how to deliver info about the children
-                    children = lambda : gen(self.children, fullUrl, path)()
+                    children = lambda : gen(self.children, fullUrl, selected, path)()
                     
                 return selected, children, fullUrl
                 
@@ -139,24 +164,23 @@ class Section(object):
             else:
                 alias = self.options.alias
                 if not alias:
-                    alias = self.name.capitalize()
+                    alias = self.url.capitalize()
                 selected, children, fullUrl = get(path)
                 yield (self.url, fullUrl, alias, selected, children, self.options)
     
-    def determineSelection(path, url=None):
-        if not url:
-            url = self.url
-            
-        if self.showBase:
+    def determineSelection(self, path, parentSelected, url=None):
+        """Return True and rest of path if selected else False and no path."""
+        if not parentSelected or not path:
+            return False, []
+        else:
+            if not url:
+                url = self.url
+                
             selected = path[0] == url
-            return path[1:], selected
-        
-        elif self.parent:
-            path, parentSelected = self.parent.determineSelection(path)
-            selected = parentSelected and path[0] == url
-            return selected, path[1:]
-        
-        return False, path
+            if selected:
+                return selected, path[1:]
+            else:
+                return False, []
         
     ########################
     ###   URL PATTERNS
@@ -245,6 +269,10 @@ class Options(object):
         settings = dict((key, getattr(self, key)) for key in self.args)
         settings.update(kwargs)
         return Options(**settings)
+    
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def show(self):
         """Determine if any dynamic conditions stand in the way of actually showing the section"""
@@ -519,7 +547,7 @@ class Menu(object):
                 section.selected = False
             yield section.getInfo(self.remainingUrl)
         
-    def heirarchial(self, section=None, path=None, parentUrl=None):
+    def heirarchial(self, section=None, path=None, parentUrl=None, parentSelected=False):
         if not section:
             section = self.selectedSection
             
@@ -530,7 +558,7 @@ class Menu(object):
             parentUrl = []
             
         if section.options.showBase:
-            for info in section.getInfo(path, parentUrl, self.heirarchial):
+            for info in section.getInfo(path, parentUrl, parentSelected, self.heirarchial):
                 yield info
             
         else:
@@ -538,9 +566,9 @@ class Menu(object):
                 parentUrl.append(section.url)
                 
             for child in section.children:
-                yield child.getInfo(path, parentUrl, self.hierarchial)
+                yield child.getInfo(path, parentUrl, parentSelected, self.hierarchial)
                 
-    def layered(self, selected=None, path=None, parentUrl = None):
+    def layered(self, selected=None, path=None, parentUrl = None, parentSelected=False):
         if not selected:
             selected = self.selectedSection
         
@@ -553,7 +581,7 @@ class Menu(object):
         while selected:
             l = []
             anySelected = False
-            for part in self.getLayer(selected, path, parentUrl):
+            for part in self.getLayer(selected, path, parentUrl, parentSelected):
                 l.append(part)
                 _, _, _, isSelected, _, _ = part
                 if isSelected:
@@ -565,9 +593,9 @@ class Menu(object):
         
         yield l
     
-    def getLayer(self, section, path, parentUrl):
+    def getLayer(self, section, path, parentUrl, parentselected):
         if section.options.showBase:
-            yield section.getInfo(path, parenturl, self.layered)
+            yield section.getInfo(path, parenturl, parentSelected, self.layered)
         
         else:
             if section.url:
@@ -575,5 +603,5 @@ class Menu(object):
                 
             l = [child.getLayer(child, path) for child in section.children]
             for part in chain.from_iterable(l):
-                yield part.getInfo(path, parentUrl, self.layered)
+                yield part.getInfo(path, parentUrl, parentSelected, self.layered)
     
