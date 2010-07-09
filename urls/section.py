@@ -77,7 +77,7 @@ class Section(object):
             else:
                 return current
         
-        return super(Section, self).__getattr__(key)
+        return object.__getattribute__(self, key)
     
     def __setattr__(self, key, value):
         if key == 'options':
@@ -132,14 +132,14 @@ class Section(object):
         """Can only appear if allowed to be displayed and shown"""
         return self.options.display and self.show()
     
-    def getInfo(self, path, parentUrl=None, parentSelected=False, gen=None):
+    def getInfo(self, path, parentUrl=None, parentSelected=True, gen=None):
         if self.options.active and self.options.exists and self.show():
             def get(path, url=None):
                 """Helper to get children, fullUrl and determine if selected"""
                 if not url:
                     url = self.url
-                    
-                path, selected = self.determineSelection(path, parentSelected, url)
+                
+                selected, path = self.determineSelection(path, parentSelected, url)
                 
                 if not parentUrl:
                     fullUrl = []
@@ -153,12 +153,12 @@ class Section(object):
                 if gen:
                     # Make it a lambda, so that template can remake the generator
                     # Generator determines how to deliver info about the children
-                    children = lambda : gen(self.children, fullUrl, selected, path)()
+                    children = lambda : gen(self.children, fullUrl, selected, path)
                     
                 return selected, children, fullUrl
                 
             if self.options.values:
-                for alias, url in self.values.getInfo(path, gen):
+                for alias, url in self.options.values.getInfo(path):
                     selected, children, fullUrl = get(path, url)
                     yield (url, fullUrl, alias, selected, children, self.options)
             else:
@@ -175,9 +175,12 @@ class Section(object):
         else:
             if not url:
                 url = self.url
-                
+            
+            # Already checked that path is not empty
             selected = path[0] == url
+            
             if selected:
+                # Only return remaining path if this section is selected
                 return selected, path[1:]
             else:
                 return False, []
@@ -187,31 +190,38 @@ class Section(object):
     ########################
 
     def patterns(self):
-        l = [part for part in self.patternList()]
+        """Return patterns object for this section"""
+        # pass self to patternList to tell it not to use patterns for any ancestor beyond it
+        l = [part for part in self.patternList(self)]
         return patterns('', *l)
         
-    def patternList(self):
-        if section.showBase or not self.children:
+    def patternList(self, stopAt=None):
+        """Return list of url patterns for this section and its children"""
+        if self.options.showBase or not self.children:
             # If not showing base, then there is no direct url to that section
             # But it's part of the url will be respected by the children
-            for urlPattern in self.urlPattern():
+            for urlPattern in self.urlPattern(stopAt):
                 yield urlPattern
         
         for child in self.children:
-            for urlPattern in child.getPatternList():
+            for urlPattern in child.patternList(stopAt):
                 yield urlPattern
     
-    def urlPattern(self):
-        for urlPattern in self.options.urlPattern(self.getPattern(), self, self.name):
+    def urlPattern(self, stopAt=None):
+        """Get tuple to be used for url pattern for this section"""
+        for urlPattern in self.options.urlPattern(self.getPattern(stopAt), self, self.name):
             yield urlPattern
 
-    def getPattern(self):
+    def getPattern(self, stopAt=None):
+        """Get list of patterns making the full pattern for this section"""
         if self._pattern:
+            # Just return if we already have one
             return self._pattern
         
         pattern = []
-        if self.parent:
-            pattern = [p for p in self.parent.getPattern()]
+        if self.parent and not self is stopAt:
+            # Get parent patterns
+            pattern = [p for p in self.parent.getPattern(stopAt)]
         
         match = self.options.match
         if match:
@@ -219,8 +229,8 @@ class Section(object):
         else:
             pattern.append(self.url)
         
-        self.pattern = pattern
-        return self.pattern
+        self._pattern = pattern
+        return self._pattern
             
 ########################
 ###
@@ -235,6 +245,7 @@ class Options(object):
         , display  = True  # says whether there should be a physical link
         , showBase = True  # says whether there should be a physical link for this. Doesn't effect children
         
+        # Following three are not carried over by default during a clone unless carryAll=True is given
         , alias    = None  # Says what this section will appear as in the menu
         , match    = None  # says what to match this part of the url as or if at all
         , values   = None  # Values object determining possible values for this section
@@ -247,26 +258,31 @@ class Options(object):
         
         , condition    = False # says whether something stands in the way of this section being shown
         , extraContext = None  # Extra context to put into url pattern
+        , **kwargs # Catch any unexpected arguments
         ):
             
         #set everything passed in to a self.xxx attribute
         import inspect
         args, _, _, _ = inspect.getargvalues(inspect.currentframe())
         for arg in args:
-            setattr(self, arg, locals()[arg])
+            if arg != 'kwargs':
+                setattr(self, arg, locals()[arg])
         
         self._obj = None
         
         # Want to store all the values minus self for the clone method
-        self.args = args[1:]
+        self.args = args[1:-1]
     
-        
     def clone(self, **kwargs):
         """Return a copy of this object with new options.
         It Determines current options, updates with new options
         And returns a new Options object with these options
         """
-        settings = dict((key, getattr(self, key)) for key in self.args)
+        args = self.args
+        if not kwargs.get('carryAll', False):
+            args = [a for a in self.args if a not in ['alias', 'match', 'values']]
+            
+        settings = dict((key, getattr(self, key)) for key in args)
         settings.update(kwargs)
         return Options(**settings)
     

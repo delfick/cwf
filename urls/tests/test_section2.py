@@ -6,7 +6,7 @@ from urls import dispatch
 
 describe 'cwf Options':
     before_each:
-        self.opts = Options(alias='a', match='m', target='view')
+        self.opts = Options(target='view', kls='a', module='m')
         self.opts.nonClonedAttribute = False
     
     it 'should be possible to clone an options object':
@@ -14,9 +14,27 @@ describe 'cwf Options':
         clone = self.opts.clone()
         clone | should_not | respond_to('nonClonedAttribute')
     
-        clone = self.opts.clone(match='z')
+        clone.module | should.equal_to | 'm'
+        clone.kls | should.equal_to | 'a'
+        
+        clone = self.opts.clone(match='z', module='y')
         clone.match | should.equal_to | 'z'
-        clone.alias | should.equal_to | 'a'
+        clone.module | should.equal_to | 'y'
+        clone.kls | should.equal_to | 'a'
+    
+    it 'should reset alias and match and values when cloning unless specified':
+        self.opts.update(values='blah', match='meh', alias='hello')
+        
+        clone = self.opts.clone()
+        clone.alias | should.equal_to | None
+        clone.match | should.equal_to | None
+        clone.values | should.equal_to | None
+        
+        clone = self.opts.clone(carryAll=True)
+        clone.alias | should.equal_to | 'hello'
+        clone.match | should.equal_to | 'meh'
+        clone.values | should.equal_to | 'blah'
+        
     
     it 'should have a function saying whether there is a condition to section being viewed':
         self.opts.condition = True
