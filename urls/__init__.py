@@ -1,4 +1,4 @@
-from section import Section, Options, Values, Menu
+from section import Section, Options, Values
 
 S = Section
 O = Options
