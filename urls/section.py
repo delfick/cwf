@@ -473,12 +473,14 @@ class Values(object):
 ########################
 
 class Site(object):
+    """Object that provides include patterns for sections and sites"""
     def __init__(self, name):
         self.name = name
         
         ###   SITE INFO OBJECT
         ########################
         class Info(object):
+            """Object that helps keep track of the sections and sites this site includes"""
             def __init__(self):
                 self.stuff = {}
                 self.order = 1
@@ -488,10 +490,12 @@ class Site(object):
                 for k, v in self.stuff.items():
                     l.append((v[0], k + v[1:]))
                 
+                # We want to maintain some order
                 for _, part in sorted(l):
                     yield part
                     
             def __nonzero__(self):
+                # Only nonzero if we are actually holding something
                 if self.stuff:
                     return True
                 else:
@@ -501,6 +505,7 @@ class Site(object):
                 return len(self.stuff)
             
             def add(self, obj, includeAs, patternFunc, namespace, app_name, menu=None):
+                # I use a dictionary for self.stuff so I don't have the same combination of (obj, includeAs) twice
                 self.stuff[(obj, includeAs)] = (self.order, patternFunc, namespace, app_name, menu)
                 self.order += 1
                 
@@ -519,6 +524,9 @@ class Site(object):
         ###   SITE BASE OBJECT
         ########################
         class Base(object):
+            """Object for keeping track of the base of the site.
+            The base is the section or site that has a urlpattern of '^$'
+            There should only be one of this"""
             def __init__(self):
                 self.stuff = []
                 
@@ -527,6 +535,7 @@ class Site(object):
                     yield self.stuff
                     
             def __nonzero__(self):
+                # Only nonzero if we actually have a base
                 if self.stuff:
                     return True
                 else:
@@ -542,6 +551,8 @@ class Site(object):
                 #set everything passed in to a self.xxx attribute
                 import inspect
                 args, _, _, _ = inspect.getargvalues(inspect.currentframe())
+                
+                # Just replace if there already is a base
                 self.stuff = [locals()[a] for a in args[1:]]
                 
             def patterns(self):
@@ -556,7 +567,7 @@ class Site(object):
     ########################
     
     def getFromString(self, s):
-        # Determine section
+        # Import an object using a string
         obj = s.split('.')
         module = '.'.join(obj[:-1])
         name = obj[-1]
@@ -565,6 +576,7 @@ class Site(object):
         return getattr(obj, name)
             
     def add(self, section=None, site=None, **kwargs):
+        """Adds a site or section to self.info"""
         if section:
             self._addSection(section, **kwargs)
         
@@ -579,10 +591,12 @@ class Site(object):
         if type(section) in (str, unicode):
             section = self.getFromString(section)
         
+        # Determine what to put in menu if anything at all
         menu = None
         if inMenu:
             menu = [section]
-            
+        
+        # Determine what to add to
         add = self.info.add
         if base:
             add = self.base.add
@@ -597,14 +611,19 @@ class Site(object):
         if type(site) in (str, unicode):
             site = self.getFromString(site)
         
+        # Determine what to put in menu if anything at all
         menu = None
         if inMenu:
+            # Only add sections to the menu
             menu = site.menu
             
+        # Determine what to add to
         add = self.info.add
         if base:
             add = self.base.add
         
+        # If we don't set includeAs, the adder will try site.url
+        # Sites don't have urls. Only sections do
         if not includeAs:
             includeAs = site.name
             
@@ -628,7 +647,7 @@ class Site(object):
     ########################
     
     def makeBase(self, inMenu=False):
-        """Return a section representing the base of the site"""
+        """Make and return a section representing the base of the site"""
         base = Section('', name=self.name)
         self.add(base, base=True, inMenu=inMenu, namespace=self.name, app_name=self.name)
         
@@ -639,6 +658,7 @@ class Site(object):
     ########################
     
     def includes(self):
+        """All the (pattern, include) tuples for this site"""
         for pat in self.base.patterns():
             yield pat
         
@@ -646,6 +666,7 @@ class Site(object):
             yield pat
     
     def patterns(self):
+        """Wraps self.includes in a patterns object"""
         l = [l for l in self.includes()]
         return patterns('', *l)
             
@@ -654,6 +675,7 @@ class Site(object):
     ########################
     
     def menu(self):
+        """Return a list of sections that form the menu"""
         collected = []
         for collection in [self.base, self.info]:
             for _, _, _, _, _, menu in collection:
