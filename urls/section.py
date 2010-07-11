@@ -476,77 +476,152 @@ class Site(object):
     def __init__(self, name):
         self.name = name
         
-        self.menu     = []
-        self.merged   = []
-        self.sections = []
-        self.patterns = []
+        ###   SITE INFO OBJECT
+        ########################
+        class Info(object):
+            def __init__(self):
+                self.stuff = {}
+                self.order = 1
+            
+            def __iter__(self):
+                l = []
+                for k, v in self.stuff.items():
+                    l.append((v[0], k + v[1:]))
+                
+                for _, part in sorted(l):
+                    yield part
+                    
+            def __nonzero__(self):
+                if self.stuff:
+                    return True
+                else:
+                    return False
+            
+            def __len__(self):
+                return len(self.stuff)
+            
+            def add(self, obj, includeAs, patternFunc, namespace, app_name, menu=None):
+                self.stuff[(obj, includeAs)] = (self.order, patternFunc, namespace, app_name, menu)
+                self.order += 1
+                
+            def patterns(self):
+                for obj, includeAs, patternFunc, namespace, app_name, _ in self:
+                    
+                    # Determine pattern
+                    pattern = '^%s/?$'
+                    if includeAs:
+                        pattern = pattern % includeAs
+                    else:
+                        pattern = pattern % obj.url
+                    
+                    yield (pattern, include(patternFunc, namespace=namespace, app_name=app_name) )
         
-        # Stuff for keeping track of base
-        self._base        = None
-        self.baseMenu     = []
-        self.baseMerged   = False
-        self.baseSections = []
+        ###   SITE BASE OBJECT
+        ########################
+        class Base(object):
+            def __init__(self):
+                self.stuff = []
+                
+            def __iter__(self):
+                if self:
+                    yield self.stuff
+                    
+            def __nonzero__(self):
+                if self.stuff:
+                    return True
+                else:
+                    return False
             
-    ########################
-    ###   MERGE/ADD
-    ########################
+            def __len__(self):
+                if self:
+                    return 1
+                else:
+                    return 0
             
-    def add(self, section, includeAs=None, namespace=None, app_name=None, base=False, inMenu=False):
+            def add(self, obj, includeAs, patternFunc, namespace=None, app_name=None, menu=None):
+                #set everything passed in to a self.xxx attribute
+                import inspect
+                args, _, _, _ = inspect.getargvalues(inspect.currentframe())
+                self.stuff = args[1:]
+                
+            def patterns(self):
+                for obj, includeAs, patternFunc, namespace, app_name, _ in self:
+                   yield ( '^$', include(patternFunc, namespace=namespace, app_name=app_name) )
+
+        self.info = Info()
+        self.base = Base()
+        
+    ########################
+    ###   ADD/MERGE
+    ########################
+    
+    def getFromString(self, s):
+        # Determine section
+        obj = s.split('.')
+        module = '.'.join(obj[:-1])
+        name = obj[-1]
+        
+        obj = __import__(module, globals(), locals(), [name], -1)
+        return getattr(obj, name)
+            
+    def add(self, section=None, site=None, **kwargs):
+        if section:
+            self._addSection(section, **kwargs)
+        
+        elif site:
+            self._addSite(site, **kwargs)
+        
+        else:
+            raise ValueError("Must either add a section or a site")
+    
+    def _addSection(self, section, includeAs=None, namespace=None, app_name=None, base=False, inMenu=False):
         """Add a section to the site"""
         if type(section) in (str, unicode):
-            # Determine section
-            section = __import__('.'.join(section[:-1]), globals(), locals(), [section[-1]], -1)
+            section = self.getFromString(section)
         
+        menu = None
+        if inMenu:
+            menu = [section]
+            
+        add = self.info.add
         if base:
-            # Replace current base if one, or just add this as new base
-            self.replaceBase(section=section, app_name=app_name, namespace=namespace, inMenu=inMenu)
-        else:
-            # Determine pattern
-            pattern = '^%s/?$'
-            if includeAs:
-                pattern = pattern % includeAs
-            else:
-                pattern = pattern % section.url
+            add = self.base.add
             
-            # Add pattern, section and menu item
-            self.patterns.append(
-                lambda : ( pattern
-                         , include([part for pat in section.patternList(stopAt=section)], namespace=namespace, app_name=app_name)
-                         )
-            )
-            
-            self.sections.append(section)
-            if inMenu:
-                self.menu.append(section)
+        add(
+            section, includeAs, lambda : section.patterns(stopAt=section), 
+            namespace=namespace, app_name=app_name, menu=menu
+        )
     
-    def merge(self, site, includeAs=None, namespace=None, app_name=None, base=False, inMenu=False):
-        """Merge a site object into this one"""
+    def _addSite(self, site, includeAs=None, namespace=None, app_name=None, base=False, inMenu=False):
+        """Add a site object to this one"""
         if type(site) in (str, unicode):
-            # Determine site object
-            site = __import__('.'.join(site[:-1]), globals(), locals(), [site[-1]], -1)
-
+            site = self.getFromString(site)
+        
+        menu = None
+        if inMenu:
+            menu = site.menu
+            
+        add = self.info.add
         if base:
-            # Replace current base if one, or just add this as new base
-            self.replaceBase(site=site, app_name=app_name, namespace=namespace, inMenu=inMenu)
-        else:
-            # Determine pattern
-            pattern = '^%s$'
-            if includeAs:
-                pattern = pattern % includeAs
-            else:
-                pattern = pattern % site.name
-                
-            # Add pattern, section, site and menu item
-            self.patterns.append(
-                lambda : ( pattern
-                         , include(site.patterns(), namespace=namespace, app_name=app_name)
-                         )
-            )
-
-            if inMenu:
-                self.menu.extend(site.menu)
-            self.merged.append(site)
-            self.sections.extend(site.sections)
+            add = self.base.add
+        
+        if not includeAs:
+            includeAs = site.name
+            
+        add(
+            site, includeAs, site.patterns, 
+            namespace=namespace, app_name=app_name, menu=menu
+        )
+    
+    def merge(self, site, keepBase=False):
+        """Merge another site with this one"""
+        for section in site.info:
+            self.info.add(*section)
+        
+        if not keepBase:
+            # Only add base from new site if we don't want to keep current base
+            for section in site.base:
+                self.base.add(*section)
             
     ########################
     ###   MAKING A BASE
@@ -554,104 +629,44 @@ class Site(object):
     
     def makeBase(self):
         """Return a section representing the base of the site"""
-        if self._base:
-            return self._base
+        if self.base:
+            return self.base.stuff[0]
         
-        return self.replaceBase()
-    
-    def replaceBase(self, site=None, section=None, app_name=None, namespace=None, inMenu=False):
-        """Remove current base and replace with new one"""
-        if self._base:
-            # Must clear current base
-            
-            # Remove pattern for base
-            self.patterns.pop(0)
-            
-            # Remove section(s)
-            # If current base is a site, then we will have baseSections
-            if self.baseSections:
-                self.sections = [sect for sect in self.sections if sect not in self.baseSections]
-                self.baseSections = []
-            else:
-                self.sections.pop(0)
-            
-            # Remove menu items
-            # If current base is a site, then we will ahve baseMenu
-            if self.baseMenu:
-                self.menu = [sect for sect in self.menu if sect not in self.baseMenu]
-                self.baseMenu = []
-            else:
-                self.menu.pop(0)
-            
-            if self.baseMerged:
-                # Current base is a site, remove it from merged
-                self.merged.pop(0)
-                self.baseMerged = False
+        base = Section('', name=self.name, namespace=self.name, app_name=self.name)
+        self.add(base, base=True)
         
-        # Set self._base to appropiate object
-        if site:
-            self._base = site
-            self.baseMerged = True
-            self.merged.insert(0, site)
-            
-        elif section:
-            self._base = section
-            
-        else:
-            # Create a new base
-            self._base = Section('', self.name)
-        
-        # Insert stuff into the menu
-        if inMenu:
-            if site:
-                self.menu.extend(site.menu)
-                self.baseMenu = [m for m in site.menu]
-            else:
-                self.menu.insert(0, self._base)
-        else:
-            self.menu.insert(0, None)
-        
-        # Insert stuff into self.sections
-        if site:
-            self.sections.extend(site.sections)
-            self.baseSections = [s for s in site.sections]
-        else:
-            self.sections.insert(0, self._base)
-            
-        # Determine namespace and app_name
-        if not namespace:
-            namespace = self.name
-        
-        if not app_name:
-            app_name = self.name
-        
-        # We make the pattern a callable because we give include a list
-        # This list may not have any content yet. But will when site.urls() is used
-        if site:
-            l = lambda : [part for part in self._base.patterns()]
-        else:
-            l = lambda : [part for part in self._base.patternList()]
-            
-        self.patterns.insert(0,
-            lambda : ('^$', include(l(), app_name=app_name, namespace=namespace))
-        )
-        
-        return self._base
+        return base
             
     ########################
     ###   URL PATTERNS
     ########################
     
     def includes(self):
-        for pattern in self.patterns:
-            if callable(pattern):
-                yield pattern()
-            else:
-                yield pattern
+        for pat in self.base.patterns():
+            yield pat
+        
+        for pat in self.info.patterns():
+            yield pat
     
     def patterns(self):
         l = [l for l in self.includes()]
         return patterns('', *l)
+            
+    ########################
+    ###   MENU/SECTIONS
+    ########################
+    
+    def menu(self):
+        collected = []
+        for collection in [self.base, self.info]:
+            for _, _, _, _, _, menu in collection:
+                if callable(menu):
+                    menu = menu()
+                for m in menu:
+                    if m not in collected:
+                        collected.append(m)
+        
+        return collected
         
 ########################
 ###
