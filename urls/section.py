@@ -146,6 +146,9 @@ class Section(object):
                 if not url:
                     url = self.url
                 
+                if url.startswith('/'):
+                    url = url[1:]
+                    
                 selected, path = self.determineSelection(path, parentSelected, url)
                 
                 if not parentUrl:
@@ -153,7 +156,7 @@ class Section(object):
                 else:
                     fullUrl = parentUrl[:]
                     
-                if url:
+                if url is not None:
                     fullUrl.append(url)
                     
                 children = self.children
@@ -161,19 +164,23 @@ class Section(object):
                     # Make it a lambda, so that template can remake the generator
                     # Generator determines how to deliver info about the children
                     children = lambda : gen(self.children, fullUrl, selected, path)
+                
+                # We want absolute paths
+                if fullUrl and fullUrl[0] != '':
+                    fullUrl.insert(0, '')
                     
                 return selected, children, fullUrl
                 
             if self.options.values:
                 for alias, url in self.options.values.getInfo(path):
                     selected, children, fullUrl = get(path, url)
-                    yield (url, fullUrl, alias, selected, children, self.options)
+                    yield (self, fullUrl, alias, selected, children, self.options)
             else:
                 alias = self.options.alias
                 if not alias:
                     alias = self.url.capitalize()
                 selected, children, fullUrl = get(path)
-                yield (self.url, fullUrl, alias, selected, children, self.options)
+                yield (self, fullUrl, alias, selected, children, self.options)
     
     def determineSelection(self, path, parentSelected, url=None):
         """Return True and rest of path if selected else False and no path."""
@@ -185,6 +192,8 @@ class Section(object):
             
             # Already checked that path is not empty
             selected = path[0] == url
+            if path[0] == '' and url == '/':
+                selected = True
             
             if selected:
                 # Only return remaining path if this section is selected
@@ -264,6 +273,7 @@ class Options(object):
         , redirect = None  # Overrides module, kls and target
         
         , condition    = False # says whether something stands in the way of this section being shown
+        , needsAuth    = False # Says whether user must be authenticated to see the section
         , extraContext = None  # Extra context to put into url pattern
         , **kwargs # Catch any unexpected arguments
         ):

@@ -149,36 +149,36 @@ describe 'Sections':
         
         it 'should get fullUrl correct':
             for t in self.sect.getInfo(['']):
-                t[0] | should.equal_to | '/'
-                t[1] | should.equal_to | ['/']
+                t[0] | should.equal_to | self.sect
+                t[1] | should.equal_to | ['']
             
             c = self.sect.add('some')
             c2 = self.sect.add('meh').base(alias='niceAlias')
             d = c.add('nice').base(match='blah')
             
-            gens = self.goThrough(self.sect.getInfo([''], gen=self.gen), ('/', ['/'], '/', False, self.sect.options))
+            gens = self.goThrough(self.sect.getInfo([], gen=self.gen), (self.sect, [''], '/', False, self.sect.options))
             
             gens = self.goThrough(gens[0]
-                , ('some', ['/', 'some'], 'Some', False, c.options)
-                , ('meh', ['/', 'meh'], 'niceAlias', False, c2.options)
+                , (c, ['', 'some'], 'Some', False, c.options)
+                , (c2, ['', 'meh'], 'niceAlias', False, c2.options)
             )
             
             self.goThrough(gens[1])
-            self.goThrough(gens[0], ('nice', ['/', 'some', 'nice'], 'Nice', False, d.options))
+            self.goThrough(gens[0], (d, ['', 'some', 'nice'], 'Nice', False, d.options))
 
         it 'should get fullUrl correct when there are dynamic values concerned':
             c = self.sect.add('some').base(values=Values(['v1', 'v2']))
             d = c.add('nice')
             
-            gens = self.goThrough(self.sect.getInfo([''], gen=self.gen), ('/', ['/'], '/', False, self.sect.options))
+            gens = self.goThrough(self.sect.getInfo([], gen=self.gen), (self.sect, [''], '/', False, self.sect.options))
         
             gens = self.goThrough(gens[0]
-                , ('v1', ['/', 'v1'], 'v1', False, c.options)
-                , ('v2', ['/', 'v2'], 'v2', False, c.options)
+                , (c, ['', 'v1'], 'v1', False, c.options)
+                , (c, ['', 'v2'], 'v2', False, c.options)
             )
             
-            self.goThrough(gens[0], ('nice', ['/', 'v1', 'nice'], 'Nice', False, d.options))
-            self.goThrough(gens[1], ('nice', ['/', 'v2', 'nice'], 'Nice', False, d.options))
+            self.goThrough(gens[0], (d, ['', 'v1', 'nice'], 'Nice', False, d.options))
+            self.goThrough(gens[1], (d, ['', 'v2', 'nice'], 'Nice', False, d.options))
         
         it 'should be able to determine if selected correctly':
             c = self.sect.add('some').base(alias='asdf')
@@ -188,19 +188,19 @@ describe 'Sections':
             g = d.add('bad_place')
             
             gens = self.goThrough(
-                  self.sect.getInfo(['/', 'some', 'nice', 'country'], gen=self.gen)
-                , ('/', ['/'], '/', True, self.sect.options)
+                  self.sect.getInfo(['', 'some', 'nice', 'country'], gen=self.gen)
+                , (self.sect, [''], '/', True, self.sect.options)
             )
         
             gens = self.goThrough(gens[0]
-                , ('some', ['/', 'some'], 'asdf', True, c.options)
-                , ('every', ['/', 'every'], 'Every', False, d.options)
+                , (c, ['', 'some'], 'asdf', True, c.options)
+                , (d, ['', 'every'], 'Every', False, d.options)
             )
             
-            self.goThrough(gens[1], ('bad_place', ['/', 'every', 'bad_place'], 'Bad_place', False, g.options))
-            gens = self.goThrough(gens[0], ('nice', ['/', 'some', 'nice'], 'Nice', True, e.options))
+            self.goThrough(gens[1], (g, ['', 'every', 'bad_place'], 'Bad_place', False, g.options))
+            gens = self.goThrough(gens[0], (e, ['', 'some', 'nice'], 'Nice', True, e.options))
             
-            self.goThrough(gens[0], ('place', ['/', 'some', 'nice', 'place'], 'Place', False, f.options))
+            self.goThrough(gens[0], (f, ['', 'some', 'nice', 'place'], 'Place', False, f.options))
         
         it 'should determine if selected correctly when a section has showbase equal to False':
             c = self.sect.add('some').base(alias='asdf', showBase=False)
@@ -210,19 +210,19 @@ describe 'Sections':
             g = d.add('bad_place')
             
             gens = self.goThrough(
-                  self.sect.getInfo(['/', 'some', 'nice', 'country'], gen=self.gen)
-                , ('/', ['/'], '/', True, self.sect.options)
+                  self.sect.getInfo(['', 'some', 'nice', 'country'], gen=self.gen)
+                , (self.sect, [''], '/', True, self.sect.options)
             )
         
             gens = self.goThrough(gens[0]
-                , ('some', ['/', 'some'], 'asdf', True, c.options)
-                , ('every', ['/', 'every'], 'Every', False, d.options)
+                , (c, ['', 'some'], 'asdf', True, c.options)
+                , (d, ['', 'every'], 'Every', False, d.options)
             )
             
-            self.goThrough(gens[1], ('bad_place', ['/', 'every', 'bad_place'], 'Bad_place', False, g.options))
-            gens = self.goThrough(gens[0], ('nice', ['/', 'some', 'nice'], 'Nice', True, e.options))
+            self.goThrough(gens[1], (g, ['', 'every', 'bad_place'], 'Bad_place', False, g.options))
+            gens = self.goThrough(gens[0], (e, ['', 'some', 'nice'], 'Nice', True, e.options))
             
-            self.goThrough(gens[0], ('place', ['/', 'some', 'nice', 'place'], 'Place', False, f.options))
+            self.goThrough(gens[0], (f, ['', 'some', 'nice', 'place'], 'Place', False, f.options))
         
         it 'should determine if selected correctly when there are dynamic values concerned':
             c = self.sect.add('some').base(showBase=False, values=Values(['some', 'blah']))
@@ -232,23 +232,23 @@ describe 'Sections':
             g = d.add('bad_place')
             
             gens = self.goThrough(
-                  self.sect.getInfo(['/', 'some', 'nice', 'country'], gen=self.gen)
-                , ('/', ['/'], '/', True, self.sect.options)
+                  self.sect.getInfo(['', 'some', 'nice', 'country'], gen=self.gen)
+                , (self.sect, [''], '/', True, self.sect.options)
             )
         
             gens = self.goThrough(gens[0]
-                , ('some', ['/', 'some'], 'some', True, c.options)
-                , ('blah', ['/', 'blah'], 'blah', False, c.options)
-                , ('every', ['/', 'every'], 'Every', False, d.options)
+                , (c, ['', 'some'], 'some', True, c.options)
+                , (c, ['', 'blah'], 'blah', False, c.options)
+                , (d, ['', 'every'], 'Every', False, d.options)
             )
             
-            self.goThrough(gens[2], ('bad_place', ['/', 'every', 'bad_place'], 'Bad_place', False, g.options))
+            self.goThrough(gens[2], (g, ['', 'every', 'bad_place'], 'Bad_place', False, g.options))
             
-            gens1 = self.goThrough(gens[1], ('nice', ['/', 'blah', 'nice'], 'Nice', False, e.options))
-            gens2 = self.goThrough(gens[0], ('nice', ['/', 'some', 'nice'], 'Nice', True, e.options))
+            gens1 = self.goThrough(gens[1], (e, ['', 'blah', 'nice'], 'Nice', False, e.options))
+            gens2 = self.goThrough(gens[0], (e, ['', 'some', 'nice'], 'Nice', True, e.options))
             
-            self.goThrough(gens1[0], ('place', ['/', 'blah', 'nice', 'place'], 'Place', False, f.options))
-            self.goThrough(gens2[0], ('place', ['/', 'some', 'nice', 'place'], 'Place', False, f.options))
+            self.goThrough(gens1[0], (f, ['', 'blah', 'nice', 'place'], 'Place', False, f.options))
+            self.goThrough(gens2[0], (f, ['', 'some', 'nice', 'place'], 'Place', False, f.options))
         
     describe 'options':
         it 'should always have an options object':

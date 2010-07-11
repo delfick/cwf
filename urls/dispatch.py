@@ -23,7 +23,11 @@ class Dispatcher(object):
         if callable(condition):
             condition = condition()
         
-        if not condition:
+        needsAuth = False
+        if section.options.needsAuth and not request.user.is_authenticated:
+            needsAuth = True
+        
+        if not condition and not needsAuth:
             view = self[obj]
             state = view.getState(request)
             return self[obj](state, target, section=section, *args, **kwargs)
