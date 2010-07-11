@@ -38,6 +38,17 @@ describe 'Site':
         self.checkLengths = checkLengths
         self.lookAtPatterns = lookAtPatterns
     
+    it 'should be possible to make a base section':
+        base = self.site.makeBase()
+        base.url | should.equal_to | ''
+        self.site.base.stuff[0] | should.be | base
+        self.checkLengths(self.site, base=1, info=0, menu=0)
+        
+        base = self.site.makeBase(inMenu=True)
+        base.url | should.equal_to | ''
+        self.site.base.stuff[0] | should.be | base
+        self.checkLengths(self.site, base=1, info=0, menu=1)
+    
     describe 'adding sections and sites':
             
         it 'should be possible to add one':
@@ -131,6 +142,18 @@ describe 'Site':
             self.checkLengths(self.site, info=1, menu=2)
     
     describe 'merging a site':
-        pass
+        it 'should be possible to merge the sections from one site into another':
+            self.site.merge(self.site2)
+            self.checkLengths(self.site, info=2, base=0, menu=0)
+            
+        it 'should be possible to merge the sections from one site into another including base':
+            self.site2.makeBase()
+            self.site.merge(self.site2)
+            self.checkLengths(self.site, info=2, base=1, menu=0)
+            
+        it 'should be possible to merge the sections from one site into another without including base':
+            self.site2.makeBase()
+            self.site.merge(self.site2, keepBase=True)
+            self.checkLengths(self.site, info=2, base=0, menu=0)
             
             

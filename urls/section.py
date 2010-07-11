@@ -542,7 +542,7 @@ class Site(object):
                 #set everything passed in to a self.xxx attribute
                 import inspect
                 args, _, _, _ = inspect.getargvalues(inspect.currentframe())
-                self.stuff = args[1:]
+                self.stuff = [locals()[a] for a in args[1:]]
                 
             def patterns(self):
                 for obj, includeAs, patternFunc, namespace, app_name, _ in self:
@@ -627,13 +627,10 @@ class Site(object):
     ###   MAKING A BASE
     ########################
     
-    def makeBase(self):
+    def makeBase(self, inMenu=False):
         """Return a section representing the base of the site"""
-        if self.base:
-            return self.base.stuff[0]
-        
-        base = Section('', name=self.name, namespace=self.name, app_name=self.name)
-        self.add(base, base=True)
+        base = Section('', name=self.name)
+        self.add(base, base=True, inMenu=inMenu, namespace=self.name, app_name=self.name)
         
         return base
             
