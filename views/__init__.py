@@ -9,13 +9,12 @@ from django.utils import simplejson
 from django.conf import settings
 from datetime import datetime
 
+defaultSite = None
 if hasattr(settings, 'SITE'):
     try:
         defaultSite = __import__(settings.SITE, globals(), locals(), ['site'], -1).site
     except ImportError:
-        defaultSite = []
-else:
-    defaultSite = []
+        pass
 
 if hasattr(settings, 'PROJECTDIR'):
     projectDir = settings.PROJECTDIR
