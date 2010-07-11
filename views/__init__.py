@@ -9,6 +9,8 @@ from django.utils import simplejson
 from django.conf import settings
 from datetime import datetime
 
+from .menus import Menu
+
 defaultSite = None
 if hasattr(settings, 'SITE'):
     try:
@@ -81,9 +83,9 @@ class View(object):
             state.update(extra)
         
         state.update(
-            { 'section' : section
-            , 'navMenu' : section.rootAncestor().getMenu(state, path, '')
+            { 'menu'    : Menu(site, section, path)
             , 'site'    : site
+            , 'section' : section
             }
         )
         
@@ -136,7 +138,7 @@ class View(object):
         
         # Create the template
         t = loader.get_template(File)
-        c = RequestContext(state)
+        c = RequestContext(request, state)
         
         try:
             render = t.render(c)

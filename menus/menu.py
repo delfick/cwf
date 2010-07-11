@@ -1,18 +1,19 @@
 class Menu(object):
+    """Wrapper around sections and sites for getting necessary menu information"""
+    
     def __init__(self, site, selectedSection, remainingUrl):
         self.site = site
         self.remainingUrl = remainingUrl
         self.selectedSection = selectedSection
     
     def getGlobal(self):
-        for section in self.site:
-            if section == self.selectedSection:
-                section.selected = True
-            else:
-                section.selected = False
-            yield section.getInfo(self.remainingUrl)
+        """Get sections in the site's menu"""
+        for section in self.site.menu():
+            for info in section.getInfo(self.remainingUrl):
+                yield info
         
     def heirarchial(self, section=None, path=None, parentUrl=None, parentSelected=False):
+        """Get menu for selected section as a heirarchy"""
         if not section:
             section = self.selectedSection
             
@@ -34,6 +35,7 @@ class Menu(object):
                 yield child.getInfo(path, parentUrl, parentSelected, self.hierarchial)
                 
     def layered(self, selected=None, path=None, parentUrl = None, parentSelected=False):
+        """Get menu for selected section per layer"""
         if not selected:
             selected = self.selectedSection
         
@@ -44,6 +46,7 @@ class Menu(object):
             parentUrl = []
             
         while selected:
+            # Whilst we still have a selected section (possibility of more layers)
             l = []
             anySelected = False
             for part in self.getLayer(selected, path, parentUrl, parentSelected):
@@ -59,6 +62,7 @@ class Menu(object):
         yield l
     
     def getLayer(self, section, path, parentUrl, parentselected):
+        """Function to get next layer for a section"""
         if section.options.showBase:
             yield section.getInfo(path, parenturl, parentSelected, self.layered)
         

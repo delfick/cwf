@@ -49,5 +49,6 @@ INSTALLED_APPS = ( 'views'
 
 TEMPLATE_DIRS = (
 	'%s/templates' % PROJECTDIR,
+	'%s/menus/templates' % PROJECTDIR
 )
 
