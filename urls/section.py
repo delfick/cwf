@@ -159,11 +159,13 @@ class Section(object):
                 if url is not None:
                     fullUrl.append(url)
                     
-                children = self.children
-                if gen:
-                    # Make it a lambda, so that template can remake the generator
-                    # Generator determines how to deliver info about the children
-                    children = lambda : gen(self.children, fullUrl, selected, path)
+                children = []
+                if self.children:
+                    children = self.children
+                    if gen:
+                        # Make it a lambda, so that template can remake the generator
+                        # Generator determines how to deliver info about the children
+                        children = lambda : gen(self.children, fullUrl, selected, path)
                 
                 # We want absolute paths
                 if fullUrl and fullUrl[0] != '':

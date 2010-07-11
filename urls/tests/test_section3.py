@@ -100,21 +100,36 @@ describe 'Sections':
                         yield part
                         
             def goThrough(gen, *expected):
-                if callable(gen):
-                    gen = gen()
+                result = []
+                if gen:
+                    if callable(gen):
+                        gen = gen()
+                    result = [t for t in gen]
                     
-                result = [t for t in gen]
                 len(expected) | should.equal_to | len(result)
                 gens = []
                 for i in range(len(result)):
                     next = expected[i]
-                    result[i] | should.equal_to | (next[0], next[1], next[2], next[3], result[i][4], next[4])
-                    gens.append(result[i][4])
+                    if len(next) == 6:
+                        fourth = next[4]
+                        fifth = next[5]
+                    else:
+                        fourth = result[i][4]
+                        fifth = next[4]
+                        
+                    result[i] | should.equal_to | (next[0], next[1], next[2], next[3], fourth, fifth)
+                    gens.append(fourth)
                 
                 return gens
                         
             self.gen = gen
             self.goThrough = goThrough
+        
+        it 'should not provide a children generator if there are no children':
+            c = self.sect.add('there')
+            
+            gens = self.goThrough(self.sect.getInfo([], gen=self.gen), (self.sect, [''], '/', False, self.sect.options))
+            gens = self.goThrough(gens[0], (c, ['', 'there'], 'There', False, [], c.options))
             
         it 'should only have info if exists and is active and is allowed to be shown':
             def test(**kwargs):
@@ -160,7 +175,7 @@ describe 'Sections':
             
             gens = self.goThrough(gens[0]
                 , (c, ['', 'some'], 'Some', False, c.options)
-                , (c2, ['', 'meh'], 'niceAlias', False, c2.options)
+                , (c2, ['', 'meh'], 'niceAlias', False, [], c2.options)
             )
             
             self.goThrough(gens[1])
@@ -177,8 +192,8 @@ describe 'Sections':
                 , (c, ['', 'v2'], 'v2', False, c.options)
             )
             
-            self.goThrough(gens[0], (d, ['', 'v1', 'nice'], 'Nice', False, d.options))
-            self.goThrough(gens[1], (d, ['', 'v2', 'nice'], 'Nice', False, d.options))
+            self.goThrough(gens[0], (d, ['', 'v1', 'nice'], 'Nice', False, [], d.options))
+            self.goThrough(gens[1], (d, ['', 'v2', 'nice'], 'Nice', False, [], d.options))
         
         it 'should be able to determine if selected correctly':
             c = self.sect.add('some').base(alias='asdf')
@@ -197,10 +212,10 @@ describe 'Sections':
                 , (d, ['', 'every'], 'Every', False, d.options)
             )
             
-            self.goThrough(gens[1], (g, ['', 'every', 'bad_place'], 'Bad_place', False, g.options))
+            self.goThrough(gens[1], (g, ['', 'every', 'bad_place'], 'Bad_place', False, [], g.options))
             gens = self.goThrough(gens[0], (e, ['', 'some', 'nice'], 'Nice', True, e.options))
             
-            self.goThrough(gens[0], (f, ['', 'some', 'nice', 'place'], 'Place', False, f.options))
+            self.goThrough(gens[0], (f, ['', 'some', 'nice', 'place'], 'Place', False, [], f.options))
         
         it 'should determine if selected correctly when a section has showbase equal to False':
             c = self.sect.add('some').base(alias='asdf', showBase=False)
@@ -219,10 +234,10 @@ describe 'Sections':
                 , (d, ['', 'every'], 'Every', False, d.options)
             )
             
-            self.goThrough(gens[1], (g, ['', 'every', 'bad_place'], 'Bad_place', False, g.options))
+            self.goThrough(gens[1], (g, ['', 'every', 'bad_place'], 'Bad_place', False, [], g.options))
             gens = self.goThrough(gens[0], (e, ['', 'some', 'nice'], 'Nice', True, e.options))
             
-            self.goThrough(gens[0], (f, ['', 'some', 'nice', 'place'], 'Place', False, f.options))
+            self.goThrough(gens[0], (f, ['', 'some', 'nice', 'place'], 'Place', False, [], f.options))
         
         it 'should determine if selected correctly when there are dynamic values concerned':
             c = self.sect.add('some').base(showBase=False, values=Values(['some', 'blah']))
@@ -242,13 +257,13 @@ describe 'Sections':
                 , (d, ['', 'every'], 'Every', False, d.options)
             )
             
-            self.goThrough(gens[2], (g, ['', 'every', 'bad_place'], 'Bad_place', False, g.options))
+            self.goThrough(gens[2], (g, ['', 'every', 'bad_place'], 'Bad_place', False, [], g.options))
             
             gens1 = self.goThrough(gens[1], (e, ['', 'blah', 'nice'], 'Nice', False, e.options))
             gens2 = self.goThrough(gens[0], (e, ['', 'some', 'nice'], 'Nice', True, e.options))
             
-            self.goThrough(gens1[0], (f, ['', 'blah', 'nice', 'place'], 'Place', False, f.options))
-            self.goThrough(gens2[0], (f, ['', 'some', 'nice', 'place'], 'Place', False, f.options))
+            self.goThrough(gens1[0], (f, ['', 'blah', 'nice', 'place'], 'Place', False, [], f.options))
+            self.goThrough(gens2[0], (f, ['', 'some', 'nice', 'place'], 'Place', False, [], f.options))
         
     describe 'options':
         it 'should always have an options object':
