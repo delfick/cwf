@@ -155,5 +155,46 @@ describe 'Site':
             self.site2.makeBase()
             self.site.merge(self.site2, keepBase=True)
             self.checkLengths(self.site, info=2, base=0, menu=0)
+    
+    describe 'patterns':
+        it 'should not fail':
+            self.site.patterns | should_not | throw(Exception)
             
+        it 'should not fail when only a base section':
+            self.site.makeBase()
+            self.site.patterns | should_not | throw(Exception)
+            
+        it 'should not fail when only a base site':
+            self.site.add(site=self.site2, base=True)
+            self.site.patterns | should_not | throw(Exception)
+        
+        it 'should not fail when only sections':
+            self.site.add(self.sect1)
+            self.site.patterns | should_not | throw(Exception)
+            
+            self.sect1.adopt(self.sect2)
+            self.site.patterns | should_not | throw(Exception)
+            
+            self.site.add(self.sect3)
+            self.site.patterns | should_not | throw(Exception)
+        
+        it 'should not fail when only sites':
+            self.site.add(site=self.site2)
+            self.site.patterns | should_not | throw(Exception)
+            
+        it 'should not fail when a mixture of sites and sections and bases':
+            self.site.makeBase()
+            self.site.patterns | should_not | throw(Exception)
+            
+            self.site.add(self.sect1)
+            self.site.patterns | should_not | throw(Exception)
+            
+            self.sect1.adopt(self.sect2)
+            self.site.patterns | should_not | throw(Exception)
+            
+            self.site.add(site=self.site2)
+            self.site.patterns | should_not | throw(Exception)
+            
+            self.site.add(site=self.site2, base=True)
+            self.site.patterns | should_not | throw(Exception)
             
