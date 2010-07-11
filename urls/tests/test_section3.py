@@ -68,6 +68,30 @@ describe 'Sections':
         c.determineSelection(['nice', 'place'], False) | should.equal_to | (False, [])
         c.determineSelection(['some', 'place'], True)  | should.equal_to | (False, [])
     
+    it 'should be possible to adopt a section':
+        sect1 = Section('hello')
+        sect2 = Section('there')
+        
+        sect1.adopt(sect2)
+        sect2.rootAncestor() | should.be | sect1
+        sect1.children | should.equal_to | [sect2]
+    
+    it 'should be possible to adopt many sections at once':
+        sect1 = Section('hello')
+        sect2 = Section('there')
+        sect3 = Section('blah')
+        sect4 = Section('meh')
+        
+        sect1.adopt(sect2)
+        sect2.rootAncestor() | should.be | sect1
+        sect1.children | should.equal_to | [sect2]
+        
+        sect1.adopt(sect3, sect4)
+        for sect in (sect3, sect4):
+            sect.rootAncestor() | should.be | sect1
+        
+        sect1.children | should.equal_to | [sect2, sect3, sect4]
+    
     describe 'info':
         before_each:
             def gen(children, parentUrl, parentSelected, restOfPath):

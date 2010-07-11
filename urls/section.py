@@ -60,6 +60,13 @@ class Section(object):
         """Extends self.options with the given keywords"""
         self.options.update(**kwargs)
         return self
+    
+    def adopt(self, *sections):
+        for section in sections:
+            section.parent = self
+            self.children.append(section)
+        
+        return self
         
     ########################
     ###   SPECIAL
