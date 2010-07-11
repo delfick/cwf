@@ -45,6 +45,7 @@ NOSE_ARGS = [ '--with-spec'
 
 INSTALLED_APPS = ( 'views'
                  , 'django_nose'
+                 , 'cwf_new'
                  )
 
 TEMPLATE_DIRS = (

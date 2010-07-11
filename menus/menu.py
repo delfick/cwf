@@ -1,7 +1,9 @@
+from itertools import chain
+
 class Menu(object):
     """Wrapper around sections and sites for getting necessary menu information"""
     
-    def __init__(self, site, selectedSection, remainingUrl):
+    def __init__(self, site, remainingUrl, selectedSection=None):
         self.site = site
         self.remainingUrl = remainingUrl
         self.selectedSection = selectedSection
@@ -12,34 +14,41 @@ class Menu(object):
             for info in section.getInfo(self.remainingUrl):
                 yield info
         
-    def heirarchial(self, section=None, path=None, parentUrl=None, parentSelected=False):
+    def heirarchial(self, sections=None, path=None, parentUrl=None, parentSelected=True):
         """Get menu for selected section as a heirarchy"""
-        if not section:
-            section = self.selectedSection
-            
-        if not path:
-            path = [p for p in self.remainingUrl]
+        if not sections:
+            sections = []
+            if self.selectedSection:
+                sections = [self.selectedSection]
         
-        if parentUrl is None:
-            parentUrl = []
+        for section in sections:
             
-        if section.options.showBase:
-            for info in section.getInfo(path, parentUrl, parentSelected, self.heirarchial):
-                yield info
+            if path is None:
+                path = [p for p in self.remainingUrl]
             
-        else:
-            if section.url:
-                parentUrl.append(section.url)
+            if parentUrl is None:
+                parentUrl = []
                 
-            for child in section.children:
-                yield child.getInfo(path, parentUrl, parentSelected, self.hierarchial)
+            if section.options.showBase:
+                for info in section.getInfo(path, parentUrl, parentSelected, self.heirarchial):
+                    yield info
                 
-    def layered(self, selected=None, path=None, parentUrl = None, parentSelected=False):
+            else:
+                if section.url:
+                    parentUrl.append(section.url)
+                selected, path = section.determineSelection(path, parentSelected)
+                parentSelected = parentSelected and selected
+                
+                for child in section.children:
+                    for info in child.getInfo(path, parentUrl, parentSelected, self.heirarchial):
+                        yield info
+                
+    def layered(self, selected=None, path=None, parentUrl = None, parentSelected=True):
         """Get menu for selected section per layer"""
         if not selected:
             selected = self.selectedSection
         
-        if not path:
+        if path is None:
             path = [p for p in self.remainingUrl]
             
         if parentUrl is None:
@@ -53,7 +62,7 @@ class Menu(object):
                 l.append(part)
                 _, _, _, isSelected, _, _ = part
                 if isSelected:
-                    selected = part
+                    selected = part[0]
                     anySelected = True
             
             if not anySelected:
@@ -61,16 +70,19 @@ class Menu(object):
         
         yield l
     
-    def getLayer(self, section, path, parentUrl, parentselected):
+    def getLayer(self, section, path, parentUrl, parentSelected):
         """Function to get next layer for a section"""
         if section.options.showBase:
-            yield section.getInfo(path, parenturl, parentSelected, self.layered)
-        
+            for info in section.getInfo(path, parentUrl, parentSelected):
+                yield info
         else:
             if section.url:
                 parentUrl.append(section.url)
                 
-            l = [child.getLayer(child, path) for child in section.children]
-            for part in chain.from_iterable(l):
-                yield part.getInfo(path, parentUrl, parentSelected, self.layered)
+            selected, path = section.determineSelection(path, parentSelected)
+            parentSelected = parentSelected and selected
+                
+            l = [self.getLayer(child, path, parentUrl, parentSelected) for child in section.children]
+            for info in chain.from_iterable(l):
+                yield info
     

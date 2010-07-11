@@ -5,7 +5,6 @@ from django.http import Http404
 from dispatch import dispatch
 
 from types import FunctionType
-from itertools import chain
 import re
 
 regexes = {
@@ -158,14 +157,13 @@ class Section(object):
                     
                 if url is not None:
                     fullUrl.append(url)
-                    
-                children = []
+                
+                children = self.children
                 if self.children:
-                    children = self.children
                     if gen:
                         # Make it a lambda, so that template can remake the generator
                         # Generator determines how to deliver info about the children
-                        children = lambda : gen(self.children, fullUrl, selected, path)
+                        children = lambda : gen(self.children, path, fullUrl, selected)
                 
                 # We want absolute paths
                 if fullUrl and fullUrl[0] != '':
@@ -698,10 +696,11 @@ class Site(object):
         collected = []
         for collection in [self.base, self.info]:
             for _, _, _, _, _, menu in collection:
-                if callable(menu):
-                    menu = menu()
-                for m in menu:
-                    if m not in collected:
-                        collected.append(m)
+                if menu:
+                    if callable(menu):
+                        menu = menu()
+                    for m in menu:
+                        if m not in collected:
+                            collected.append(m)
         
         return collected

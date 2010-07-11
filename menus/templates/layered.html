@@ -1,5 +1,6 @@
+{% for layer in menu.layered %}
 <ul {% block ulAttrs %}{% endblock %}>
-{% for section, fullUrl, alias, selected, children, options in menu.getGlobal %}
+{% for section, fullUrl, alias, selected, children, options in layer %}
 	{% if section.appear %}
 	{% if not options.needsAuth or user.is_authenticated %}
     
@@ -11,3 +12,5 @@
 	{%endif%}
 {% endfor %}
 </ul>
+{% endfor %}
+

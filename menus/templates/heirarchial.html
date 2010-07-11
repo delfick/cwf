@@ -1,13 +1,16 @@
+{%load partial %}
+
 <ul {% block ulAttrs %}{% endblock %}>
-{% for section, fullUrl, alias, selected, children, options in menu.getGlobal %}
+
+{% for section, fullUrl, alias, selected, children, options in menu.heirarchial %}
 	{% if section.appear %}
 	{% if not options.needsAuth or user.is_authenticated %}
-    
+	
     <li {% if selected %}{% block selectedAttrs %} class="selected" {% endblock %}{% else %}{% block nonSelectedAttrs %}{% endblock %}{% endif %}>
         <a href="{{fullUrl|join:'/'}}">{{sect.alias}}</a>
+        {% block children %}{% if selected and children %}{% repeat children %}{% endif %}{% endblock %}
     </li>
     
-	{%endif%}
-	{%endif%}
-{% endfor %}
+{%endif%}{%endif%}{% endfor %}
 </ul>
+

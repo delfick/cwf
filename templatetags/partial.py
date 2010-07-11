@@ -3,7 +3,7 @@ from django.template.context import Context
 
 register = Library()
 
-class PartialNode(Node):
+class repeatNode(Node):
     def __init__(self, template, menu):
         self.menu     = menu
         self.template = template
@@ -13,13 +13,14 @@ class PartialNode(Node):
             menu = resolve_variable(self.menu, context)
         else:
             menu = context.get('menu', None)
-        
+        import pdb
+        pdb.set_trace()
         t = loader.get_template('%s.html' % self.template)
         c = Context({'menu' : menu})
         return t.render(c)
 
 @register.tag
-def partial(parser, token):
+def repeat(parser, token):
     items = token.split_contents()
     
     template = items[1]
@@ -27,4 +28,4 @@ def partial(parser, token):
     if len(items) > 2:
         menu = items[2]
         
-    return PartialNode(template, menu)
+    return repeatNode(template, menu)
