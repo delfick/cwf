@@ -234,7 +234,7 @@ describe 'Menu':
                 ]
                 
             it 'should determine fullUrl properly':
-                menu = self.menu(['', 'a', 'nice'])
+                menu = self.menu(['', 'b', 'bad', '2_'])
                 self.roll(menu.layered(), give=1) | should.equal_to | [
                       [ ['', 'a'], ['', 'b'], ['', 'c'] ]
                     , [ ['', 'b', 'bad'] ]
@@ -242,7 +242,7 @@ describe 'Menu':
                 ]
                 
             it 'should determine alias properly':
-                menu = self.menu(['', 'a', 'nice'])
+                menu = self.menu(['', 'b', 'bad', '2_'])
                 self.roll(menu.layered(), give=2) | should.equal_to | [
                       [ 'A', 'B', 'C' ]
                     , [ 'Bad' ]
@@ -264,8 +264,6 @@ describe 'Menu':
                     , [ True ]
                     , [ False ]
                 ]
-                
-                
                 
                 
                 

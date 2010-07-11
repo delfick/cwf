@@ -43,46 +43,49 @@ class Menu(object):
                     for info in child.getInfo(path, parentUrl, parentSelected, self.heirarchial):
                         yield info
                 
-    def layered(self, selected=None, path=None, parentUrl = None, parentSelected=True):
+    def layered(self):
         """Get menu for selected section per layer"""
-        if not selected:
-            selected = self.selectedSection
-        
-        if path is None:
-            path = [p for p in self.remainingUrl]
-            
-        if parentUrl is None:
-            parentUrl = []
+        path      = [p for p in self.remainingUrl]
+        parentUrl = []
+        selected  = self.getLayer([self.selectedSection], path, [], True)
+        selectedSection = self.selectedSection
             
         while selected:
             # Whilst we still have a selected section (possibility of more layers)
             l = []
-            anySelected = False
-            for part in self.getLayer(selected, path, parentUrl, parentSelected):
+            anySelected  = False
+            nextSelected = selectedSection
+            for part in selected:
+                section, _, _, isSelected, children, _ = part
                 l.append(part)
-                _, _, _, isSelected, _, _ = part
+                    
                 if isSelected:
-                    selected = part[0]
-                    anySelected = True
+                    nextSelected = section
+                    anySelected  = True
+                    selected     = children
+                    if callable(children):
+                        selected = children()
             
             if not anySelected:
                 selected = None
-        
-        yield l
-    
-    def getLayer(self, section, path, parentUrl, parentSelected):
+            else:
+                selectedSection = nextSelected
+            
+            if l:
+                yield l
+
+    def getLayer(self, sections, path, parentUrl, parentSelected):
         """Function to get next layer for a section"""
-        if section.options.showBase:
-            for info in section.getInfo(path, parentUrl, parentSelected):
-                yield info
-        else:
-            if section.url:
-                parentUrl.append(section.url)
-                
-            selected, path = section.determineSelection(path, parentSelected)
-            parentSelected = parentSelected and selected
-                
-            l = [self.getLayer(child, path, parentUrl, parentSelected) for child in section.children]
-            for info in chain.from_iterable(l):
-                yield info
-    
+        for section in sections:
+            if section.options.showBase:
+                for info in section.getInfo(path, parentUrl, parentSelected, self.getLayer):
+                    yield info
+            else:
+                if section.url:
+                    parentUrl.append(section.url)
+                    
+                selected, path = section.determineSelection(path, parentSelected)
+                parentSelected = parentSelected and selected
+                    
+                for info in self.getLayer(section.children, path, parentUrl, parentSelected):
+                    yield info

@@ -32,7 +32,6 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 NOSE_ARGS = [ '--with-spec'
             , '--spec-color'
             , '--with-noy'
-            , '--trim-errors'
             , '--noy-ignore-kls=TestCase'
             , '--noy-ignore-kls=TransactionTestCase'
             ]
