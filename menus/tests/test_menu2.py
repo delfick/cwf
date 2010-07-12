@@ -40,7 +40,7 @@ describe 'Menu templates':
         
         self.base = self.site.makeBase(inMenu=True)
         
-        self.sect1 = Section('1')
+        self.sect1 = Section('1').base(showBase=False)
         self.site.add(self.sect1, inMenu=True)
         
         self.sect1_some = self.sect1.add('some').base(alias='blah')
@@ -48,18 +48,21 @@ describe 'Menu templates':
                           match = 'blah'
                         , values = Values(
                             lambda path : ['2', '1', '3']
-                          , lambda path, value : ('%s_' % value, '_%s' % value)
+                          , lambda path, value : ('_%s' % value, '%s_' % value)
                           , sorter = True
                           )
                         )
         
-        self.sect2 = Section('2').base(alias='two')
+        self.sect2 = Section('2').base(alias='two', showBase=False)
         self.site.add(self.sect2, inMenu=True)
         
+        self.sect2_first = self.sect2.first().base(alias='meh')
         self.sect2_1 = self.sect2.add('1')
         self.sect2_1_1 = self.sect2_1.add('2').base(exists=False)
+        self.sect2_1_2 = self.sect2_1.add('3')
+        self.sect2_1_2_1 = self.sect2_1_2.add('4')
         
-        self.sect3 = Section('3').base(display=False)
+        self.sect3 = Section('3').base(display=False, showBase=False)
         self.site.add(self.sect3, inMenu=True)
         
         self.sect3.add('test1')
@@ -75,6 +78,61 @@ describe 'Menu templates':
         """
         
         (menu, 'global') | should | render_as(desired)
+            
+    it 'should make a heirarchial menu 1':
+        menu = Menu(self.site, ['1'], self.sect1)
+        desired = """
+        <ul>
+            <li><a href="/1/some">blah</a></li>
+            <li><a href="/1/1_">_1</a></li>
+            <li><a href="/1/2_">_2</a></li>
+            <li><a href="/1/3_">_3</a></li>
+        </ul>
+        """
+        
+        (menu, 'heirarchial') | should | render_as(desired)
+            
+    it 'should make a heirarchial menu 2':
+        menu = Menu(self.site, ['1', '1_'], self.sect1)
+        desired = """
+        <ul>
+            <li><a href="/1/some">blah</a></li>
+            <li class="selected"><a href="/1/1_">_1</a></li>
+            <li><a href="/1/2_">_2</a></li>
+            <li><a href="/1/3_">_3</a></li>
+        </ul>
+        """
+        
+        (menu, 'heirarchial') | should | render_as(desired)
+            
+    ignore 'should make a heirarchial menu 3':
+        menu = Menu(self.site, ['2'], self.sect2)
+        desired = """
+        <ul>
+            <li class="selected"><a href="/2/">meh</a></li>
+            <li>
+                <a href="/2/1">1</a>
+                <ul>
+                    <li>
+                        <a href="/2/1/3">3</a>
+                        <ul>
+                            <li><a href="/2/1/3/4">4</a></li>
+                        </ul>
+                    </li>
+                <ul>
+            </li>
+        </ul>
+        """
+        
+        (menu, 'heirarchial') | should | render_as(desired)
+            
+    it 'should make a heirarchial menu 4':
+        menu = Menu(self.site, ['3'], self.sect3)
+        desired = "<ul></ul>"
+        
+        (menu, 'heirarchial') | should | render_as(desired)
+            
+            
             
             
             

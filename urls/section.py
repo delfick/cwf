@@ -184,13 +184,16 @@ class Section(object):
     
     def determineSelection(self, path, parentSelected, url=None):
         """Return True and rest of path if selected else False and no path."""
-        if not parentSelected or not path:
+        if not url:
+            url = self.url
+            
+        if not parentSelected or (not path and url != ''):
             return False, []
         else:
-            if not url:
-                url = self.url
-            
-            # Already checked that path is not empty
+            if not path:
+                # Must be a base address and its parent is selected
+                return True, []
+                
             selected = path[0] == url
             if path[0] == '' and url == '/':
                 selected = True
@@ -297,7 +300,7 @@ class Options(object):
         """
         args = self.args
         if not kwargs.get('carryAll', False):
-            args = [a for a in self.args if a not in ['alias', 'match', 'values']]
+            args = [a for a in self.args if a not in ['alias', 'match', 'values', 'showBase']]
             
         settings = dict((key, getattr(self, key)) for key in args)
         settings.update(kwargs)
@@ -665,7 +668,7 @@ class Site(object):
     
     def makeBase(self, inMenu=False):
         """Make and return a section representing the base of the site"""
-        base = Section('', name=self.name)
+        base = Section('', name=self.name).base(showBase=False)
         self.add(base, base=True, inMenu=inMenu, namespace=self.name, app_name=self.name)
         
         return base
