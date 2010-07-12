@@ -31,14 +31,37 @@ else:
 
 class DictObj(object):
     def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            self[key] = value
+        self.theKeys = {}
+        self.update(kwargs)
     
     def __getitem__(self, key):
         return getattr(self, key)
     
     def __setitem__(self, key, value):
         setattr(self, key, value)
+    
+    def __setattr__(self, key, value):
+        if key not in ['self', 'theKeys']:
+            self.theKeys[key] = True
+        
+        object.__setattr__(self, key, value)
+    
+    def __iter__(self):
+        for key in self.theKeys.keys():
+            yield key
+    
+    def keys(self):
+        return self.theKeys.keys()
+    
+    def values(self):
+        return [self[key] for key in self.theKeys.keys()]
+    
+    def items(self):
+        return [(key, self[key]) for key in self.theKeys.keys()]
+    
+    def update(self, values):
+        for key, value in values.items():
+            self[key] = value
     
 ########################
 ###  
@@ -82,12 +105,15 @@ class View(object):
         if extra:
             state.update(extra)
         
-        state.update(
-            { 'menu'    : Menu(site, section, path)
-            , 'site'    : site
-            , 'section' : section
-            }
-        )
+        if section:
+            state.update(
+                { 'menu'    : Menu(site, section.rootAncestor(), path)
+                , 'site'    : site
+                , 'section' : section
+                }
+            )
+        else:
+            state.site = site
         
         return state
     
@@ -101,7 +127,7 @@ class View(object):
         
         # Ensure there are no trailing slashes on parts taken from url
         for key, item in kwargs.items():
-            if type(item) is unicode:
+            if type(item) in (str, unicode):
                 if item[-1] == '/':
                     kwargs[key] = item[:-1]
         
@@ -178,16 +204,16 @@ class View(object):
         
         return address.replace('//', '/')
             
-    def redirect(self, *args, **kwargs):
+    def redirect(self, state, *args, **kwargs):
         """Return a HttpResponseRedirect object"""
-        address = self._redirect(*args, **kwargs)            
+        address = self._redirect(state, *args, **kwargs)            
         return HttpResponseRedirect(address)
     
     def render(self, state, File, extra, mime="text/plain", modify=None):
         """Shortcut to create a template, give it context and display as some mime type (default to plain text)"""
         state.update(extra)
         t = loader.get_template(File)
-        c = RequestContext(state)
+        c = RequestContext(state.request, state)
         
         try:
             render = t.render(c)

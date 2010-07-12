@@ -25,6 +25,28 @@ describe 'DictObj':
         self.d['c'] = 7
         self.d['c'] | should.be | 7
         self.d.c | should.be | 7
+    
+    it 'should be possible to see if it has a particular attribute':
+        ('a' in self.d) | should.be | True
+        ('b' in self.d) | should.be | False
+    
+    it 'should be possible to get a list of keys in the dictobj':
+        self.d.keys() | should.equal_to | ['a']
+        
+        self.d.stuff = 'asdf'
+        self.d.keys() | should.equal_to | ['a', 'stuff']
+    
+    it 'should be possible to get a list of values in the dictobj':
+        self.d.values() | should.equal_to | [5]
+        
+        self.d.stuff = 'asdf'
+        self.d.values() | should.equal_to | [5, 'asdf']
+    
+    it 'should be possible to get a list of items in the dictobj':
+        self.d.items() | should.equal_to | [('a', 5)]
+        
+        self.d.stuff = 'asdf'
+        self.d.items() | should.equal_to | [('a', 5), ('stuff', 'asdf')]
         
 describe 'View':
     before_each:

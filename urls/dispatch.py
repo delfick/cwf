@@ -29,8 +29,7 @@ class Dispatcher(object):
         
         if not condition and not needsAuth:
             view = self[obj]
-            state = view.getState(request)
-            return self[obj](state, target, section=section, *args, **kwargs)
+            return self[obj](request, target, section=section, *args, **kwargs)
         
         raise Http404
     
