@@ -1,16 +1,23 @@
-{%load partial %}
+{% load partial %}
+{% for section, fullUrl, alias, selected, children, options in gen %}
 
-<ul{% block ulAttrs %}{% endblock %}>
-
-{% for section, fullUrl, alias, selected, children, options in menu.heirarchial %}
 	{% if section.appear %}
 	{% if not options.needsAuth or user.is_authenticated %}
-	
-    <li{% if selected %}{% block selectedAttrs %} class="selected"{% endblock %}{% else %}{% block nonSelectedAttrs %}{% endblock %}{% endif %}>
-        <a href="{{fullUrl|join:'/'}}">{{alias}}</a>
-        {% block children %}{% if selected and children %}{% repeat children %}{% endif %}{% endblock %}
-    </li>
-    
-{%endif%}{%endif%}{% endfor %}
-</ul>
 
+{% if forloop.first %}
+<ul{% block ulAttrs %}{% endblock %}>
+{% endif %}
+
+    <li{% if selected %}{% block selectedAttrs %} class="selected"{% endblock %}{% else %}{% block nonSelectedAttrs %}{% endblock %}{% endif %}>
+        {% block insideLiLink %}<a href="{{fullUrl|join:'/'}}">{{alias}}</a>{% endblock %}
+        {% block insideLi %}{% if selected and children %}{% repeat children "heirarchial.html" %}{% endif %}{% endblock %}
+    </li>
+
+{% if forloop.last %}
+</ul>
+{% endif %}
+
+	{%endif%}
+	{%endif%}
+
+{% endfor %}

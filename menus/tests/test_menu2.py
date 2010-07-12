@@ -13,9 +13,13 @@ class RenderAs(object):
         return self
 
     def match(self, actual):
-        menu, name = actual
+        if len(actual) == 3:
+            menu, name, gen = actual
+        else:
+            menu, name = actual
+            gen = name
         
-        extra = {'menu' : menu}
+        extra = {'gen' : getattr(menu, gen)()}
         t = loader.get_template('%s.html' % name)
         c = Context(extra)
         self._expected = t.render(c)
@@ -77,7 +81,7 @@ describe 'Menu templates':
         </ul>
         """
         
-        (menu, 'global') | should | render_as(desired)
+        (menu, 'base', 'getGlobal') | should | render_as(desired)
             
     it 'should make a heirarchial menu 1':
         menu = Menu(self.site, ['1'], self.sect1)
@@ -105,21 +109,32 @@ describe 'Menu templates':
         
         (menu, 'heirarchial') | should | render_as(desired)
             
-    ignore 'should make a heirarchial menu 3':
+    it 'should make a heirarchial menu and not include children when parent isnt selected':
         menu = Menu(self.site, ['2'], self.sect2)
         desired = """
         <ul>
             <li class="selected"><a href="/2/">meh</a></li>
-            <li>
+            <li><a href="/2/1">1</a></li>
+        </ul>
+        """
+        
+        (menu, 'heirarchial') | should | render_as(desired)
+            
+    it 'should make a heirarchial menu and do include children when parent is selected':
+        menu = Menu(self.site, ['2', '1', '3', '4'], self.sect2)
+        desired = """
+        <ul>
+            <li><a href="/2/">meh</a></li>
+            <li class="selected">
                 <a href="/2/1">1</a>
                 <ul>
-                    <li>
+                    <li class="selected">
                         <a href="/2/1/3">3</a>
                         <ul>
-                            <li><a href="/2/1/3/4">4</a></li>
+                            <li class="selected"><a href="/2/1/3/4">4</a></li>
                         </ul>
                     </li>
-                <ul>
+                </ul>
             </li>
         </ul>
         """
@@ -128,7 +143,7 @@ describe 'Menu templates':
             
     it 'should make a heirarchial menu 4':
         menu = Menu(self.site, ['3'], self.sect3)
-        desired = "<ul></ul>"
+        desired = ""
         
         (menu, 'heirarchial') | should | render_as(desired)
             

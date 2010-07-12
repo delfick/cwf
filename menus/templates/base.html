@@ -1,6 +1,4 @@
-{% for layer in gen %}
-{% for section, fullUrl, alias, selected, children, options in layer %}
-
+{% for section, fullUrl, alias, selected, children, options in gen %}
 	{% if section.appear %}
 	{% if not options.needsAuth or user.is_authenticated %}
 
@@ -8,17 +6,17 @@
 <ul{% block ulAttrs %}{% endblock %}>
 {% endif %}
 
+
     <li{% if selected %}{% block selectedAttrs %} class="selected"{% endblock %}{% else %}{% block nonSelectedAttrs %}{% endblock %}{% endif %}>
         {% block insideLiLink %}<a href="{{fullUrl|join:'/'}}">{{alias}}</a>{% endblock %}
         {% block insideLi %}{% endblock %}
     </li>
 
+	{%endif%}
+	{%endif%}
+
 {% if forloop.last %}
 </ul>
 {% endif %}
-    
-	{%endif%}	
-	{%endif%}
 
-{% endfor %}
 {% endfor %}
