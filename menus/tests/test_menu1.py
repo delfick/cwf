@@ -29,7 +29,7 @@ describe 'Menu':
             self.site2.add(self.sect1, base=True, inMenu=True)
             
             self.site1.add(self.sect2, inMenu=True)
-            self.site1.add(self.sect3)
+            self.site1.add(self.sect3, inMenu=False)
             self.site1.add(site=self.site2, inMenu=True)
             
             menu = Menu(self.site1, [''])

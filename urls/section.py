@@ -606,7 +606,7 @@ class Site(object):
         else:
             raise ValueError("Must either add a section or a site")
     
-    def _addSection(self, section, includeAs=None, namespace=None, app_name=None, base=False, inMenu=False):
+    def _addSection(self, section, includeAs=None, namespace=None, app_name=None, base=False, inMenu=True):
         """Add a section to the site"""
         if type(section) in (str, unicode):
             section = self.getFromString(section)
@@ -626,7 +626,7 @@ class Site(object):
             namespace=namespace, app_name=app_name, menu=menu
         )
     
-    def _addSite(self, site, includeAs=None, namespace=None, app_name=None, base=False, inMenu=False):
+    def _addSite(self, site, includeAs=None, namespace=None, app_name=None, base=False, inMenu=True):
         """Add a site object to this one"""
         if type(site) in (str, unicode):
             site = self.getFromString(site)
