@@ -107,7 +107,7 @@ class View(object):
         
         if section:
             state.update(
-                { 'menu'    : Menu(site, section.rootAncestor(), path)
+                { 'menu'    : Menu(site, path, section.rootAncestor())
                 , 'site'    : site
                 , 'section' : section
                 }

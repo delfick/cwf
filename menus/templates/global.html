@@ -1,10 +1,10 @@
-<ul {% block ulAttrs %}{% endblock %}>
+<ul{% block ulAttrs %}{% endblock %}>
 {% for section, fullUrl, alias, selected, children, options in menu.getGlobal %}
 	{% if section.appear %}
 	{% if not options.needsAuth or user.is_authenticated %}
     
-    <li {% if selected %}{% block selectedAttrs %} class="selected" {% endblock %}{% else %}{% block nonSelectedAttrs %}{% endblock %}{% endif %}>
-        <a href="{{fullUrl|join:'/'}}">{{sect.alias}}</a>
+    <li{% if selected %}{% block selectedAttrs %} class="selected"{% endblock %}{% else %}{% block nonSelectedAttrs %}{% endblock %}{% endif %}>
+        <a href="{{fullUrl|join:'/'}}">{{alias}}</a>
     </li>
     
 	{%endif%}
