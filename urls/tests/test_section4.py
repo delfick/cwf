@@ -55,7 +55,7 @@ describe 'Site':
             self.site.add(self.sect1)
             
             self.checkLengths(self.site, info=1, base=0, menu=0)
-            self.lookAtPatterns() | should.equal_to | ['^some/?$']
+            self.lookAtPatterns() | should.equal_to | ['^some/?']
             
         it 'should be possible to consecutively add more than one section':            
             self.site.add(self.sect1)
@@ -64,7 +64,7 @@ describe 'Site':
             self.site.add(self.sect4)
             
             self.checkLengths(self.site, info=4, base=0, menu=0)
-            self.lookAtPatterns() | should.equal_to | ['^some/?$', '^very/?$', '^nice/?$', '^place/?$']
+            self.lookAtPatterns() | should.equal_to | ['^some/?', '^very/?', '^nice/?', '^place/?']
         
         it 'should be possible to add sections with different include names':            
             self.site.add(self.sect1, includeAs='blah')
@@ -73,7 +73,7 @@ describe 'Site':
             self.site.add(self.sect4)
             
             self.checkLengths(self.site, info=4, base=0, menu=0)
-            self.lookAtPatterns() | should.equal_to | ['^blah/?$', '^very/?$', '^meh/?$', '^place/?$']
+            self.lookAtPatterns() | should.equal_to | ['^blah/?', '^very/?', '^meh/?', '^place/?']
         
         it 'should be possible to add sections to menu when you add them':
             self.checkLengths(self.site, menu=0)       
@@ -93,7 +93,7 @@ describe 'Site':
             self.site.add(self.sect4)
             
             self.checkLengths(self.site, info=3, base=1, menu=0)
-            self.lookAtPatterns() | should.equal_to | ['^$', '^some/?$', '^nice/?$', '^place/?$']
+            self.lookAtPatterns() | should.equal_to | ['^', '^some/?', '^nice/?', '^place/?']
             
         it 'should be possible to add a site as a base':           
             self.site.add(self.sect1)
@@ -102,7 +102,7 @@ describe 'Site':
             self.site.add(self.sect4)
             
             self.checkLengths(self.site, info=3, base=1, menu=0)
-            self.lookAtPatterns() | should.equal_to | ['^$', '^some/?$', '^nice/?$', '^place/?$']
+            self.lookAtPatterns() | should.equal_to | ['^', '^some/?', '^nice/?', '^place/?']
         
         it 'should be possible to reorder a section by adding it again':           
             self.site.add(self.sect1, includeAs='blah')
@@ -111,29 +111,29 @@ describe 'Site':
             self.site.add(self.sect4)
             
             self.checkLengths(self.site, info=4, base=0, menu=0)
-            self.lookAtPatterns() | should.equal_to | ['^blah/?$', '^very/?$', '^meh/?$', '^place/?$']
+            self.lookAtPatterns() | should.equal_to | ['^blah/?', '^very/?', '^meh/?', '^place/?']
             
             self.site.add(self.sect2)
             self.checkLengths(self.site, info=4, base=0, menu=0)
-            self.lookAtPatterns() | should.equal_to | ['^blah/?$', '^meh/?$', '^place/?$', '^very/?$']
+            self.lookAtPatterns() | should.equal_to | ['^blah/?', '^meh/?', '^place/?', '^very/?']
             
             self.site.add(self.sect3, includeAs='meh')
             self.checkLengths(self.site, info=4, base=0, menu=0)
-            self.lookAtPatterns() | should.equal_to | ['^blah/?$', '^place/?$', '^very/?$', '^meh/?$']
+            self.lookAtPatterns() | should.equal_to | ['^blah/?', '^place/?', '^very/?', '^meh/?']
             
             self.site.add(self.sect3)
             self.checkLengths(self.site, info=5, base=0, menu=0)
-            self.lookAtPatterns() | should.equal_to | ['^blah/?$', '^place/?$', '^very/?$', '^meh/?$', '^nice/?$']
+            self.lookAtPatterns() | should.equal_to | ['^blah/?', '^place/?', '^very/?', '^meh/?', '^nice/?']
             
         it 'should be able to import a section from a string':
             self.site.add('urls.tests.fixture.sect1')
             self.checkLengths(self.site, info=1, base=0, menu=0)
-            self.lookAtPatterns() | should.equal_to | ['^meh/?$']
+            self.lookAtPatterns() | should.equal_to | ['^meh/?']
             
         it 'should be able to add a site from a string':
             self.site.add(site='urls.tests.fixture.theTestSite')
             self.checkLengths(self.site, info=1, base=0, menu=0)
-            self.lookAtPatterns() | should.equal_to | ['^tester/?$']
+            self.lookAtPatterns() | should.equal_to | ['^tester/?']
         
         it 'should be able to add all menu items from a site when adding it':
             self.checkLengths(self.site2, info=2, menu=2)

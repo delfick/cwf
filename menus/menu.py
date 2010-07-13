@@ -28,10 +28,12 @@ class Menu(object):
         if not includeFirst and sections is None:
             part = [t for t in self.selectedSection.getInfo(
                 path, parentUrl, parentSelected, self.heirarchial
-            )][0]
-            section, parentUrl, _, parentSelected, sections, _  = part
-            for info in sections():
-                yield info
+            )]
+            if part:
+                part = part[0]
+                section, parentUrl, _, parentSelected, sections, _  = part
+                for info in sections():
+                    yield info
         else:
             if not sections:
                 sections = []

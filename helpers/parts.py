@@ -1,4 +1,4 @@
-from .urls.section import Site
+from cwf_new.urls.section import Site
         
 ########################
 ###
@@ -16,23 +16,23 @@ class Parts(object):
     def models(self, theLocals, activeOnly=False):
         """Put all the models from each part in the local space of the models.py this is called from"""
         for part in self._iter(activeOnly):
-            module = part.get("models", '__all__', [])
+            models = part.get("models", '__all__', [])
             for model in models:
-                locals()[model.__name__] = model
+                theLocals[model.__name__] = model
     
     def admin(self, theLocals, activeOnly=False):
         """Load all the admin.py files in each part so that they can register with the admin"""
         for part in self._iter(activeOnly):
             part.get("admin")
     
-    def site(self, name, activeOnly=False):
+    def site(self, name, activeOnly=True):
         """Create and return a site object that holds each section.
         Options for the add function is kept as self.kwargs in each part"""
         site = Site(name)
         for part in self._iter(activeOnly):
             section = part.get("urls", 'section', None)
             if section:
-                site.add(section, **part.kwargs)
+                site.add(section, includeAs=part.name, **part.kwargs)
         
         return site
     
@@ -44,7 +44,7 @@ class Parts(object):
     def _iter(self, activeOnly=False):
         """An iter that determines whether to go through all sections or just those that are "active" """
         for part in self:
-            if activeOnly or not part.active:
+            if not activeOnly or part.active:
                 yield part
         
 ########################
@@ -55,7 +55,7 @@ class Parts(object):
 
 class Part(object):
     """Object representing each part of a multi-part app"""
-    def __init__(self, name, active, **kwargs):
+    def __init__(self, name, active=True, **kwargs):
         self.name = name
         self.active = active
         self.kwargs = kwargs
@@ -70,7 +70,9 @@ class Part(object):
             self.pkg = getattr(package, self.name)
         
         else:
-            self.pkg = __import__('%s.%s' % (package, self.name), theGlobals, theLocals, [], -1)
+            # We want an error from this to propagate
+            pkg = __import__(package, theGlobals, theLocals, [self.name], -1)
+            self.pkg = getattr(pkg, self.name)
         
     def get(self, name, attr=None, default=None):
         """Get a module from this package
@@ -78,6 +80,13 @@ class Part(object):
         Or if there is no such attr, a default value
         """
         ret = default
+        if not hasattr(self.pkg, name):
+            # If it doesn't know about it, perhaps we need to import it
+            try:
+                __import__(self.pkg.__name__, globals(), locals(), [name], -1)
+            except ImportError, error:
+                pass
+            
         if hasattr(self.pkg, name):
             ret = getattr(self.pkg, name)
             if attr:

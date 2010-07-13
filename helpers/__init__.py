@@ -23,6 +23,7 @@ appRoot:
         views.py
         models.py
         admin.py
+        views.py
     
     part2:
         etc
@@ -53,7 +54,7 @@ parts = Parts(
 
 P is an alias for the Part class. You can provide keyword arguements to the P call :
     active :: default = True :: Says whether we can use this part
-    Any other keyword argument is passed into the Site.add function if you choose to create a Site object using these parts
+    All other keyword arguments are passed into the Site.add function if you choose to create a Site object using these parts
 
 
 ==========================

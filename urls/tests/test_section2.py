@@ -114,11 +114,15 @@ describe 'cwf Options':
             
             it 'should add optional slash at end of regex only if pattern doesnt have ending slash':
                 for pat in self.pattern(
-                    '/', '/some_place/nice/', '//some_place/nice/', 
+                    '/some_place/nice/', '//some_place/nice/', 
                     '//some_place//nice/', '/some_place/', 'some_place/'
                 ):
                     pat | should_not.end_with | '/?$'
                     pat | should.end_with | '/$'
+            
+            it 'should remove the slash if pattern is just a slash':
+                for pat in self.pattern('/'):
+                    pat | should.equal_to | '^$'
         
         describe '___the view':
             before_each:

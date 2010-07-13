@@ -9,7 +9,7 @@ from django.utils import simplejson
 from django.conf import settings
 from datetime import datetime
 
-from .menus import Menu
+from cwf_new.menus import Menu
 
 defaultSite = None
 if hasattr(settings, 'SITE'):

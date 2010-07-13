@@ -4,9 +4,9 @@ S = Section
 O = Options
 V = Values
 
-def init(self, package, name=None):
+def init(package, name=None):
     sect = S('', name, None).base(
-           module = package
+           module = '%s.views' % package
          , showBase = False
          )
     

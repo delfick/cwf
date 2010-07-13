@@ -208,10 +208,10 @@ class Section(object):
     ###   URL PATTERNS
     ########################
 
-    def patterns(self):
+    def patterns(self, stopAt=None):
         """Return patterns object for this section"""
         # pass self to patternList to tell it not to use patterns for any ancestor beyond it
-        l = [part for part in self.patternList(self)]
+        l = [part for part in self.patternList(stopAt)]
         return patterns('', *l)
         
     def patternList(self, stopAt=None):
@@ -269,7 +269,7 @@ class Options(object):
         , match    = None  # says what to match this part of the url as or if at all
         , values   = None  # Values object determining possible values for this section
         
-        , kls    = "Views" # The view class. Can be an actual class, which will override module, or a string
+        , kls    = "views" # The view class. Can be an actual class, which will override module, or a string
         , module = None    # Determines module that view class should exist in. Can be string or actual module
         , target = 'base'  # Name of the function to call
         
@@ -364,17 +364,26 @@ class Options(object):
         """Return url pattern for this section"""
         if self.active and self.exists:
             if type(pattern) in (tuple, list):
-                pattern = '/'.join(pattern)
+                if any(part != '' for part in pattern):
+                    pattern = '/'.join(pattern)
+                else:
+                    pattern = ''
                 
             # Remove duplicate slashes
             pattern = regexes['multiSlash'].sub('/', pattern)
             
-            # Turn pattern into regex
-            if pattern.endswith('/'):
-                pattern = '^%s$' % pattern
+            if pattern == '/':
+                pattern = '^$'
             else:
-                pattern = '^%s/?$' % pattern
-            
+                if pattern and pattern[0] == '/':
+                    pattern = pattern[1:]
+                
+                # Turn pattern into regex
+                if pattern.endswith('/'):
+                    pattern = '^%s$' % pattern
+                else:
+                    pattern = '^%s/?$' % pattern
+                    
             # Get redirect and call if can
             redirect = self.redirect
             if callable(self.redirect):
@@ -397,7 +406,7 @@ class Options(object):
                     view = dispatch
                         
                     kwargs = {
-                        'obj' : self.getObj(), 'target' : target, 'section' : section, 'condition' : self.show
+                        'obj' : self.getObj(), 'target' : target, 'section' : section, 'condition' : lambda : not self.show()
                     }
                     
                     if self.extraContext:
@@ -533,19 +542,19 @@ class Site(object):
                 for obj, includeAs, patternFunc, namespace, app_name, _ in self:
                     
                     # Determine pattern
-                    pattern = '^%s/?$'
+                    pattern = '^%s/?'
                     if includeAs:
                         pattern = pattern % includeAs
                     else:
                         pattern = pattern % obj.url
                     
-                    yield (pattern, include(patternFunc, namespace=namespace, app_name=app_name) )
+                    yield (pattern, include(patternFunc(), namespace=namespace, app_name=app_name) )
         
         ###   SITE BASE OBJECT
         ########################
         class Base(object):
             """Object for keeping track of the base of the site.
-            The base is the section or site that has a urlpattern of '^$'
+            The base is the section or site that has a urlpattern of '^'
             There should only be one of this"""
             def __init__(self):
                 self.stuff = []
@@ -577,7 +586,7 @@ class Site(object):
                 
             def patterns(self):
                 for obj, includeAs, patternFunc, namespace, app_name, _ in self:
-                   yield ( '^$', include(patternFunc, namespace=namespace, app_name=app_name) )
+                   yield ( '^', include(patternFunc(), namespace=namespace, app_name=app_name) )
 
         self.info = Info()
         self.base = Base()
@@ -685,8 +694,10 @@ class Site(object):
         for pat in self.info.patterns():
             yield pat
     
-    def patterns(self):
+    def patterns(self, stopAt=None):
         """Wraps self.includes in a patterns object"""
+        # The stopAt argument isn't used, 
+        # but is there to mimic the patterns method of the Sections object
         l = [l for l in self.includes()]
         return patterns('', *l)
             
