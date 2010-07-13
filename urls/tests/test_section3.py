@@ -131,15 +131,15 @@ describe 'Sections':
             gens = self.goThrough(self.sect.getInfo([], gen=self.gen), (self.sect, [''], '/', False, self.sect.options))
             gens = self.goThrough(gens[0], (c, ['', 'there'], 'There', False, [], c.options))
             
-        it 'should only have info if exists and is active and is allowed to be shown':
+        it 'should only have info if it is active':
             def test(**kwargs):
                 self.sect.base(**kwargs)
                 return [t for t in self.sect.getInfo([''])]
             
             test() | should | have(1).element
-            test(exists=False) | should | have(0).elements
-            test(exists=True, active=False) | should | have(0).elements
-            test(exists=True, active=True, condition=True) | should | have(0).elements
+            test(active=False) | should | have(0).elements
+            test(exists=False, active=True) | should | have(1).elements
+            test(exists=True, active=True, condition=True) | should | have(1).elements
         
         it 'should return a 6 element tuple':
             for t in self.sect.getInfo(['']):

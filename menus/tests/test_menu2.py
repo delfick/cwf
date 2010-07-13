@@ -62,7 +62,7 @@ describe 'Menu templates':
         
         self.sect2_first = self.sect2.first().base(alias='meh')
         self.sect2_1 = self.sect2.add('1')
-        self.sect2_1_1 = self.sect2_1.add('2').base(exists=False)
+        self.sect2_1_1 = self.sect2_1.add('2').base(active=False)
         self.sect2_1_2 = self.sect2_1.add('3')
         self.sect2_1_2_1 = self.sect2_1_2.add('4')
         

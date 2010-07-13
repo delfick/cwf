@@ -139,7 +139,7 @@ class Section(object):
         return self.options.display and self.show()
     
     def getInfo(self, path, parentUrl=None, parentSelected=True, gen=None):
-        if self.options.active and self.options.exists and self.show():
+        if self.options.active:
             def get(path, url=None):
                 """Helper to get children, fullUrl and determine if selected"""
                 if not url:
@@ -362,7 +362,7 @@ class Options(object):
     
     def urlPattern(self, pattern, section=None, name=None):
         """Return url pattern for this section"""
-        if self.active and self.exists:
+        if self.active:
             if type(pattern) in (tuple, list):
                 if any(part != '' for part in pattern):
                     pattern = '/'.join(pattern)
