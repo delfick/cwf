@@ -145,7 +145,11 @@ class Section(object):
         
     def appear(self):
         """Can only appear if allowed to be displayed and shown"""
-        return self.options.display and self.show()
+        display = self.options.display
+        if callable(display):
+            display = display()
+            
+        return display and self.show()
     
     def getInfo(self, path, parentUrl=None, parentSelected=True, gen=None):
         if self.options.active:
@@ -154,18 +158,19 @@ class Section(object):
                 if not url:
                     url = self.url
                 
-                if url.startswith('/'):
+                if type(url) in (str, unicode) and url.startswith('/'):
                     url = url[1:]
-                    
+                
                 selected, path = self.determineSelection(path, parentSelected, url)
                 
                 if not parentUrl:
                     fullUrl = []
                 else:
                     fullUrl = parentUrl[:]
-                    
+                
                 if url is not None:
-                    fullUrl.append(url)
+                    if url != '' or len(fullUrl) == 0:
+                        fullUrl.append(url)
                 
                 children = self.children
                 if self.children:
@@ -177,11 +182,14 @@ class Section(object):
                 # We want absolute paths
                 if fullUrl and fullUrl[0] != '':
                     fullUrl.insert(0, '')
-                    
+                
                 return selected, children, fullUrl
+            
+            if parentUrl is None:
+                parentUrl = []
                 
             if self.options.values:
-                for alias, url in self.options.values.getInfo(path):
+                for alias, url in self.options.values.getInfo(parentUrl + path):
                     selected, children, fullUrl = get(path, url)
                     yield (self, fullUrl, alias, selected, children, self.options)
             else:
@@ -195,15 +203,15 @@ class Section(object):
         """Return True and rest of path if selected else False and no path."""
         if not url:
             url = self.url
-            
+        
         if not parentSelected or (not path and url != ''):
             return False, []
         else:
             if not path:
                 # Must be a base address and its parent is selected
                 return True, []
-                
-            selected = path[0] == url
+            
+            selected = path[0] == str(url).lower()
             if path[0] == '' and url == '/':
                 selected = True
             
@@ -259,6 +267,25 @@ class Section(object):
         
         self._pattern = pattern
         return self._pattern
+
+    def getPath(self, section, path, parentUrl):
+        """Used to get the part of the path defined by the includeAs option.
+        This is just to maintain the same signature and behaviour as the site.getPath.
+        This will just return path and parentUrl as is with true or false 
+            depending on if we're finding path for this or another section
+        """
+        inside = False
+        if section == self:
+            inside = True
+        
+        return parentUrl, path, inside
+        
+    def pathTo(self, section, path):
+        """Used to get include path to specified section"""
+        if section == self and path:
+            return path
+        
+        return []
             
 ########################
 ###
@@ -391,7 +418,7 @@ class Options(object):
                 if pattern.endswith('/'):
                     pattern = '^%s$' % pattern
                 else:
-                    pattern = '^%s/?$' % pattern
+                    pattern = '^%s/*$' % pattern
                     
             # Get redirect and call if can
             redirect = self.redirect
@@ -400,7 +427,12 @@ class Options(object):
             
             if redirect and type(redirect) in (str, unicode):
                 # Only redirect if we have a string to redirect to
-                view = redirect_to                    
+                def redirector(request, url):
+                    if not url.startswith('/'):
+                        url = '%s/%s' % (request.path, url)
+                    return redirect_to(request, url)
+                
+                view = redirector
                 kwargs = {'url' : unicode(redirect)}
                 yield (pattern, view, kwargs, name)
         
@@ -433,7 +465,7 @@ class Values(object):
     def __init__(self
         , values = None   # lambda path : []
         , each   = None   # lambda path, value : (alias, urlPart)
-        , asSet  = False  # says whether to remove duplicates from values
+        , asSet  = True   # says whether to remove duplicates from values
         , sorter = None   # function to be used for sorting values
         , sortWithAlias = True   # sort values by alias or the values themselves
         ):
@@ -474,6 +506,10 @@ class Values(object):
             else:
                 values = self.values
             
+            # Remove duplicates
+            if self.asSet:
+                values = set(values)
+                
             # Sort if we have to
             if not sortWithAlias:
                 values = self.sort(values)
@@ -487,10 +523,6 @@ class Values(object):
             # Sort if we haven't yet
             if sortWithAlias:
                 ret = self.sort(ret)
-                
-            # Remove duplicates
-            if self.asSet:
-                ret = set(ret)
                 
             return ret
         
@@ -525,8 +557,9 @@ class Site(object):
             
             def __iter__(self):
                 l = []
-                for k, v in self.stuff.items():
-                    l.append((v[0], k + v[1:]))
+                for k, dicts in self.stuff.items():
+                    for i, v in dicts.items():
+                        l.append((v[0], (k, i) + v[1:]))
                 
                 # We want to maintain some order
                 for _, part in sorted(l):
@@ -540,18 +573,70 @@ class Site(object):
                     return False
             
             def __len__(self):
-                return len(self.stuff)
+                return sum(len(t) for t in self.stuff.values())
             
             def add(self, obj, includeAs, patternFunc, namespace, app_name, menu=None):
                 # I use a dictionary for self.stuff so I don't have the same combination of (obj, includeAs) twice
-                self.stuff[(obj, includeAs)] = (self.order, patternFunc, namespace, app_name, menu)
+                
+                if obj not in self.stuff:
+                    self.stuff[obj] = {}
+                    
+                self.stuff[obj][includeAs] = (self.order, patternFunc, namespace, app_name, menu)
                 self.order += 1
+            
+            def getPath(self, section, path, parentUrl):
+                """Used to get the part of the path defined by the includeAs option"""
+                keys   = self.stuff.keys()
+                index  = -1
+                inside = False
+                
+                # I'm using while loops so I don't iterate more than is necessary
+                while index < (len(keys)-1) and not inside:
+                    index += 1
+                    obj = keys[index]
+                    
+                    parentUrl, path, inside = obj.getPath(section, path, parentUrl)
+                    
+                    if inside:
+                        found    = False
+                        index2   = -1
+                        includes = self.stuff[obj].keys()
+                        
+                        while index2 < (len(includes)-1) and not found:
+                            index2 += 1
+                            includeAs = includes[index2]
+                            if path and str(includeAs).lower() == path[0]:
+                                found = True
+                                if path:
+                                    parentUrl.append(path[0])
+                                    path = path[1:]
+                
+                return parentUrl, path, inside
+        
+            def pathTo(self, section, path):
+                """Used to get include path to specified section"""
+                result = []
+                keys   = self.stuff.keys()
+                index  = -1
+                
+                # I'm using while loops so I don't iterate more than is necessary
+                while index < (len(keys)-1) and not result:
+                    index += 1
+                    obj = keys[index]
+                    include = self.stuff[obj].keys()[0]
+                    use = [include]
+                    if include is None:
+                        use = []
+                        
+                    result = obj.pathTo(section, path + use)
+                
+                return result
                 
             def patterns(self):
                 for obj, includeAs, patternFunc, namespace, app_name, _ in self:
                     
                     # Determine pattern
-                    pattern = '^%s/?'
+                    pattern = '^%s/*'
                     if includeAs:
                         pattern = pattern % includeAs
                     else:
@@ -592,6 +677,22 @@ class Site(object):
                 
                 # Just replace if there already is a base
                 self.stuff = [locals()[a] for a in args[1:]]
+            
+            def getPath(self, section, path, parentUrl):
+                """Used to get the part of the path defined by the includeAs option"""
+                inside = False
+                if self.stuff:
+                    parentUrl, path, inside = self.stuff[0].getPath(section, path, parentUrl)
+                
+                return parentUrl, path, inside
+        
+            def pathTo(self, section, path):
+                """Used to get include path to specified section"""
+                path = []
+                if self.stuff:
+                    path = self.stuff[0].pathTo(section, path)
+                
+                return path
                 
             def patterns(self):
                 for obj, includeAs, patternFunc, namespace, app_name, _ in self:
@@ -727,3 +828,33 @@ class Site(object):
                             collected.append(m)
         
         return collected
+
+    def getPath(self, section, path, parentUrl=None):
+        """Used to get the part of the path defined by the includeAs option from self.add"""
+        if not parentUrl:
+            parentUrl = []
+        
+        parentUrl, path, inside = self.base.getPath(section, path, parentUrl)
+        if not inside:
+            # Not looking for base, let's look in stuff
+            parentUrl, path, inside = self.info.getPath(section, path, parentUrl)
+            
+        return parentUrl, path, inside
+
+    def pathTo(self, section, path=None):
+        """Used to get include path to specified section"""
+        if not path:
+            path = []
+            
+        result = self.base.pathTo(section, path)
+        if not result:
+            # Not looking for base, let's look in stuff
+            result = self.info.pathTo(section, path)
+        return result
+            
+    ########################
+    ###   OTHER
+    ########################
+
+    def __repr__(self):
+        return '<CWF SITE : %s>' % self.name

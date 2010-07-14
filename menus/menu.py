@@ -8,91 +8,114 @@ class Menu(object):
         self.remainingUrl = remainingUrl
         self.selectedSection = selectedSection
     
+    def clean(self, info):
+        section, fullUrl, alias, selected, children, options = info
+        if fullUrl == ['']:
+            fullUrl = ['', '']
+        
+        elif fullUrl and fullUrl[-1] == '':
+            fullUrl = fullUrl[:-1]
+        
+        return (section, fullUrl, alias, selected, children, options)
+    
     def getGlobal(self):
         """Get sections in the site's menu"""
         for section in self.site.menu():
-            for info in section.getInfo(self.remainingUrl):
-                yield info
-        
-    def heirarchial(self, sections=None, path=None, parentUrl=None, parentSelected=True, includeFirst=False):
-        """Get menu for selected section as a heirarchy"""
-        
-        if path is None:
             path = [p for p in self.remainingUrl]
-            if not path:
-                path = ['']
+            parentUrl = self.site.pathTo(section)
+            parentSelected = all(d == e for (d, e) in zip(parentUrl, path))
+            if parentSelected:
+                for item in parentUrl:
+                    path.pop(0)
+            
+            for info in section.getInfo(path, parentUrl, parentSelected):
+                yield self.clean(info)
         
-        if parentUrl is None:
-            parentUrl = []
-           
-        if not includeFirst and sections is None:
-            part = [t for t in self.selectedSection.getInfo(
-                path, parentUrl, parentSelected, self.heirarchial
-            )]
-            if part:
-                part = part[0]
-                section, parentUrl, _, parentSelected, sections, _  = part
-                for info in sections():
-                    yield info
-        else:
-            if not sections:
-                sections = []
-                if self.selectedSection:
-                    sections = [self.selectedSection]
-                    
-            for section in sections:
-                if section.options.showBase:
-                    for info in section.getInfo(path, parentUrl, parentSelected, self.heirarchial):
-                        yield info
-                    
-                else:
+    def heirarchial(self, includeFirst=False):
+        """Get menu for selected section as a heirarchy"""
+        if self.selectedSection:
+            path = [p for p in self.remainingUrl]
+            parentUrl, path, _ = self.site.getPath(self.selectedSection.rootAncestor(), path)
+            parentSelected = True
+            
+            if not includeFirst:
+                section = self.selectedSection
+                if not section.options.showBase:
                     if section.url:
                         parentUrl.append(section.url)
+                        
                     selected, path = section.determineSelection(path, parentSelected)
                     parentSelected = parentSelected and selected
                     
-                    for child in section.children:
-                        for info in child.getInfo(path, parentUrl, parentSelected, self.heirarchial):
-                            yield info
+                sections = section.children
+            else:
+                sections = []
+                if self.selectedSection:
+                    sections = [self.selectedSection]
+                
+            for info in self.getHeirarchy(sections, path, parentUrl, parentSelected):
+                yield self.clean(info)
+        
+    def getHeirarchy(self, sections, path, parentUrl, parentSelected):
+        """Generator function for heirarchial menu children"""
+        for section in sections:
+            if section.options.showBase:
+                for info in section.getInfo(path, parentUrl, parentSelected, self.getHeirarchy):
+                    yield info
+                
+            else:
+                if section.url:
+                    parentUrl.append(section.url)
+                    
+                selected, path = section.determineSelection(path, parentSelected)
+                parentSelected = parentSelected and selected
+                
+                for child in section.children:
+                    for info in child.getInfo(path, parentUrl, parentSelected, self.getHeirarchy):
+                        yield info
+        
                     
     def layered(self, includeFirst=False):
         """Get menu for selected section per layer"""
-        path      = [p for p in self.remainingUrl]
-        if not path:
-            path = ['']
-        
-        parentUrl = []
-        selected  = self.getLayer([self.selectedSection], path, [], True)
-        selectedSection = self.selectedSection
-        
-        noInclude = None
-        if not includeFirst:
-            noInclude = selectedSection.rootAncestor()
+        if self.selectedSection:
+            path      = [p for p in self.remainingUrl]
+            parentUrl = []
+            parentSelected = True
             
-        while selected:
-            # Whilst we still have a selected section (possibility of more layers)
-            l = []
-            anySelected  = False
-            nextSelected = selectedSection
-            for part in selected:
-                section, _, _, isSelected, children, _ = part
-                if section is not noInclude:
-                    l.append(part)
-                    
-                if isSelected:
-                    nextSelected = section
-                    anySelected  = True
-                    selected     = children
-                    if callable(children):
-                        selected = children()
-            
-            if not anySelected:
-                selected = None
+            if not includeFirst:
+                parentUrl, path, _ = self.site.getPath(self.selectedSection.rootAncestor(), path)
+                section = self.selectedSection
+                if not section.options.showBase:
+                    if section.url:
+                        parentUrl.append(section.url)
+                        
+                    selected, path = section.determineSelection(path, parentSelected)
+                    parentSelected = parentSelected and selected
+                
+                selected = self.getLayer(section.children, path, parentUrl, parentSelected)
             else:
-                selectedSection = nextSelected
+                selected  = self.getLayer([self.selectedSection], path, parentUrl, parentSelected)
             
-            if l:
-                yield l
+            while selected:
+                # Whilst we still have a selected section (possibility of more layers)
+                l = []
+                anySelected  = False
+                for part in selected:
+                    section, _, _, isSelected, children, _ = part
+                    if section:
+                        l.append(self.clean(part))
+                        
+                    if isSelected:
+                        anySelected  = True
+                        selected     = children
+                        if callable(children):
+                            selected = children()
+                
+                if not anySelected:
+                    selected = None
+                
+                if l:
+                    yield l
 
     def getLayer(self, sections, path, parentUrl, parentSelected):
         """Function to get next layer for a section"""

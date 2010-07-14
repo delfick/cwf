@@ -83,7 +83,7 @@ describe 'Menu templates':
         self.sect4_2_4 = self.sect4_2.add('somewhere')
         
         self.sect4_2_2_1 = self.sect4_2_2.add('\w+').base(
-                           values = Values(['1', '2', '3'])
+                           values = Values(['1', '2', '3'], asSet=False)
                          )
         
         self.sect4_2_2_1_1 = self.sect4_2_2_1.add('meh')
@@ -95,14 +95,14 @@ describe 'Menu templates':
         menu = Menu(self.site, [''], self.base)
         desired = """
         <ul>
-            <li class="selected"><a href=""></a></li>
+            <li class="selected"><a href="/"></a></li>
             <li><a href="/1">1</a></li>
             <li><a href="/2">two</a></li>
         </ul>
         """
         
         (menu, 'base', 'getGlobal') | should | render_as(desired)
-    
+        
     describe 'heirarchial menu':
         it 'should make a heirarchial menu':
             menu = Menu(self.site, ['1'], self.sect1)
@@ -134,7 +134,7 @@ describe 'Menu templates':
             menu = Menu(self.site, ['2'], self.sect2)
             desired = """
             <ul>
-                <li class="selected"><a href="/2/">meh</a></li>
+                <li class="selected"><a href="/2">meh</a></li>
                 <li><a href="/2/1">1</a></li>
             </ul>
             """
@@ -145,7 +145,7 @@ describe 'Menu templates':
             menu = Menu(self.site, ['2', '1', '3', '4'], self.sect2)
             desired = """
             <ul>
-                <li><a href="/2/">meh</a></li>
+                <li><a href="/2">meh</a></li>
                 <li class="selected">
                     <a href="/2/1">1</a>
                     <ul>
@@ -186,7 +186,7 @@ describe 'Menu templates':
             menu = Menu(self.site, ['2'], self.sect2)
             desired = """
             <ul>
-                <li class="selected"><a href="/2/">meh</a></li>
+                <li class="selected"><a href="/2">meh</a></li>
                 <li><a href="/2/1">1</a></li>
             </ul>
             """
@@ -225,9 +225,6 @@ describe 'Menu templates':
             desired = ""
             
             (menu, 'layered') | should | render_as(desired)
-            
-            
-            
             
             
             

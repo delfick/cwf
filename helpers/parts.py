@@ -32,7 +32,7 @@ class Parts(object):
         for part in self._iter(activeOnly):
             section = part.get("urls", 'section', None)
             if section:
-                site.add(section, includeAs=part.name, **part.kwargs)
+                site.add(section, **part.kwargs)
         
         return site
     
@@ -56,10 +56,13 @@ class Parts(object):
 class Part(object):
     """Object representing each part of a multi-part app"""
     def __init__(self, name, active=True, **kwargs):
+        self.pkg = None
         self.name = name
         self.active = active
         self.kwargs = kwargs
-        self.pkg = None
+        
+        if kwargs.get('includeAs', None) is None:
+            kwargs['includeAs'] = self.name
     
     def _import(self, package, theGlobals, theLocals):
         """Get the package we are representing"""

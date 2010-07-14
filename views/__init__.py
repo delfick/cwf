@@ -11,6 +11,8 @@ from datetime import datetime
 
 from cwf_new.menus import Menu
 
+import re
+
 defaultSite = None
 if hasattr(settings, 'SITE'):
     try:
@@ -23,6 +25,10 @@ if hasattr(settings, 'PROJECTDIR'):
 else:
     projectDir = '/var/www'
     
+regexes = {
+    'multiSlash' : re.compile('/+'),
+}
+
 ########################
 ###  
 ###   CONVENIENCE OBJECT
@@ -87,7 +93,8 @@ class View(object):
                        , site    = site
                        )
             
-        path = [p for p in request.path.split('/')]
+        path = regexes['multiSlash'].sub('/', request.path)
+        path = [p.lower() for p in path.split('/')]
         if path[0] == '':
             path.pop(0)
         
@@ -190,7 +197,7 @@ class View(object):
     
     def _redirect(self, request, address, relative=True, carryGET=False, ignoreGET=None):
         """Get's address used by redirect"""
-        unicode(address)
+        address = unicode(address)
         
         if address[0] == '/':
             address = '%s%s' % (request.state.baseUrl, address)

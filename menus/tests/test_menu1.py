@@ -7,6 +7,7 @@ describe 'Menu':
     before_each:
         self.site1 = Site('site1')
         self.site2 = Site('site2')
+        self.site3 = Site('site3')
         
         self.sect1 = Section('a')
         self.sect1_1 = self.sect1.add('nice')
@@ -76,10 +77,22 @@ describe 'Menu':
                 self.sect2_1_1.base(
                     values = Values( ['1', '2', '3']
                                    , lambda path, value : ('_%s' % value, '%s_' % value)
+                                   , asSet=False
                                    )
                 )
                 
                 self.menu = lambda path : Menu(self.site1, path, base)
+            
+            it 'should work on a site object with no base or children':
+                menu = Menu(self.site3, [], None)
+                self.roll(menu.heirarchial(), give=0) | should.equal_to | []
+            
+            it 'should work on a site object with no base':
+                sect = Section('blah')
+                self.site3.add(sect)
+                
+                menu = Menu(self.site3, [], sect)
+                self.roll(menu.heirarchial(includeFirst=True), give=0) | should.equal_to | [[sect]]
                 
             it 'should give info heirarchially':
                 menu = self.menu([])
@@ -104,7 +117,7 @@ describe 'Menu':
                 ]
                 
             it 'should determine fullUrl properly':
-                menu = self.menu(['', 'a', 'nice'])
+                menu = self.menu(['a', 'nice'])
                 self.roll(menu.heirarchial(), give=1) | should.equal_to | [
                       [ ['', 'a']
                       , [ ['', 'a', 'nice']
@@ -126,7 +139,7 @@ describe 'Menu':
                 ]
                 
             it 'should determine alias properly':
-                menu = self.menu(['', 'a', 'nice'])
+                menu = self.menu(['a', 'nice'])
                 self.roll(menu.heirarchial(), give=2) | should.equal_to | [
                       [ 'A'
                       , [ 'Nice'
@@ -222,11 +235,23 @@ describe 'Menu':
                 self.sect2_1_1.base(
                     values = Values( ['1', '2', '3']
                                    , lambda path, value : ('_%s' % value, '%s_' % value)
+                                   , asSet=False
                                    )
                 )
                 
                 self.menu = lambda path : Menu(self.site1, path, base)
+            
+            it 'should work on a site object with no base or children':
+                menu = Menu(self.site3, [], None)
+                self.roll(menu.layered(), give=0) | should.equal_to | []
+            
+            it 'should work on a site object with no base':
+                sect = Section('', 'blah')
+                self.site3.add(sect)
                 
+                menu = Menu(self.site3, [], sect)
+                self.roll(menu.layered(includeFirst=True), give=0) | should.equal_to | [[sect]]
+            
             it 'should give info layered only for selected sections':
                 menu = self.menu([])
                 self.roll(menu.layered(), give=0) | should.equal_to | [

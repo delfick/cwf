@@ -145,7 +145,7 @@ describe 'Sections':
             for t in self.sect.getInfo(['']):
                 t | should | have(6).elements
             
-            self.sect.base(values = Values(['blah']))
+            self.sect.base(values = Values(['blah'], asSet=False))
             for t in self.sect.getInfo(['']):
                 t | should | have(6).elements
         
@@ -159,7 +159,7 @@ describe 'Sections':
                 t[2] | should.equal_to | 'nice'
         
         it 'should not change alias from a values object':
-            self.sect.base(values = Values(['v1', 'v2']))
+            self.sect.base(values = Values(['v1', 'v2'], asSet=False))
             [t[2] for t in self.sect.getInfo([''])] | should.equal_to | ['v1', 'v2']
         
         it 'should get fullUrl correct':
@@ -182,7 +182,7 @@ describe 'Sections':
             self.goThrough(gens[0], (d, ['', 'some', 'nice'], 'Nice', False, d.options))
 
         it 'should get fullUrl correct when there are dynamic values concerned':
-            c = self.sect.add('some').base(values=Values(['v1', 'v2']))
+            c = self.sect.add('some').base(values=Values(['v1', 'v2'], asSet=False))
             d = c.add('nice')
             
             gens = self.goThrough(self.sect.getInfo([], gen=self.gen), (self.sect, [''], '/', False, self.sect.options))
@@ -240,7 +240,7 @@ describe 'Sections':
             self.goThrough(gens[0], (f, ['', 'some', 'nice', 'place'], 'Place', False, [], f.options))
         
         it 'should determine if selected correctly when there are dynamic values concerned':
-            c = self.sect.add('some').base(showBase=False, values=Values(['some', 'blah']))
+            c = self.sect.add('some').base(showBase=False, values=Values(['some', 'blah'], asSet=False))
             d = self.sect.add('every')
             e = c.add('nice').base(showBase=False)
             f = e.add('place')
