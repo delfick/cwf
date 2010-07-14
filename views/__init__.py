@@ -75,45 +75,42 @@ class View(object):
     def __init__(self):
         self.projectDir = projectDir
     
-    def getState(self, request):
+    def getState(self, request, target, site, section):
         """This is to be passed around everywhere and represents state for one request.
         This is to avoid storing state on the class itself which is only ever instantiated once"""
-        return DictObj( baseUrl = request.META.get('SCRIPT_NAME', '')
-                      , request = request
-                      , section = ''
-                      , target  = ''
-                      , site    = ''
-                      , req     = request
-                      )
-    
-    ########################
-    ###   CALL STUFF
-    ########################
-
-    def getExtra(self, state, target, section, site, extra=None):
-        """Used by the View to insert any extra variables for use in the template."""
         if not site:
             site = defaultSite
-        
-        path = [p for p in state.request.path.split('/')]
+            
+        state = DictObj( baseUrl = request.META.get('SCRIPT_NAME', '')
+                       , section = section
+                       , target  = target
+                       , site    = site
+                       )
+            
+        path = [p for p in request.path.split('/')]
         if path[0] == '':
             path.pop(0)
         
         if state.baseUrl != "":
             path.pop(0)
         
+        if section:
+            state.menu = Menu(site, path, section.rootAncestor())
+        
+        return state
+    
+    ########################
+    ###   CALL STUFF
+    ########################
+
+    def updateState(self, request, state, extra=None):
+        """Used by the View to insert any extra variables for use in the template."""
+        
+        if state is None:
+            state = DictObj()
+        
         if extra:
             state.update(extra)
-        
-        if section:
-            state.update(
-                { 'menu'    : Menu(site, path, section.rootAncestor())
-                , 'site'    : site
-                , 'section' : section
-                }
-            )
-        else:
-            state.site = site
         
         return state
     
@@ -123,7 +120,8 @@ class View(object):
     
     def __call__(self, request, target, section, site=None, *args, **kwargs):
         """Called by dispatch and determines what to call, calls it, creates template and renders it."""
-        state = self.getState(request)
+        state = self.getState(request, target, site, section)
+        request.state = state
         
         # Ensure there are no trailing slashes on parts taken from url
         for key, item in kwargs.items():
@@ -134,17 +132,17 @@ class View(object):
         result = None
         # If class has override method, use that instead
         if hasattr(self, 'override'):
-            result = self.override(state, *args, **kwargs)
+            result = self.override(request, *args, **kwargs)
         
         # If there was no override ::
         if not result:
             if hasattr(self, target):
                 # Get the result from target
-                result = self.getResult(state, target, *args, **kwargs)
+                result = self.getResult(request, target, *args, **kwargs)
                 
                 # If it's callable, give it state and return result
                 if callable(result):
-                    return result(self.getExtra(state, target, section, site))
+                    return result(request)
                 
             else:
                 raise Exception, "View object doesn't have a target : %s" % target
@@ -159,8 +157,8 @@ class View(object):
         else:
             return result
         
-        # Get any extra stuff
-        state = self.getExtra(state, target, section, site, extra)
+        # Add extra varaibles to state object
+        state = self.updateState(request, request.state, extra)
         
         # Create the template
         t = loader.get_template(File)
@@ -178,6 +176,7 @@ class View(object):
     ########################
     ###   RAISES/RETURNS
     ########################    
+    
     def raise404(self):
         raise Http404
 
@@ -189,31 +188,31 @@ class View(object):
         """Shortcut to render xml."""
         return render_to_response(address, mimetype="application/xml")
     
-    def _redirect(self, state, address, relative=True, carryGET=False, ignoreGET=None):
+    def _redirect(self, request, address, relative=True, carryGET=False, ignoreGET=None):
         """Get's address used by redirect"""
         unicode(address)
         
         if address[0] == '/':
-            address = '%s%s' % (state.baseUrl, address)
+            address = '%s%s' % (request.state.baseUrl, address)
         
         elif relative:
-            address = "%s/%s" % (state.request.path, address)
+            address = "%s/%s" % (request.path, address)
         
         if carryGET:
-            address = "%s?%s" % (address, self.getGETString(state.request, ignoreGET))
+            address = "%s?%s" % (address, self.getGETString(request, ignoreGET))
         
         return address.replace('//', '/')
             
-    def redirect(self, state, *args, **kwargs):
+    def redirect(self, request, *args, **kwargs):
         """Return a HttpResponseRedirect object"""
-        address = self._redirect(state, *args, **kwargs)            
+        address = self._redirect(request, *args, **kwargs)            
         return HttpResponseRedirect(address)
     
-    def render(self, state, File, extra, mime="text/plain", modify=None):
+    def render(self, request, File, extra, mime="text/plain", modify=None):
         """Shortcut to create a template, give it context and display as some mime type (default to plain text)"""
-        state.update(extra)
+        request.state.update(extra)
         t = loader.get_template(File)
-        c = RequestContext(state.request, state)
+        c = RequestContext(request, request.state)
         
         try:
             render = t.render(c)
@@ -271,11 +270,11 @@ class View(object):
 ######################## 
 
 class StaffView(View):
-    def getResult(self, state, target, *args, **kwargs):
-        def view(state, *args, **kwargs):
-            return getattr(self, target)(state, *args, **kwargs)
+    def getResult(self, request, target, *args, **kwargs):
+        def view(request, *args, **kwargs):
+            return getattr(self, target)(request, *args, **kwargs)
         
-        return staff_member_required(view)(state, *args, **kwargs)
+        return staff_member_required(view)(request, *args, **kwargs)
 
 ########################
 ### 
@@ -284,10 +283,10 @@ class StaffView(View):
 ######################## 
 
 class LocalOnlyView(View):
-    def getResult(self, state, target, *args, **kwargs):  
-        ip = state.request.META.get('REMOTE_ADDR')
+    def getResult(self, request, target, *args, **kwargs):  
+        ip = request.META.get('REMOTE_ADDR')
         if ip == '127.0.0.1':
-            return getattr(self, target)(state, *args, **kwargs)
+            return getattr(self, target)(request, *args, **kwargs)
         else:
             self.raise404()
             
@@ -298,8 +297,8 @@ class LocalOnlyView(View):
 ######################## 
 
 class JSView(View):
-    def getResult(self, state, target, *args, **kwargs):  
-        result = super(JSView, self).getResult(state, target, *args, **kwargs)
+    def getResult(self, request, target, *args, **kwargs):  
+        result = super(JSView, self).getResult(request, target, *args, **kwargs)
         File, extra = result
         return HttpResponse(simplejson.dumps(extra), mimetype='application/javascript')
 

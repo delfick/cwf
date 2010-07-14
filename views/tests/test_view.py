@@ -56,6 +56,10 @@ describe 'View':
         self.request2 = self.client.get('/some/other/path/', {'this': '3'})
         self.request3 = self.client.get('/some/other/path/', {'this': '', 'that' : ''})
         self.state = DictObj( baseUrl = '/cwf' )
+        
+        self.request1.state = self.state
+        self.request2.state = self.state
+        self.request3.state = self.state
     
     @raises(Http404)
     it 'should be able to raise a 404':
@@ -103,8 +107,8 @@ describe 'View':
         before_each:
             def use(num, *args, **kwargs):
                 func = getattr(self.view, '_redirect')
-                self.state.request = getattr(self, 'request%d' % num)
-                return func(self.state, *args, **kwargs)
+                request = getattr(self, 'request%d' % num)
+                return func(request, *args, **kwargs)
             
             self.use = use
             

@@ -55,8 +55,17 @@ class Section(object):
         
         return section
         
-    def base(self, **kwargs):
-        """Extends self.options with the given keywords"""
+    def base(self, *args, **kwargs):
+        """Extends self.options with the given keywords.
+        It also accepts positional aguements but doesn't use them.
+        This is purely so I can use it like this
+        section.add('asdf').baes(''
+            , kw1 = value1
+            , kw2 = value2
+            , kw3 = value3
+            )
+        Without the positional argument at the beginning, the first line can't have a comma
+        """
         self.options.update(**kwargs)
         return self
     

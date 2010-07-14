@@ -20,7 +20,7 @@ class Parts(object):
             for model in models:
                 theLocals[model.__name__] = model
     
-    def admin(self, theLocals, activeOnly=False):
+    def admin(self, activeOnly=False):
         """Load all the admin.py files in each part so that they can register with the admin"""
         for part in self._iter(activeOnly):
             part.get("admin")
