@@ -205,19 +205,25 @@ describe 'Site':
             self.site3 = Site('other')
             
             self.s1 = Section('s1')
-            self.s1_1 = self.s1.add('hello')
             
             self.site3.add(self.s1, includeAs='meh')
             self.site2.add(site=self.site3)
             self.site.add(site=self.site2)
             
+            # Site doesn't form part of url
+            # Site2 forms "main" urlspace
+            #   Site3 is under site2 and forms "other" urlspace
+            #       s1 is under site3 and includeAs means it forms "meh" namespace
+            #
+            # Hence url to s1 is "/main/other/meh" 
+            
         it 'should be able to split path for url to section beyond root ancestor':
-            parentUrl, path, inside = self.site.getPath(self.s1_1.rootAncestor(), ['main', 'meh'])
-            parentUrl | should.equal_to | ['main']
-            path | should.equal_to | ['meh']
+            parentUrl, path, _ = self.site.getPath(self.s1, ['main', 'other', 'meh', 'blah'])
+            parentUrl | should.equal_to | ['main', 'other', 'meh']
+            path | should.equal_to | ['blah']
         
         it 'should be able to get path leading to a section':
-            parentUrl = self.site.pathTo(self.s1)
+            parentUrl, inside = self.site.pathTo(self.s1)
             parentUrl | should.equal_to | ['main', 'other', 'meh']
     
     describe 'paths2':
@@ -227,20 +233,58 @@ describe 'Site':
             self.site3 = Site('other')
             
             self.s1 = Section('s1')
-            self.s1_1 = self.s1.add('hello')
             
             self.site3.add(self.s1, includeAs='meh')
             self.site2.add(site=self.site3)
             self.site.add(site=self.site2, base=True)
             
+            # Site doesn't form part of url
+            # Site2 is included as base and doesn't add urlspace
+            #   Site3 is under site2 and forms "other" urlspace
+            #       s1 is under site3 and includeAs means it forms "meh" namespace
+            #
+            # Hence url to s1 is "/main/other/meh" 
+            
         it 'should be able to split path for url to section beyond root ancestor when bases involved':
-            parentUrl, path, inside = self.site.getPath(self.s1_1.rootAncestor(), ['other', 'meh'])
-            parentUrl | should.equal_to | ['other']
-            path | should.equal_to | ['meh']
+            parentUrl, path, inside = self.site.getPath(self.s1, ['other', 'meh', 'blah'])
+            parentUrl | should.equal_to | ['other', 'meh']
+            path | should.equal_to | ['blah']
         
         it 'should be able to get path leading to a section when bases involved':
-            parentUrl = self.site.pathTo(self.s1)
+            parentUrl, inside = self.site.pathTo(self.s1)
             parentUrl | should.equal_to | ['other', 'meh']
+    
+    describe 'path steering':
+        before_each:
+            self.site  = Site('site')
+            self.s1 = Section('s1')
+            self.s2 = Section('s2')
+            
+            self.site.add(self.s1, includeAs='hello')
+            self.site.add(self.s1, includeAs='there')
+            
+            self.site.add(self.s2, includeAs="blah")
+            self.site.add(self.s2, includeAs="meh")
+            self.site.add(self.s2, base=True)
+            
+        it 'should be possible to steer pathTo':
+            path, _ = self.site.pathTo(self.s1, ['hello'])
+            path | should.equal_to | ['hello']
+            
+            path, _ = self.site.pathTo(self.s1, ['there'])
+            path | should.equal_to | ['there']
+        
+        it 'should be able to get path leading to a section when bases involved':
+            path, _ = self.site.pathTo(self.s2, ['blah'])
+            path | should.equal_to | ['blah']
+            
+            path, _ = self.site.pathTo(self.s2, ['meh'])
+            path | should.equal_to | ['meh']
+            
+            path, inside = self.site.pathTo(self.s2)
+            path | should.equal_to | []
+            inside | should.be | True
+            
             
             
             

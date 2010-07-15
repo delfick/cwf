@@ -44,7 +44,7 @@ describe 'Menu templates':
         
         self.base = self.site.makeBase(inMenu=True)
         
-        self.sect1 = Section('1').base(showBase=False)
+        self.sect1 = Section('one').base(showBase=False)
         self.site.add(self.sect1, inMenu=True)
         
         self.sect1_some = self.sect1.add('some').base(alias='blah')
@@ -91,12 +91,36 @@ describe 'Menu templates':
         self.sect4_4_1 = self.sect4_4.add('test')
         self.sect4_4_2 = self.sect4_4.add('blah')
             
-    it 'should make a global menu':
-        menu = Menu(self.site, [''], self.base)
+    it 'should make a global menu with base selected':
+        menu = Menu(self.site, [], self.base)
         desired = """
         <ul>
             <li class="selected"><a href="/"></a></li>
-            <li><a href="/1">1</a></li>
+            <li><a href="/one">One</a></li>
+            <li><a href="/2">two</a></li>
+        </ul>
+        """
+        
+        (menu, 'base', 'getGlobal') | should | render_as(desired)
+    
+    it 'should make a global menu with section other than base selected':
+        menu = Menu(self.site, ['one'], self.base)
+        desired = """
+        <ul>
+            <li><a href="/"></a></li>
+            <li class="selected"><a href="/one">One</a></li>
+            <li><a href="/2">two</a></li>
+        </ul>
+        """
+        
+        (menu, 'base', 'getGlobal') | should | render_as(desired)
+    
+    it 'should make global menu and be case insensitive':
+        menu = Menu(self.site, ['oNe'], self.base)
+        desired = """
+        <ul>
+            <li><a href="/"></a></li>
+            <li class="selected"><a href="/one">One</a></li>
             <li><a href="/2">two</a></li>
         </ul>
         """
@@ -105,26 +129,60 @@ describe 'Menu templates':
         
     describe 'heirarchial menu':
         it 'should make a heirarchial menu':
-            menu = Menu(self.site, ['1'], self.sect1)
+            menu = Menu(self.site, ['one'], self.sect1)
             desired = """
             <ul>
-                <li><a href="/1/some">blah</a></li>
-                <li><a href="/1/1_">_1</a></li>
-                <li><a href="/1/2_">_2</a></li>
-                <li><a href="/1/3_">_3</a></li>
+                <li><a href="/one/some">blah</a></li>
+                <li><a href="/one/1_">_1</a></li>
+                <li><a href="/one/2_">_2</a></li>
+                <li><a href="/one/3_">_3</a></li>
+            </ul>
+            """
+            
+            (menu, 'heirarchial') | should | render_as(desired)
+            
+        it 'should make a heirarchial menu when ending in a number':
+            site = Site('main')
+            meh = Section('')
+            site.add(meh, inMenu=True, includeAs='blah')
+            
+            meh.first().base(alias='latest')
+            
+            b = meh.add('meh')
+            b2 = b.add('\d{4}').base(match='year', values=Values([2010, 2009], asSet=False))
+            h = b2.add('\d+').base(match='asdf', values=Values([1], asSet=False))
+            
+            menu = Menu(site, ['blah', 'meh', '2010', '1'], h.rootAncestor())
+            desired = """
+            <ul>
+                <li><a href="/blah">latest</a></li>
+                <li class="selected">
+                    <a href="/blah/meh">Meh</a>
+                    <ul>
+                        <li class="selected">
+                            <a href="/blah/meh/2010">2010</a>
+                            <ul>
+                                <li class="selected">
+                                    <a href="/blah/meh/2010/1">1</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li><a href="/blah/meh/2009">2009</a></li>
+                    </ul>
+                </li>
             </ul>
             """
             
             (menu, 'heirarchial') | should | render_as(desired)
                 
         it 'should support sections with multiple values':
-            menu = Menu(self.site, ['1', '1_'], self.sect1)
+            menu = Menu(self.site, ['one', '1_'], self.sect1)
             desired = """
             <ul>
-                <li><a href="/1/some">blah</a></li>
-                <li class="selected"><a href="/1/1_">_1</a></li>
-                <li><a href="/1/2_">_2</a></li>
-                <li><a href="/1/3_">_3</a></li>
+                <li><a href="/one/some">blah</a></li>
+                <li class="selected"><a href="/one/1_">_1</a></li>
+                <li><a href="/one/2_">_2</a></li>
+                <li><a href="/one/3_">_3</a></li>
             </ul>
             """
             
@@ -170,13 +228,13 @@ describe 'Menu templates':
     
     describe 'layered menu':
         it 'should be able to handle no selected section':
-            menu = Menu(self.site, ['1'], self.sect1)
+            menu = Menu(self.site, ['one'], self.sect1)
             desired = """
             <ul>
-                <li><a href="/1/some">blah</a></li>
-                <li><a href="/1/1_">_1</a></li>
-                <li><a href="/1/2_">_2</a></li>
-                <li><a href="/1/3_">_3</a></li>
+                <li><a href="/one/some">blah</a></li>
+                <li><a href="/one/1_">_1</a></li>
+                <li><a href="/one/2_">_2</a></li>
+                <li><a href="/one/3_">_3</a></li>
             </ul>
             """
             

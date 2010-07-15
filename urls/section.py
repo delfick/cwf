@@ -204,6 +204,9 @@ class Section(object):
         if not url:
             url = self.url
         
+        if parentSelected and self.options.showBase == False and url == '':
+            return True, path
+        
         if not parentSelected or (not path and url != ''):
             return False, []
         else:
@@ -267,25 +270,11 @@ class Section(object):
         
         self._pattern = pattern
         return self._pattern
-
-    def getPath(self, section, path, parentUrl):
-        """Used to get the part of the path defined by the includeAs option.
-        This is just to maintain the same signature and behaviour as the site.getPath.
-        This will just return path and parentUrl as is with true or false 
-            depending on if we're finding path for this or another section
-        """
-        inside = False
-        if section == self:
-            inside = True
         
-        return parentUrl, path, inside
-        
-    def pathTo(self, section, path):
+    def pathTo(self, section, steer, path):
         """Used to get include path to specified section"""
-        if section == self and path:
-            return path
-        
-        return []
+        inside = section == self
+        return path, inside
             
 ########################
 ###
@@ -583,54 +572,42 @@ class Site(object):
                     
                 self.stuff[obj][includeAs] = (self.order, patternFunc, namespace, app_name, menu)
                 self.order += 1
-            
-            def getPath(self, section, path, parentUrl):
-                """Used to get the part of the path defined by the includeAs option"""
-                keys   = self.stuff.keys()
-                index  = -1
-                inside = False
-                
-                # I'm using while loops so I don't iterate more than is necessary
-                while index < (len(keys)-1) and not inside:
-                    index += 1
-                    obj = keys[index]
-                    
-                    parentUrl, path, inside = obj.getPath(section, path, parentUrl)
-                    
-                    if inside:
-                        found    = False
-                        index2   = -1
-                        includes = self.stuff[obj].keys()
-                        
-                        while index2 < (len(includes)-1) and not found:
-                            index2 += 1
-                            includeAs = includes[index2]
-                            if path and str(includeAs).lower() == path[0]:
-                                found = True
-                                if path:
-                                    parentUrl.append(path[0])
-                                    path = path[1:]
-                
-                return parentUrl, path, inside
         
-            def pathTo(self, section, path):
+            def pathTo(self, section, steer, path):
                 """Used to get include path to specified section"""
+                inside = False
                 result = []
                 keys   = self.stuff.keys()
                 index  = -1
                 
-                # I'm using while loops so I don't iterate more than is necessary
-                while index < (len(keys)-1) and not result:
-                    index += 1
-                    obj = keys[index]
-                    include = self.stuff[obj].keys()[0]
+                # I'm using a while loop so I don't iterate more than is necessary
+                while index < (len(keys)-1) and not inside:
+                    index     += 1
+                    obj       = keys[index]
+                    includes  = self.stuff[obj].keys()
+                    nextSteer = []
+                    
+                    if not steer:
+                        include = includes[0]
+                    else:
+                        nextSteer = steer[0]
+                        if nextSteer in includes:
+                            include = nextSteer
+                            
+                            # Steer is still current, keep using it
+                            nextSteer = steer[1:]
+                        else:
+                            include = includes[0]
+                            
                     use = [include]
                     if include is None:
                         use = []
-                        
-                    result = obj.pathTo(section, path + use)
+                    
+                    # Can't just compare section to obj because obj may be a site
+                    # So we use pathTo on the object instead
+                    result, inside = obj.pathTo(section, nextSteer, path + use)
                 
-                return result
+                return result, inside
                 
             def patterns(self):
                 for obj, includeAs, patternFunc, namespace, app_name, _ in self:
@@ -677,22 +654,15 @@ class Site(object):
                 
                 # Just replace if there already is a base
                 self.stuff = [locals()[a] for a in args[1:]]
-            
-            def getPath(self, section, path, parentUrl):
-                """Used to get the part of the path defined by the includeAs option"""
+        
+            def pathTo(self, section, steer, path):
+                """Used to get include path to specified section"""
+                
                 inside = False
                 if self.stuff:
-                    parentUrl, path, inside = self.stuff[0].getPath(section, path, parentUrl)
+                    path, inside = self.stuff[0].pathTo(section, steer, path)
                 
-                return parentUrl, path, inside
-        
-            def pathTo(self, section, path):
-                """Used to get include path to specified section"""
-                path = []
-                if self.stuff:
-                    path = self.stuff[0].pathTo(section, path)
-                
-                return path
+                return path, inside
                 
             def patterns(self):
                 for obj, includeAs, patternFunc, namespace, app_name, _ in self:
@@ -829,28 +799,54 @@ class Site(object):
         
         return collected
 
-    def getPath(self, section, path, parentUrl=None):
-        """Used to get the part of the path defined by the includeAs option from self.add"""
-        if not parentUrl:
-            parentUrl = []
+    def getPath(self, section, path):
+        """Return (parentUrl, remainingUrl, isInside) tuple given desired section and actual path"""
         
-        parentUrl, path, inside = self.base.getPath(section, path, parentUrl)
+        parentUrl, inside = self.pathTo(section, steer=path[:])
         if not inside:
-            # Not looking for base, let's look in stuff
-            parentUrl, path, inside = self.info.getPath(section, path, parentUrl)
-            
+            # Section doesn't even belong to the site !
+            return [], path, False
+        
+        for item in parentUrl:
+            if path : path.pop(0)
+        
         return parentUrl, path, inside
 
-    def pathTo(self, section, path=None):
-        """Used to get include path to specified section"""
+    def pathTo(self, section, steer=None, path=None):
+        """Determines url to get to specified section.
+        When a section is added to a site, there is no reference to the site on the section.
+        This is because we may add the section to many sites.
+        Also, when adding to the site we specified what to include the section as, which again isn't on the section.
+        
+        Hence the only way to get this information is to ask the site how to get to this section.
+        
+        Arguments :
+            section = Section we're attempting to find
+            steer = Sections can be included under many names. Steer steers to specific includes 
+                    (will quietly ignore if it's rubbish)
+            path = Path collected so far (pathTo may be called on other sites in the process)
+            
+            Path and steer must both be lists, not strings (so url.split('/'))
+        """
+        
         if not path:
             path = []
             
-        result = self.base.pathTo(section, path)
-        if not result:
-            # Not looking for base, let's look in stuff
-            result = self.info.pathTo(section, path)
-        return result
+        if not steer:
+            steer = []
+        
+        # If we have steer, then perhaps we should look inside stuff first
+        # Otherwise if it's in base as well it will override every time
+        first = self.base.pathTo
+        second = self.info.pathTo
+        if steer:
+            first, second = second, first
+        
+        result, inside = first(section, steer, path)
+        if not inside:
+            result, inside = second(section, steer, path)
+        
+        return result, inside
             
     ########################
     ###   OTHER

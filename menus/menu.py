@@ -21,14 +21,21 @@ class Menu(object):
     def getGlobal(self):
         """Get sections in the site's menu"""
         for section in self.site.menu():
-            path = [p for p in self.remainingUrl]
-            parentUrl = self.site.pathTo(section)
-            parentSelected = all(d == e for (d, e) in zip(parentUrl, path))
-            if parentSelected:
-                for item in parentUrl:
-                    path.pop(0)
+            path = [p.lower() for p in self.remainingUrl]
+            parentUrl, remaining, inside = self.site.getPath(section, path)
             
-            for info in section.getInfo(path, parentUrl, parentSelected):
+            parentSelected = False
+            if inside:
+                if path == []:
+                    parentSelected = True
+                else:
+                    if not parentUrl and section.url and remaining:
+                        if remaining[0] == str(section.url).lower():
+                            parentSelected = True
+                    else:
+                        parentSelected = len(parentUrl) > 0 and all(d == e for (d, e) in zip(parentUrl, path))
+            
+            for info in section.getInfo(remaining, parentUrl, parentSelected):
                 yield self.clean(info)
         
     def heirarchial(self, includeFirst=False):

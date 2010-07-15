@@ -161,7 +161,7 @@ describe 'Menu':
                 ]
                 
             it 'should determine selection properly_1':
-                menu = self.menu(['', 'b', 'bad', '2_'])
+                menu = self.menu(['b', 'bad', '2_'])
                 self.roll(menu.heirarchial(), give=3) | should.equal_to | [
                       [ False
                       , [ False
@@ -183,7 +183,7 @@ describe 'Menu':
                 ]
                 
             it 'should determine selection properly_2':
-                menu = self.menu(['', 'a', 'nice'])
+                menu = self.menu(['a', 'nice'])
                 self.roll(menu.heirarchial(), give=3) | should.equal_to | [
                       [ True
                       , [ True
@@ -246,7 +246,7 @@ describe 'Menu':
                 self.roll(menu.layered(), give=0) | should.equal_to | []
             
             it 'should work on a site object with no base':
-                sect = Section('', 'blah')
+                sect = Section('blah')
                 self.site3.add(sect)
                 
                 menu = Menu(self.site3, [], sect)
@@ -259,7 +259,7 @@ describe 'Menu':
                 ]
                 
             it 'should determine fullUrl properly':
-                menu = self.menu(['', 'b', 'bad', '2_'])
+                menu = self.menu(['b', 'bad', '2_'])
                 self.roll(menu.layered(), give=1) | should.equal_to | [
                       [ ['', 'a'], ['', 'b'], ['', 'c'] ]
                     , [ ['', 'b', 'bad'] ]
@@ -267,7 +267,7 @@ describe 'Menu':
                 ]
                 
             it 'should determine alias properly':
-                menu = self.menu(['', 'b', 'bad', '2_'])
+                menu = self.menu(['b', 'bad', '2_'])
                 self.roll(menu.layered(), give=2) | should.equal_to | [
                       [ 'A', 'B', 'C' ]
                     , [ 'Bad' ]
@@ -275,7 +275,7 @@ describe 'Menu':
                 ]
                 
             it 'should determine selection properly_1':
-                menu = self.menu(['', 'b', 'bad', '2_'])
+                menu = self.menu(['b', 'bad', '2_'])
                 self.roll(menu.layered(), give=3) | should.equal_to | [
                       [ False, True, False ]
                     , [ True ]
@@ -283,7 +283,7 @@ describe 'Menu':
                 ]
                 
             it 'should determine selection properly_2':
-                menu = self.menu(['', 'a', 'nice'])
+                menu = self.menu(['a', 'nice'])
                 self.roll(menu.layered(), give=3) | should.equal_to | [
                       [ True, False, False ]
                     , [ True ]
