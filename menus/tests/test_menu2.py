@@ -51,8 +51,8 @@ describe 'Menu templates':
         self.sect1_blah = self.sect1.add('\w+').base(
                           match = 'blah'
                         , values = Values(
-                            lambda path : ['2', '1', '3']
-                          , lambda path, value : ('_%s' % value, '%s_' % value)
+                            lambda parentUrl, path : ['2', '1', '3']
+                          , lambda parentUrl, path, value : ('_%s' % value, '%s_' % value)
                           , sorter = True
                           )
                         )
@@ -117,6 +117,18 @@ describe 'Menu templates':
     
     it 'should make global menu and be case insensitive':
         menu = Menu(self.site, ['oNe'], self.base)
+        desired = """
+        <ul>
+            <li><a href="/"></a></li>
+            <li class="selected"><a href="/one">One</a></li>
+            <li><a href="/2">two</a></li>
+        </ul>
+        """
+        
+        (menu, 'base', 'getGlobal') | should | render_as(desired)
+    
+    it 'should make global menu when the url is longer than selected section':
+        menu = Menu(self.site, ['one', 'some'], self.base)
         desired = """
         <ul>
             <li><a href="/"></a></li>

@@ -189,7 +189,7 @@ class Section(object):
                 parentUrl = []
                 
             if self.options.values:
-                for alias, url in self.options.values.getInfo(parentUrl + path):
+                for alias, url in self.options.values.getInfo(parentUrl, path):
                     selected, children, fullUrl = get(path, url)
                     yield (self, fullUrl, alias, selected, children, self.options)
             else:
@@ -482,7 +482,7 @@ class Values(object):
         # Not allowed to sort, so just return as is
         return values
         
-    def getValues(self, path, sortWithAlias=None):
+    def getValues(self, parentUrl, path, sortWithAlias=None):
         """Get transformed, sorted values"""
         # If we have values
         if self.values is not None:
@@ -491,7 +491,7 @@ class Values(object):
             
             # Get a list of values
             if callable(self.values):
-                values = list(value for value in self.values(path))
+                values = list(value for value in self.values(parentUrl, path))
             else:
                 values = self.values
             
@@ -505,20 +505,20 @@ class Values(object):
                 
             # Tranform if we can
             if self.each and callable(self.each):
-                ret = [self.each(path, value) for value in values]
+                ret = [self.each(parentUrl, path, value) for value in values]
             else:
                 ret = [(value, value) for value in values]
                 
             # Sort if we haven't yet
             if sortWithAlias:
                 ret = self.sort(ret)
-                
+            
             return ret
         
-    def getInfo(self, path):
+    def getInfo(self, parentUrl, path):
         """Generator for (alias, url) pairs for each value"""
         # Get sorted values
-        values = self.getValues(path)
+        values = self.getValues(parentUrl, path)
             
         # Yield some information
         if values and any(v is not None for v in values):

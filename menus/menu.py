@@ -20,21 +20,30 @@ class Menu(object):
     
     def getGlobal(self):
         """Get sections in the site's menu"""
+        
+        path = [p.lower() for p in self.remainingUrl]
+        
         for section in self.site.menu():
-            path = [p.lower() for p in self.remainingUrl]
-            parentUrl, remaining, inside = self.site.getPath(section, path)
+            parentUrl, remaining, inside = self.site.getPath(section, path[:])
             
             parentSelected = False
             if inside:
-                if path == []:
+                if path == [] and not parentUrl:
                     parentSelected = True
+
                 else:
                     if not parentUrl and section.url and remaining:
                         if remaining[0] == str(section.url).lower():
                             parentSelected = True
+
+                    elif path == parentUrl:
+                        parentSelected = True
+
                     else:
-                        parentSelected = len(parentUrl) > 0 and all(d == e for (d, e) in zip(parentUrl, path))
-            
+                        zipped = zip(parentUrl, path)
+                        if zipped:
+                            parentSelected = len(parentUrl) > 0 and all(d == e for (d, e) in zipped)
+
             for info in section.getInfo(remaining, parentUrl, parentSelected):
                 yield self.clean(info)
         
@@ -47,10 +56,8 @@ class Menu(object):
             
             if not includeFirst:
                 section = self.selectedSection
-                if not section.options.showBase:
-                    if section.url:
-                        parentUrl.append(section.url)
-                        
+                if section.url:
+                    parentUrl.append(section.url)
                     selected, path = section.determineSelection(path, parentSelected)
                     parentSelected = parentSelected and selected
                     
@@ -92,10 +99,8 @@ class Menu(object):
             if not includeFirst:
                 parentUrl, path, _ = self.site.getPath(self.selectedSection.rootAncestor(), path)
                 section = self.selectedSection
-                if not section.options.showBase:
-                    if section.url:
-                        parentUrl.append(section.url)
-                        
+                if section.url:
+                    parentUrl.append(section.url)
                     selected, path = section.determineSelection(path, parentSelected)
                     parentSelected = parentSelected and selected
                 

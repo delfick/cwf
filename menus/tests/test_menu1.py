@@ -21,6 +21,128 @@ describe 'Menu':
         self.sect3_1 = self.sect3.add('hello')
         self.sect3_1_1 = self.sect3_1.add('there')
         
+        def getGiving(part, give):
+            section, fullUrl, alias, selected, children, options = part
+            if give is None:
+                giving = (section, fullUrl, alias, selected)
+                
+            else:
+                giving = []
+                useTuple = True
+                if type(give) is int:
+                    useTuple = False
+                    give = [give]
+                    
+                for p in give:
+                    giving.append(part[p])
+                
+                if useTuple:
+                    giving = tuple(giving)
+                else:
+                    giving = giving[0]
+            
+            return giving, children
+            
+        def layeredRoll(gen, give=None):
+            parts = []
+            if callable(gen):
+                gen = gen()
+            
+            for part in gen:
+                next = []
+                for info in part:
+                    giving, _ = getGiving(info, give)
+                    next.append(giving)
+                    
+                parts.append(next)
+            
+            return parts
+        
+        def heirarchialRoll(gen, give=None):
+            parts = []
+            if callable(gen):
+                gen = gen()
+              
+            for part in gen:
+                giving, children = getGiving(part, give)
+                childParts = heirarchialRoll(children, give)
+                parts.append([giving] + childParts)
+            
+            return parts
+    
+        self.layeredRoll = layeredRoll
+        self.heirarchialRoll = heirarchialRoll
+    
+    describe 'values':
+        before_each:
+            self.site1.add(self.sect3)
+            
+            self.sect3_1_1_1 = self.sect3_1_1.add('\d+').base(''
+                , values = Values(
+                    lambda parentUrl, path : parentUrl[1:] + ['asdf'] + path
+                  , lambda parentUrl, path, value : ('%s%s' % (parentUrl[-1], value), value)
+                  , asSet=False
+                  )
+                )
+        
+        describe 'heirarchially':
+            it 'should give values function parenturl and path':
+                menu = Menu(self.site1, ['c', 'hello', 'there'], self.sect3)
+                self.heirarchialRoll(menu.heirarchial(), give=[0, 2, 1]) | should.equal_to | [
+                    [ (self.sect3_1, 'Hello', ['', 'c', 'hello'])
+                    , [ (self.sect3_1_1, 'There', ['', 'c', 'hello', 'there']) 
+                      , [ (self.sect3_1_1_1, 'therec', ['', 'c', 'hello', 'there', 'c']) ]
+                      , [ (self.sect3_1_1_1, 'therehello', ['', 'c', 'hello', 'there', 'hello']) ]
+                      , [ (self.sect3_1_1_1, 'therethere', ['', 'c', 'hello', 'there', 'there']) ]
+                      , [ (self.sect3_1_1_1, 'thereasdf', ['', 'c', 'hello', 'there', 'asdf']) ]
+                      ]
+                    ]
+                ]
+                
+            it 'should give values function parenturl and path':
+                menu = Menu(self.site1, ['c', 'hello', 'there', 'blah', 'meh'], self.sect3)
+                self.heirarchialRoll(menu.heirarchial(), give=[0, 2, 1]) | should.equal_to | [
+                    [ (self.sect3_1, 'Hello', ['', 'c', 'hello'])
+                    , [ (self.sect3_1_1, 'There', ['', 'c', 'hello', 'there']) 
+                      , [ (self.sect3_1_1_1, 'therec', ['', 'c', 'hello', 'there', 'c']) ]
+                      , [ (self.sect3_1_1_1, 'therehello', ['', 'c', 'hello', 'there', 'hello']) ]
+                      , [ (self.sect3_1_1_1, 'therethere', ['', 'c', 'hello', 'there', 'there']) ]
+                      , [ (self.sect3_1_1_1, 'thereasdf', ['', 'c', 'hello', 'there', 'asdf']) ]
+                      , [ (self.sect3_1_1_1, 'thereblah', ['', 'c', 'hello', 'there', 'blah']) ]
+                      , [ (self.sect3_1_1_1, 'theremeh', ['', 'c', 'hello', 'there', 'meh']) ]
+                      ]
+                    ]
+                ]
+        
+        describe 'layered':
+            it 'should give values function parenturl and path':
+                menu = Menu(self.site1, ['c', 'hello', 'there'], self.sect3)
+                self.layeredRoll(menu.layered(), give=[0, 2, 1]) | should.equal_to | [
+                      [ (self.sect3_1, 'Hello', ['', 'c', 'hello']) ]
+                    , [ (self.sect3_1_1, 'There', ['', 'c', 'hello', 'there']) ]
+                    , [ 
+                        (self.sect3_1_1_1, 'therec', ['', 'c', 'hello', 'there', 'c'])
+                      , (self.sect3_1_1_1, 'therehello', ['', 'c', 'hello', 'there', 'hello'])
+                      , (self.sect3_1_1_1, 'therethere', ['', 'c', 'hello', 'there', 'there'])
+                      , (self.sect3_1_1_1, 'thereasdf', ['', 'c', 'hello', 'there', 'asdf'])
+                      ]
+                    ]
+                
+            it 'should give values function parenturl and path':
+                menu = Menu(self.site1, ['c', 'hello', 'there', 'blah', 'meh'], self.sect3)
+                self.layeredRoll(menu.layered(), give=[0, 2, 1]) | should.equal_to | [
+                      [ (self.sect3_1, 'Hello', ['', 'c', 'hello']) ]
+                    , [ (self.sect3_1_1, 'There', ['', 'c', 'hello', 'there']) ]
+                    , [ 
+                        (self.sect3_1_1_1, 'therec', ['', 'c', 'hello', 'there', 'c'])
+                      , (self.sect3_1_1_1, 'therehello', ['', 'c', 'hello', 'there', 'hello'])
+                      , (self.sect3_1_1_1, 'therethere', ['', 'c', 'hello', 'there', 'there'])
+                      , (self.sect3_1_1_1, 'thereasdf', ['', 'c', 'hello', 'there', 'asdf'])
+                      , (self.sect3_1_1_1, 'thereblah', ['', 'c', 'hello', 'there', 'blah'])
+                      , (self.sect3_1_1_1, 'theremeh', ['', 'c', 'hello', 'there', 'meh'])
+                      ]
+                    ]
+            
     describe 'Global menu':
         it 'should give an empty list if no sections':
             menu = Menu(self.site1, [''])
@@ -50,33 +172,14 @@ describe 'Menu':
             
         describe '___heirarchial':
             before_each:
-                def roll(gen, give=None):
-                    parts = []
-                    if callable(gen):
-                        gen = gen()
-                      
-                    for part in gen:
-                        section, fullUrl, alias, selected, children, options = part
-                        
-                        if give is not None:
-                            giving = part[give]
-                        else:
-                            giving = (section, fullUrl, alias, selected)
-                            
-                        childParts = roll(children, give)
-                        
-                        parts.append([giving] + childParts)
-                    
-                    return parts
-            
-                self.roll = roll
+                self.roll = self.heirarchialRoll
                 
                 base = self.site1.makeBase().base(showBase=False)
                 base.adopt(self.sect1, self.sect2, self.sect3)
                 
                 self.sect2_1_1.base(
                     values = Values( ['1', '2', '3']
-                                   , lambda path, value : ('_%s' % value, '%s_' % value)
+                                   , lambda parentUrl, path, value : ('_%s' % value, '%s_' % value)
                                    , asSet=False
                                    )
                 )
@@ -206,35 +309,14 @@ describe 'Menu':
             
         describe '___layered':
             before_each:
-                def roll(gen, give=None):
-                    parts = []
-                    if callable(gen):
-                        gen = gen()
-                    
-                    for part in gen:
-                        next = []
-                        for info in part:
-                            section, fullUrl, alias, selected, children, options = info
-                            
-                            if give is not None:
-                                giving = info[give]
-                            else:
-                                giving = (section, fullUrl, alias, selected)
-                                
-                            next.append(giving)
-                            
-                        parts.append(next)
-                    
-                    return parts
-            
-                self.roll = roll
+                self.roll = self.layeredRoll
                 
                 base = self.site1.makeBase().base(showBase=False)
                 base.adopt(self.sect1, self.sect2, self.sect3)
                 
                 self.sect2_1_1.base(
                     values = Values( ['1', '2', '3']
-                                   , lambda path, value : ('_%s' % value, '%s_' % value)
+                                   , lambda parentUrl, path, value : ('_%s' % value, '%s_' % value)
                                    , asSet=False
                                    )
                 )

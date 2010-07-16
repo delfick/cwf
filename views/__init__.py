@@ -93,8 +93,15 @@ class View(object):
                        , site    = site
                        )
             
-        path = regexes['multiSlash'].sub('/', request.path)
+        path = request.path
+        if path.startswith('/'):
+            path = path[1:]
+        
+        if path:
+            path = regexes['multiSlash'].sub('/', request.path)
+            
         path = [p.lower() for p in path.split('/')]
+        
         if path[0] == '':
             path.pop(0)
         
