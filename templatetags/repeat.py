@@ -32,14 +32,15 @@ def repeat(parser, token):
         
     return repeatNode(menu, template)
 
-class WithULNode(Node):
-    def __init__(self, nodelist):
+class WithWrapNode(Node):
+    def __init__(self, nodelist, wrapWith):
         self.nodelist = nodelist
+        self.wrapWith = wrapWith
         
     def render(self, context):
         output = self.nodelist.render(context)
         if not output.isspace():
-            return "<ul>\n%s\n</ul>" % output
+            return "<%s>\n%s\n</%s>" % (self.wrapWith, output, self.wrapWith)
         
         return ''
 
@@ -47,4 +48,10 @@ class WithULNode(Node):
 def withul(parser, token):
     nodelist = parser.parse(('endwithul',))
     parser.delete_first_token()
-    return WithULNode(nodelist)
+    return WithWrapNode(nodelist, 'ul')
+
+@register.tag
+def withli(parser, token):
+    nodelist = parser.parse(('endwithli',))
+    parser.delete_first_token()
+    return WithWrapNode(nodelist, 'li')
