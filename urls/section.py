@@ -541,6 +541,9 @@ class Site(object):
         class Info(object):
             """Object that helps keep track of the sections and sites this site includes"""
             def __init__(self):
+                self.reset()
+                
+            def reset(self):
                 self.stuff = {}
                 self.order = 1
             
@@ -628,6 +631,9 @@ class Site(object):
             The base is the section or site that has a urlpattern of '^'
             There should only be one of this"""
             def __init__(self):
+                self.reset()
+                
+            def reset(self):
                 self.stuff = []
                 
             def __iter__(self):
@@ -851,6 +857,10 @@ class Site(object):
     ########################
     ###   OTHER
     ########################
-
+    
+    def reset(self):
+        self.base.reset()
+        self.info.reset()
+        
     def __repr__(self):
         return '<CWF SITE : %s>' % self.name

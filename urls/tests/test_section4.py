@@ -38,6 +38,16 @@ describe 'Site':
         self.checkLengths = checkLengths
         self.lookAtPatterns = lookAtPatterns
     
+    it 'should be possible to reset a site':
+        site = Site('test')
+        base = site.makeBase()
+        site.add(Section('blah'))
+        site.add(Section('meh'))
+        self.checkLengths(site, base=1, info=2, menu=2)
+        
+        site.reset()
+        self.checkLengths(site, base=0, info=0, menu=0)
+        
     it 'should be possible to make a base section':
         base = self.site.makeBase()
         base.url | should.equal_to | ''
