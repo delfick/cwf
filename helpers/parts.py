@@ -1,4 +1,4 @@
-from cwf_new.urls.section import Site
+from cwf.urls.section import Site
         
 ########################
 ###

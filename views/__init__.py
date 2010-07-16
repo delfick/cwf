@@ -9,7 +9,7 @@ from django.utils import simplejson
 from django.conf import settings
 from datetime import datetime
 
-from cwf_new.menus import Menu
+from cwf.menus import Menu
 
 import re
 

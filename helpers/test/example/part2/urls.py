@@ -1,4 +1,4 @@
-from cwf_new.urls import init
+from cwf.urls import init
 
 section = init(__package__)
 

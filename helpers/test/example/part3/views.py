@@ -1,4 +1,4 @@
-from cwf_new.views import View
+from cwf.views import View
 
 class views(View):
     def base(self, request):

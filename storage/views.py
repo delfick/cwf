@@ -1,5 +1,5 @@
-from cwf_new.views import StaffView
-from cwf_new.storage import Xml
+from cwf.views import StaffView
+from cwf.storage import Xml
 
 class FinderView(StaffView):
     def can(self, request, needsSuperUser):

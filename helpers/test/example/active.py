@@ -1,4 +1,4 @@
-from cwf_new.helpers import Parts, P
+from cwf.helpers import Parts, P
 
 parts = Parts(
         __package__, globals(), locals()
