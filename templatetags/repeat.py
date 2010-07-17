@@ -1,25 +1,31 @@
 from django.template import Library, Node, loader, resolve_variable, TemplateSyntaxError
+from django.template import Variable, VariableDoesNotExist
 from django.template.context import Context
 
 register = Library()
 
 class repeatNode(Node):
     def __init__(self, gen, template):
-        self.gen      = gen
+        self.gen      = Variable(gen)
         self.template = template
 
     def render(self, context):
+        gen = context.get('gen', None)
         if self.gen:
-            gen = resolve_variable(self.gen, context)
-        else:
-            gen = context.get('gen', None)
+            try:
+                gen = self.gen.resolve(context)
+            except VariableDoesNotExist:
+                pass
+
+        if gen:
+            if callable(gen):
+                gen = gen()
+            
+            t = loader.get_template(self.template.replace('"', '').replace("'", ''))
+            c = Context({'gen' : gen})
+            return t.render(c)
         
-        if callable(gen):
-            gen = gen()
-        
-        t = loader.get_template(self.template.replace('"', '').replace("'", ''))
-        c = Context({'gen' : gen})
-        return t.render(c)
+        return ''
 
 @register.tag
 def repeat(parser, token):
