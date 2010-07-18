@@ -79,8 +79,8 @@ describe 'Menu':
             
             self.sect3_1_1_1 = self.sect3_1_1.add('\d+').base(''
                 , values = Values(
-                    lambda parentUrl, path : parentUrl[1:] + ['asdf'] + path
-                  , lambda parentUrl, path, value : ('%s%s' % (parentUrl[-1], value), value)
+                    lambda (r, pu, p) : pu[1:] + ['asdf'] + p
+                  , lambda (r, pu, p), value : ('%s%s' % (pu[-1], value), value)
                   , asSet=False
                   )
                 )
@@ -179,7 +179,7 @@ describe 'Menu':
                 
                 self.sect2_1_1.base(
                     values = Values( ['1', '2', '3']
-                                   , lambda parentUrl, path, value : ('_%s' % value, '%s_' % value)
+                                   , lambda (r, pu, p), value : ('_%s' % value, '%s_' % value)
                                    , asSet=False
                                    )
                 )
@@ -316,7 +316,7 @@ describe 'Menu':
                 
                 self.sect2_1_1.base(
                     values = Values( ['1', '2', '3']
-                                   , lambda parentUrl, path, value : ('_%s' % value, '%s_' % value)
+                                   , lambda (r, pu, p), value : ('_%s' % value, '%s_' % value)
                                    , asSet=False
                                    )
                 )

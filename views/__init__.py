@@ -109,7 +109,7 @@ class View(object):
             path.pop(0)
         
         if section:
-            state.menu = Menu(site, path, section.rootAncestor())
+            state.menu = Menu(site, path, section.rootAncestor(), request=request)
         
         return state
     
@@ -170,6 +170,10 @@ class View(object):
             File, extra = result
         else:
             return result
+        
+        # If File is None, assume extra is a HttpResponse
+        if File is None:
+            return extra
         
         # Add extra varaibles to state object
         state = self.updateState(request, request.state, extra)

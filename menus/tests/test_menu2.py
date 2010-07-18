@@ -51,8 +51,8 @@ describe 'Menu templates':
         self.sect1_blah = self.sect1.add('\w+').base(
                           match = 'blah'
                         , values = Values(
-                            lambda parentUrl, path : ['2', '1', '3']
-                          , lambda parentUrl, path, value : ('_%s' % value, '%s_' % value)
+                            lambda (r, pu, p) : ['2', '1', '3']
+                          , lambda (r, pu, p), value : ('_%s' % value, '%s_' % value)
                           , sorter = True
                           )
                         )

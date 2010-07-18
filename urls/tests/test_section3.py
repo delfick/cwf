@@ -94,9 +94,9 @@ describe 'Sections':
     
     describe 'info':
         before_each:
-            def gen(children, restOfPath, parentUrl, parentSelected):
+            def gen(children, restOfPath, parentUrl, parentSelected, request=None):
                 for child in children:
-                    for part in child.getInfo(restOfPath, parentUrl, parentSelected, gen=gen):
+                    for part in child.getInfo(restOfPath, parentUrl, parentSelected, gen=gen, request=request):
                         yield part
                         
             def goThrough(gen, *expected):

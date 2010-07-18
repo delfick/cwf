@@ -151,7 +151,7 @@ class Section(object):
             
         return display and self.show()
     
-    def getInfo(self, path, parentUrl=None, parentSelected=True, gen=None):
+    def getInfo(self, path, parentUrl=None, parentSelected=True, gen=None, request=None):
         if self.options.active:
             def get(path, url=None):
                 """Helper to get children, fullUrl and determine if selected"""
@@ -177,7 +177,7 @@ class Section(object):
                     if gen:
                         # Make it a lambda, so that template can remake the generator
                         # Generator determines how to deliver info about the children
-                        children = lambda : gen(self.children, path, fullUrl, selected)
+                        children = lambda : gen(self.children, path, fullUrl, selected, request=request)
                 
                 # We want absolute paths
                 if fullUrl and fullUrl[0] != '':
@@ -189,7 +189,7 @@ class Section(object):
                 parentUrl = []
                 
             if self.options.values:
-                for alias, url in self.options.values.getInfo(parentUrl, path):
+                for alias, url in self.options.values.getInfo(parentUrl, path, request=request):
                     selected, children, fullUrl = get(path, url)
                     yield (self, fullUrl, alias, selected, children, self.options)
             else:
@@ -482,7 +482,7 @@ class Values(object):
         # Not allowed to sort, so just return as is
         return values
         
-    def getValues(self, parentUrl, path, sortWithAlias=None):
+    def getValues(self, parentUrl, path, sortWithAlias=None, request=None):
         """Get transformed, sorted values"""
         # If we have values
         if self.values is not None:
@@ -491,7 +491,7 @@ class Values(object):
             
             # Get a list of values
             if callable(self.values):
-                values = list(value for value in self.values(parentUrl, path))
+                values = list(value for value in self.values((request, parentUrl, path)))
             else:
                 values = self.values
             
@@ -505,7 +505,7 @@ class Values(object):
                 
             # Tranform if we can
             if self.each and callable(self.each):
-                ret = [self.each(parentUrl, path, value) for value in values]
+                ret = [self.each((request, parentUrl, path), value) for value in values]
             else:
                 ret = [(value, value) for value in values]
                 
@@ -515,10 +515,10 @@ class Values(object):
             
             return ret
         
-    def getInfo(self, parentUrl, path):
+    def getInfo(self, parentUrl, path, request=None):
         """Generator for (alias, url) pairs for each value"""
         # Get sorted values
-        values = self.getValues(parentUrl, path)
+        values = self.getValues(parentUrl, path, request=request)
             
         # Yield some information
         if values and any(v is not None for v in values):
