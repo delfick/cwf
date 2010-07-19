@@ -135,7 +135,7 @@ class Menu(object):
         """Function to get next layer for a section"""
         for section in sections:
             if section.options.showBase:
-                for info in section.getInfo(path, parentUrl, parentSelected, self.getLayer, request=None):
+                for info in section.getInfo(path, parentUrl, parentSelected, self.getLayer, request=request):
                     yield info
             else:
                 if section.url:

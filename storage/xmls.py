@@ -247,6 +247,9 @@ class Xml(object):
                         except TypeError:
                             pass
                 
+                if not use:
+                    created = True
+                    
                 if not next:
                     next = model()
                         
@@ -321,7 +324,11 @@ class Xml(object):
             #######################################################
             # create query again incase any objects have been added
             
-            query = model.objects.filter(**identity)
+            if identity:
+                query = model.objects.filter(**identity)
+            else:
+                query = model.objects.all()
+                
             if oneOnly:
                 length = 1
             else:
@@ -344,7 +351,10 @@ class Xml(object):
                 if not oneOnly:
                     for item in xmlPass:
                         if active and active(item) or not active:
-                            yield item, query[count]
+                            if len(query) > count:
+                                yield item, query[count]
+                            else:
+                                yield item, model.objects.create(**identity)
                             count += 1
                         else:
                             yield item, None
