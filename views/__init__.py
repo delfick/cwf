@@ -128,9 +128,9 @@ class View(object):
         
         return state
     
-    def getResult(self, state, target, *args, **kwargs):
+    def getResult(self, request, target, *args, **kwargs):
         """Used to determine what function to call, and actually call it."""
-        return getattr(self, target)(state, *args, **kwargs)
+        return getattr(self, target)(request, *args, **kwargs)
     
     def __call__(self, request, target, section, site=None, *args, **kwargs):
         """Called by dispatch and determines what to call, calls it, creates template and renders it."""

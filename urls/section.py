@@ -307,11 +307,12 @@ class Options(object):
         ):
             
         #set everything passed in to a self.xxx attribute
-        import inspect
-        args, _, _, _ = inspect.getargvalues(inspect.currentframe())
-        for arg in args:
-            if arg != 'kwargs':
-                setattr(self, arg, locals()[arg])
+        local = locals()
+        args = []
+        for arg in local:
+            if arg not in ('self', 'kwargs'):
+                args.append(arg)
+                setattr(self, arg, local[arg])
         
         self._obj = None
         
@@ -460,10 +461,9 @@ class Values(object):
         ):
             
         #set everything passed in to a self.xxx attribute
-        import inspect
-        args, _, _, _ = inspect.getargvalues(inspect.currentframe())
-        for arg in args:
-            setattr(self, arg, locals()[arg])
+        local = locals()
+        for arg in local:
+            setattr(self, arg, local[arg])
         
         if not values:
             self.values = []
@@ -654,12 +654,8 @@ class Site(object):
                     return 0
             
             def add(self, obj, includeAs, patternFunc, namespace=None, app_name=None, menu=None):
-                #set everything passed in to a self.xxx attribute
-                import inspect
-                args, _, _, _ = inspect.getargvalues(inspect.currentframe())
-                
                 # Just replace if there already is a base
-                self.stuff = [locals()[a] for a in args[1:]]
+                self.stuff = [obj, includeAs, patternFunc, namespace, app_name, menu]
         
             def pathTo(self, section, steer, path):
                 """Used to get include path to specified section"""
