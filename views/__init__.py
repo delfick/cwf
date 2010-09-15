@@ -210,8 +210,13 @@ class View(object):
         """Get's address used by redirect"""
         address = unicode(address)
         
+        if hasattr(request, 'state'):
+            baseUrl = request.state.baseUrl
+        else:
+            baseUrl = request.META.get('SCRIPT_NAME', '')
+            
         if address[0] == '/':
-            address = '%s%s' % (request.state.baseUrl, address)
+            address = '%s%s' % (baseUrl, address)
         
         elif relative:
             address = "%s/%s" % (request.path, address)
