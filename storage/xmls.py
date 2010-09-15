@@ -205,9 +205,22 @@ class Xml(object):
                 
                 countdown = len(xmlPass) - len(everything)
                 if countdown > 0:
-                    for _ in range(countdown):
-                        xmlPass[count].getparent().remove(xmlPass[count])
-                        count += 1
+                    if numberedAttr:
+                        everythingNums = [getattr(t, numberedAttr) for t in everything]
+                        xmlPassNums = [int(t.get(numberedAttr)) for t in xmlPass]
+
+                        indexesToDelete = []
+                        for index, num in enumerate(xmlPassNums):
+                            if num not in everythingNums:
+                                indexesToDelete.append(index)
+                                
+                        indexesToDelete.reverse()
+                        for index in indexesToDelete:
+                            xmlPass[index].getparent().remove(xmlPass[index])
+                    else:
+                        for _ in range(countdown):
+                            xmlPass[count].getparent().remove(xmlPass[count])
+                            count += 1
                         
                     xml.save()
             
@@ -448,7 +461,7 @@ class Xml(object):
     
     def getInt(self, section, attr, default=None):
         result = section.get(attr, default)
-        if result.isdigit():
+        if result and result.isdigit():
             return int(result)
         else:
             return default
