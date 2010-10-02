@@ -22,7 +22,8 @@ class repeatNode(Node):
                 gen = gen()
             
             t = loader.get_template(self.template.replace('"', '').replace("'", ''))
-            c = Context({'gen' : gen})
+            context['gen'] = gen
+            c = Context(context)
             return t.render(c)
         
         return ''
