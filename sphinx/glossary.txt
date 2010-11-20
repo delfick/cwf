@@ -1,0 +1,11 @@
+.. _glossary:
+
+========
+Glossary
+========
+
+.. glossary::
+    
+    Recursion
+        See :term:`recursion`.
+    

@@ -3,3 +3,4 @@ syntax:glob
 *~
 messages.log
 docs/**
+sphinx/_build/**
