@@ -4,7 +4,6 @@
 .. toctree::
    :hidden:
    
-   intro/index
    topics/index
    glossary
    
@@ -14,13 +13,18 @@ Cwf
 
 Cwf is a utility layer that sits on top of Django. It attempts to make it easier to create the urlpatterns, views and html for a menuing system.
 
-Getting Started
-===============
-    
-    * :doc:`Installation <intro/install>`
+To use cwf, it must be inside your pythonPath and you need ``cwf`` inside your ``settings.INSTALLED_APPS`` setting.
+
+Read below to see what you can then achieve using this libary.
 
 Topics
 ===============
+
+* :doc:`About <topics/about>`
+* Creating urls
+* Creating views
+* Generating the menu
+* Making many apps behave as one
     
 Index and glossary
 ============================

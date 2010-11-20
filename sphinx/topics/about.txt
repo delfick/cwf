@@ -1,0 +1,18 @@
+.. _about:
+
+About The library
+=================
+
+About Me
+--------
+
+Hi!
+
+As of 2010, I'm a 21 year old student engineer at Curtin University of Western Australia doing a bachelor of Engineering in Software Engineering. I'm mostly a python programmer, however I've dabbled in Actionscript, JavaScript and a bit of C and Java. Towards the end of 2008, I started to re-make the site for the engineers club at university and I decided to do it using Django. At this time I didn't know much python, had never touched django and didn't know much about making anything more than a basic html website. 
+
+Through making this site over the past year, I've learnt a lot about python, django, making websites; and in the process created this library to do quite a few things for me. Whilst I'm sure most of it goes against a few django conventions, but it may be helpful to others, so I've opensourced it.
+
+About the name
+--------------
+
+Cwf literally doesn't stand for anything or have any meaning. It's just three letters that happen to be very close to each other on the keyboard. If anyone thinks of an actual name, please suggest it :p
