@@ -289,7 +289,7 @@ class Options(object):
         
         , kls    = None    # The view class. Can be an actual class, which will override module, or a string
         , module = None    # Determines module that view class should exist in. Can be string or actual module
-        , target = 'base'  # Name of the function to call
+        , target = None    # Name of the function to call
         
         , redirect = None  # Overrides module, kls and target
         
@@ -432,8 +432,10 @@ class Options(object):
                     # There is no kls
                     # So, bypass the dispatcher
                     obj = self.getObj()
-                    if target:
+                    if obj and target:
                         obj = '%s.%s' % (obj, target)
+                    elif target and not obj:
+                        obj = target
                     yield (pattern, obj, self.extraContext, name)
                 else:
                     view = dispatch

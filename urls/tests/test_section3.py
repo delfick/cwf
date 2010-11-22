@@ -270,7 +270,7 @@ describe 'Sections':
             self.sect.options | should.be_kind_of | Options
         
         it 'should extend the sections options object upon calling base':
-            self.sect.options.target | should.equal_to | 'base'
+            self.sect.options.target = 'base'
             
             self.sect.base(target='t')
             self.sect.options.target | should.equal_to | 't'

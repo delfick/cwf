@@ -153,6 +153,11 @@ describe 'cwf Options':
                 for thing in o.urlPattern(''):
                     thing[1] | should.be | aFunction
             
+            it 'should bypass dispatcher if target is string and both module and kls not defined':
+                o = self.opts.clone(kls=None, module=None, target='django.views.generic.simple.direct_to_template')
+                for thing in o.urlPattern(''):
+                    thing[1] | should.equal_to | 'django.views.generic.simple.direct_to_template'
+            
             it 'should bypass dispatcher if no kls is defined':
                 o = self.opts.clone(kls=None, module='django.views.generic.simple', target='direct_to_template')
                 for thing in o.urlPattern(''):
