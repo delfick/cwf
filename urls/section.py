@@ -80,29 +80,22 @@ class Section(object):
     ###   SPECIAL
     ########################
     
-    def __getattr__(self, key):
-        if key == 'options':
-            # Always want to have an options object
-            # To avoid creating one unecessarily, we lazily create it
-            current = object.__getattribute__(self, '_options')
-            if not current:
-                opts = Options()
-                self._options = opts
-                return opts
-            else:
-                return current
-        
-        return object.__getattribute__(self, key)
-    
-    def __setattr__(self, key, value):
-        if key == 'options':
-            # So I don't need a try..except in __getattr__, I put options under self._options
-            # This is so I can have self._options = None in __init__
-            # If I have self.options = None in __init__, __getattr__ is never called for self.options
-            self._options = value
-        
+    def _get_options(self):
+        current = self._options
+        if not current:
+            opts = Options()
+            self._options = opts
+            return opts
         else:
-            super(Section, self).__setattr__(key, value)
+            return current
+    
+    def _set_options(self, value):
+        self._options = value
+    
+    options = property(_get_options, _set_options, None,
+    """ Always want to have an options object
+        To avoid creating one unecessarily, we lazily create it
+    """)
             
     def __iter__(self):
         """Return self followed by all children"""
@@ -294,7 +287,7 @@ class Options(object):
         , match    = None  # says what to match this part of the url as or if at all
         , values   = None  # Values object determining possible values for this section
         
-        , kls    = "views" # The view class. Can be an actual class, which will override module, or a string
+        , kls    = None    # The view class. Can be an actual class, which will override module, or a string
         , module = None    # Determines module that view class should exist in. Can be string or actual module
         , target = 'base'  # Name of the function to call
         
@@ -355,7 +348,7 @@ class Options(object):
             obj = self.kls
         
         else:
-            # Remove any dots at begninning and end of kls string
+            # Remove any dots at beginning and end of kls string
             kls = self.kls
             if self.kls is None:
                 kls = ''
@@ -377,12 +370,14 @@ class Options(object):
             if type(self.module) in (str, unicode):
                 # Both module and kls are strings, just return a string
                 obj = self.module
-                obj = '%s.%s' % (self.module, self.kls)
+                if kls:
+                    obj = '%s.%s' % (self.module, kls)
             
             else:
                 obj = self.module
-                for next in kls.split('.'):
-                    obj = getattr(obj, next)
+                if kls:
+                    for next in kls.split('.'):
+                        obj = getattr(obj, next)
         
         return obj
     
@@ -431,8 +426,15 @@ class Options(object):
                 
                 if type(target) is FunctionType:
                     # Target is callable and not part of a class
-                    # So bypass the dispatcher
+                    # So, bypass the dispatcher
                     yield (pattern, target, self.extraContext, name)
+                elif not self.kls:
+                    # There is no kls
+                    # So, bypass the dispatcher
+                    obj = self.getObj()
+                    if target:
+                        obj = '%s.%s' % (obj, target)
+                    yield (pattern, obj, self.extraContext, name)
                 else:
                     view = dispatch
                         

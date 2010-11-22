@@ -83,7 +83,7 @@ describe 'cwf Options':
     
     describe 'getting url pattern':
         before_each:
-            self.opts = Options(target='t')
+            self.opts = Options(target='t', kls='views')
                 
         it 'should return a tuple with four items':
             for thing in self.opts.urlPattern(''):
@@ -147,11 +147,16 @@ describe 'cwf Options':
                 ):
                     redirect | should_not.be | redirect_to
             
-            it 'should use bypass dispatcher if target is not a method':
+            it 'should bypass dispatcher if target is not a method':
                 def aFunction(): pass
                 o = self.opts.clone(target=aFunction)
                 for thing in o.urlPattern(''):
                     thing[1] | should.be | aFunction
+            
+            it 'should bypass dispatcher if no kls is defined':
+                o = self.opts.clone(kls=None, module='django.views.generic.simple', target='direct_to_template')
+                for thing in o.urlPattern(''):
+                    thing[1] | should.equal_to | 'django.views.generic.simple.direct_to_template'
                 
             it 'should not bypass dispatcher if target is a method':
                 class test(object):
