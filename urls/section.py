@@ -424,30 +424,34 @@ class Options(object):
             else:
                 target = self.target
                 
-                if type(target) is FunctionType:
-                    # Target is callable and not part of a class
-                    # So, bypass the dispatcher
-                    yield (pattern, target, self.extraContext, name)
-                elif not self.kls:
-                    # There is no kls
-                    # So, bypass the dispatcher
-                    obj = self.getObj()
-                    if obj and target:
-                        obj = '%s.%s' % (obj, target)
-                    elif target and not obj:
-                        obj = target
-                    yield (pattern, obj, self.extraContext, name)
-                else:
-                    view = dispatch
+                if target:
+                    if type(target) is FunctionType:
+                        # Target is callable and not part of a class
+                        # So, bypass the dispatcher
+                        yield (pattern, target, self.extraContext, name)
+                    elif not self.kls:
+                        # There is no kls
+                        # So, bypass the dispatcher
+                        obj = self.getObj()
+                        if obj and target:
+                            obj = '%s.%s' % (obj, target)
+                        elif target and not obj:
+                            obj = target
+                        yield (pattern, obj, self.extraContext, name)
+                    else:
+                        view = dispatch
+                            
+                        kwargs = {
+                            'obj' : self.getObj(), 
+                            'target' : target, 
+                            'section' : section, 
+                            'condition' : lambda : not self.show()
+                        }
                         
-                    kwargs = {
-                        'obj' : self.getObj(), 'target' : target, 'section' : section, 'condition' : lambda : not self.show()
-                    }
-                    
-                    if self.extraContext:
-                        kwargs.update(self.extraContext)
-                        
-                    yield (pattern, view, kwargs, name)
+                        if self.extraContext:
+                            kwargs.update(self.extraContext)
+                            
+                        yield (pattern, view, kwargs, name)
             
 ########################
 ###

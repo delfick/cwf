@@ -147,6 +147,19 @@ describe 'cwf Options':
                 ):
                     redirect | should_not.be | redirect_to
             
+            it 'should not create a urlpattern if there is no target defined':
+                o = self.opts.clone(target=None, module='blah', kls='meh')
+                list(o.urlPattern('')) | should | have(0).patterns
+                
+                o = self.opts.clone(target=None, module='blah', kls=None)
+                list(o.urlPattern('')) | should | have(0).patterns
+                
+                o = self.opts.clone(target=None, module=None, kls='meh')
+                list(o.urlPattern('')) | should | have(0).patterns
+                
+                o = self.opts.clone(target=None, module=None, kls=None)
+                list(o.urlPattern('')) | should | have(0).patterns
+                
             it 'should bypass dispatcher if target is not a method':
                 def aFunction(): pass
                 o = self.opts.clone(target=aFunction)
