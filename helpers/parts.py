@@ -1,4 +1,5 @@
 from cwf.urls.section import Site
+from inject import inject
         
 ########################
 ###
@@ -8,17 +9,31 @@ from cwf.urls.section import Site
 
 class Parts(object):
     """Object that holds Part objects and has methods for getting models, admin or site from them"""
-    def __init__(self, package, theGlobals, theLocals, *parts):
+    def __init__(self, package, *parts):
+        self.package = package
         self.parts = parts
         for part in self.parts:
-            part._import(package, theGlobals, theLocals)
+            part._import(package)
     
-    def models(self, theLocals, activeOnly=False):
+    def models(self, activeOnly=False):
         """Put all the models from each part in the local space of the models.py this is called from"""
+        mdls = {}
         for part in self._iter(activeOnly):
             models = part.get("models", '__all__', [])
             for model in models:
-                theLocals[model.__name__] = model
+                mdls[model.__name__] = model
+        
+        return mdls
+
+    def urls(self, activeOnly=False, includeDefaults=False):
+        site = self.site(self.package)
+        urls = {'site' : site, 'urlpatterns' : site.patterns()}
+        if includeDefaults:
+            from django.conf.urls import defaults
+            for d in dir(defaults):
+                if not d.startswith("_"):
+                    urls[d] = getattr(defaults, d)
+        return urls
     
     def admin(self, activeOnly=False):
         """Load all the admin.py files in each part so that they can register with the admin"""
@@ -64,7 +79,7 @@ class Part(object):
         if kwargs.get('includeAs', None) is None:
             kwargs['includeAs'] = self.name
     
-    def _import(self, package, theGlobals, theLocals):
+    def _import(self, package):
         """Get the package we are representing"""
         if type(self.name) not in (str, unicode):
             self.pkg = self.name
@@ -74,7 +89,7 @@ class Part(object):
         
         else:
             # We want an error from this to propagate
-            pkg = __import__(package, theGlobals, theLocals, [self.name], -1)
+            pkg = __import__(package, globals(), locals(), [self.name], -1)
             self.pkg = getattr(pkg, self.name)
         
     def get(self, name, attr=None, default=None):
@@ -97,5 +112,31 @@ class Part(object):
     
         return ret
         
+########################
+###
+###   Configure
+###
+########################
         
+def configure(settings, package, *parts, **kwargs):
+    if not hasattr(settings, 'PARTCONFIG'):
+        settings.PARTCONFIG = {}
+    
+    config = Parts(package, *parts)
+    settings.PARTCONFIG[package] = config
+    
+    # get the models
+    models = config.models()
+    
+    # get the urls
+    includeDefaults = kwargs.get("includeDefaultUrls", False)
+    urls = lambda : config.urls(includeDefaults=includeDefaults)
+    
+    # Inject everything
+    prefix=kwargs.get("prefix", None)
+    inject(models, '%s.models' % package, prefix=prefix)
+    inject(urls,   '%s.urls'   % package, prefix=prefix)
+    
+    # Load in the admin configuration for this package
+    config.admin()
         
