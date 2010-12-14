@@ -14,12 +14,9 @@ from cwf.menus import Menu
 import re
 
 defaultSite = None
-if hasattr(settings, 'SITE'):
-    try:
-        defaultSite = __import__(settings.SITE, globals(), locals(), ['site'], -1).site
-    except ImportError:
-        pass
-
+if hasattr(settings, 'THESITE'):
+    defaultSite = settings.THESITE.site
+    
 if hasattr(settings, 'PROJECTDIR'):
     projectDir = settings.PROJECTDIR
 else:

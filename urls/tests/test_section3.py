@@ -92,6 +92,17 @@ describe 'Sections':
         
         sect1.children | should.equal_to | [sect2, sect3, sect4]
     
+    describe 'getting alias':
+        it 'should be possible to get the alias':
+            self.sect.getAlias() | should.equal_to | '/'
+            self.sect.options.alias = 'blah'
+            self.sect.getAlias() | should.equal_to | 'blah'
+        
+        it 'should default to the capitalised url':
+            self.sect.getAlias() | should.equal_to | '/'
+            self.sect.url = 'blah'
+            self.sect.getAlias() | should.equal_to | 'Blah'
+        
     describe 'info':
         before_each:
             def gen(children, restOfPath, parentUrl, parentSelected, request=None):

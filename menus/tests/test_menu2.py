@@ -2,7 +2,7 @@
 
 from django.template import loader, Context, Template
 from urls.section import Site, Section, Values
-from .menus import Menu
+from menus import Menu
 
 @matcher
 class RenderAs(object):
@@ -42,7 +42,7 @@ describe 'Menu templates':
     before_each:
         self.site = Site('templateTest')
         
-        self.base = self.site.makeBase(inMenu=True)
+        self.base = self.site.makeBase(inMenu=True).base(alias="Home")
         
         self.sect1 = Section('one').base(showBase=False)
         self.site.add(self.sect1, inMenu=True)
@@ -95,7 +95,7 @@ describe 'Menu templates':
         menu = Menu(self.site, [], self.base)
         desired = """
         <ul>
-            <li class="selected"><a href="/"></a></li>
+            <li class="selected"><a href="/">Home</a></li>
             <li><a href="/one">One</a></li>
             <li><a href="/2">two</a></li>
         </ul>
@@ -107,7 +107,7 @@ describe 'Menu templates':
         menu = Menu(self.site, ['one'], self.base)
         desired = """
         <ul>
-            <li><a href="/"></a></li>
+            <li><a href="/">Home</a></li>
             <li class="selected"><a href="/one">One</a></li>
             <li><a href="/2">two</a></li>
         </ul>
@@ -119,7 +119,7 @@ describe 'Menu templates':
         menu = Menu(self.site, ['oNe'], self.base)
         desired = """
         <ul>
-            <li><a href="/"></a></li>
+            <li><a href="/">Home</a></li>
             <li class="selected"><a href="/one">One</a></li>
             <li><a href="/2">two</a></li>
         </ul>
@@ -131,7 +131,7 @@ describe 'Menu templates':
         menu = Menu(self.site, ['one', 'some'], self.base)
         desired = """
         <ul>
-            <li><a href="/"></a></li>
+            <li><a href="/">Home</a></li>
             <li class="selected"><a href="/one">One</a></li>
             <li><a href="/2">two</a></li>
         </ul>

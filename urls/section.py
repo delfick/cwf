@@ -186,12 +186,16 @@ class Section(object):
                     selected, children, fullUrl = get(path, url)
                     yield (self, fullUrl, alias, selected, children, self.options)
             else:
-                alias = self.options.alias
-                if not alias:
-                    alias = self.url.capitalize()
+                alias = self.getAlias()
                 selected, children, fullUrl = get(path)
                 yield (self, fullUrl, alias, selected, children, self.options)
     
+    def getAlias(self):
+        alias = self.options.alias
+        if not alias and self.url:
+            alias = self.url.capitalize()
+        return alias
+        
     def determineSelection(self, path, parentSelected, url=None):
         """Return True and rest of path if selected else False and no path."""
         if not url:
