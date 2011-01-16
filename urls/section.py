@@ -43,13 +43,13 @@ class Section(object):
         
         return section
 
-    def first(self, match=None, name=None):
+    def first(self, url="", match=None, name=None):
         """Adds a child with the same url as the parent at the beginning of self.children"""
         if self.children and self.children[0].url == '':
             # Override if we already have a first section
             self.children.pop(0)
         
-        section = Section(url="", name=name, parent=self)
+        section = Section(url=url, name=name, parent=self)
         section.options = self.options.clone(match=match)
         self.children.insert(0, section)
         
@@ -388,26 +388,29 @@ class Options(object):
     def urlPattern(self, pattern, section=None, name=None):
         """Return url pattern for this section"""
         if self.active:
-            if type(pattern) in (tuple, list):
-                if any(part != '' for part in pattern):
-                    pattern = '/'.join(pattern)
-                else:
-                    pattern = ''
-                
-            # Remove duplicate slashes
-            pattern = regexes['multiSlash'].sub('/', pattern)
-            
-            if pattern == '/':
-                pattern = '^$'
+            if pattern is None or any(p is None for p in pattern):
+                pattern = '^.*'
             else:
-                if pattern and pattern[0] == '/':
-                    pattern = pattern[1:]
+                if type(pattern) in (tuple, list):
+                    if any(part != '' for part in pattern):
+                        pattern = '/'.join(pattern)
+                    else:
+                        pattern = ''
+                    
+                # Remove duplicate slashes
+                pattern = regexes['multiSlash'].sub('/', pattern)
                 
-                # Turn pattern into regex
-                if pattern.endswith('/'):
-                    pattern = '^%s$' % pattern
+                if pattern == '/':
+                    pattern = '^$'
                 else:
-                    pattern = '^%s/*$' % pattern
+                    if pattern and pattern[0] == '/':
+                        pattern = pattern[1:]
+                    
+                    # Turn pattern into regex
+                    if pattern.endswith('/'):
+                        pattern = '^%s$' % pattern
+                    else:
+                        pattern = '^%s/*$' % pattern
                     
             # Get redirect and call if can
             redirect = self.redirect
