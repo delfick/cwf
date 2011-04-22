@@ -203,9 +203,12 @@ class View(object):
         """Shortcut to render xml."""
         return render_to_response(address, mimetype="application/xml")
     
-    def _redirect(self, request, address, relative=True, carryGET=False, ignoreGET=None):
+    def _redirect(self, request, address, relative=True, carryGET=False, ignoreGET=None, noProcessing=False):
         """Get's address used by redirect"""
         address = unicode(address)
+        
+        if noProcessing:
+            return address
         
         if hasattr(request, 'state'):
             baseUrl = request.state.baseUrl
