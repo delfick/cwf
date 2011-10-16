@@ -1,5 +1,4 @@
 from django.conf.urls.defaults import include, patterns
-from django.views.generic.simple import redirect_to
 from django.http import Http404
 
 from dispatch import dispatch
@@ -385,6 +384,12 @@ class Options(object):
         
         return obj
     
+    def redirect_to(self, *args, **kwargs):
+        if not hasattr(self, '_redirect_to'):
+            from django.views.generic.simple import redirect_to
+            self._redirect_to = redirect_to
+        return self._redirect_to(*args, **kwargs)
+    
     def urlPattern(self, pattern, section=None, name=None):
         """Return url pattern for this section"""
         if self.active:
@@ -422,7 +427,7 @@ class Options(object):
                 def redirector(request, url):
                     if not url.startswith('/'):
                         url = '%s/%s' % (request.path, url)
-                    return redirect_to(request, url)
+                    return self.redirect_to(request, url)
                 
                 view = redirector
                 kwargs = {'url' : unicode(redirect)}
