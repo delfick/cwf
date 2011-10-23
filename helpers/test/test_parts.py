@@ -12,6 +12,7 @@ describe 'helpers':
     urls = 'helpers.test.example.urls'
     
     before_each:
+
         def checkLengths(site, info=None, base=None, menu=None):
             if info:
                 len(site.info) | should_be | info
@@ -52,9 +53,7 @@ describe 'helpers':
     
     it 'should be possible to follow the url scheme':
         self.checkExists(
-              '', '/'
-            , '/part1', '/part1/', '/part1/some', '/part1/some/', '/part1/some/meh', '/part1/some/meh/'
-            , '/part2/apart', '/part2/apart/'
+              '', '/', '/part1/', '/part1/some/', '/part1/some/meh/', '/part2/apart/'
             , desired = 200
             )
     

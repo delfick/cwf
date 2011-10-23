@@ -214,12 +214,22 @@ class View(object):
             baseUrl = request.state.baseUrl
         else:
             baseUrl = request.META.get('SCRIPT_NAME', '')
+        
+        def join(a, b):
+            if not b or not a:
+                return '%s%s' % (a, b)
+            elif b[0] == '/' and a[-1] != '/':
+                return '%s%s' % (a, b)
+            elif b[0] != '/' and a[-1] == '/':
+                return '%s%s' % (a, b)
+            else:
+                return '%s/%s' % (a, b)
             
         if address[0] == '/':
-            address = '%s%s' % (baseUrl, address)
+            address = join(baseUrl, address)
         
         elif relative:
-            address = "%s/%s" % (request.path, address)
+            address = join(request.path, address)
         
         if carryGET:
             address = "%s?%s" % (address, self.getGETString(request, ignoreGET))

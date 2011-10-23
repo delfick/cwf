@@ -84,6 +84,7 @@ describe 'View':
     
     describe 'getGETString':
         before_each:
+            
             def use(num, *args, **kwargs):
                 func = getattr(self.view, 'getGETString')
                 req = getattr(self, 'request%d' % num)
@@ -105,6 +106,7 @@ describe 'View':
     
     describe 'redirect':
         before_each:
+            
             def use(num, *args, **kwargs):
                 func = getattr(self.view, '_redirect')
                 request = getattr(self, 'request%d' % num)

@@ -91,6 +91,7 @@ describe 'cwf Options':
     
         describe '___the pattern':
             before_each:
+
                 def pattern(*patterns):
                     for pat in patterns:
                         for thing in self.opts.urlPattern(pat):
@@ -110,14 +111,13 @@ describe 'cwf Options':
                 for pat in self.pattern(
                     '', '/some_place/nice', '//some_place/nice', '//some_place//nice', '/some_place', 'some_place'
                 ):
-                    pat | should.end_with | '/*$'
+                    pat | should.end_with | '/$'
             
             it 'should add optional slash at end of regex only if pattern doesnt have ending slash':
                 for pat in self.pattern(
                     '/some_place/nice/', '//some_place/nice/', 
                     '//some_place//nice/', '/some_place/', 'some_place/'
                 ):
-                    pat | should_not.end_with | '/*$'
                     pat | should.end_with | '/$'
             
             it 'should remove the slash if pattern is just a slash':

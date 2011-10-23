@@ -48,6 +48,9 @@ class Section(object):
             # Override if we already have a first section
             self.children.pop(0)
         
+        if name is None:
+            name = self.name
+            
         section = Section(url=url, name=name, parent=self)
         section.options = self.options.clone(match=match)
         self.children.insert(0, section)
@@ -412,10 +415,12 @@ class Options(object):
                         pattern = pattern[1:]
                     
                     # Turn pattern into regex
-                    if pattern.endswith('/'):
+                    if pattern is '':
+                        pattern = '^$'
+                    elif pattern.endswith('/'):
                         pattern = '^%s$' % pattern
                     else:
-                        pattern = '^%s/*$' % pattern
+                        pattern = '^%s/$' % pattern
                     
             # Get redirect and call if can
             redirect = self.redirect
@@ -426,7 +431,10 @@ class Options(object):
                 # Only redirect if we have a string to redirect to
                 def redirector(request, url):
                     if not url.startswith('/'):
-                        url = '%s/%s' % (request.path, url)
+                        if request.path.endswith('/'):
+                            url = '%s%s' % (request.path, url)
+                        else:
+                            url = '%s/%s' % (request.path, url)
                     return self.redirect_to(request, url)
                 
                 view = redirector
@@ -636,7 +644,7 @@ class Site(object):
                 for obj, includeAs, patternFunc, namespace, app_name, _ in self:
                     
                     # Determine pattern
-                    pattern = '^%s/*'
+                    pattern = '^%s/'
                     if includeAs:
                         pattern = pattern % includeAs
                     else:
