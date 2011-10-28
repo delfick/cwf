@@ -1,0 +1,20 @@
+{% extends "grappelli/templates/admin/change_form.html" %}
+{% block object-tools-items %}
+    {% for button in buttons %}
+        {% if button.show and not button.forAll and not button.saveOnClick %}
+        <li>{{button}}</li>
+        {% endif %}
+    {% endfor %}
+    
+    {{ block.super }}
+{% endblock %}
+
+{% block after_related_objects %}
+    <ul class="submit-row">
+    {% for button in buttons %}
+        {% if button.show and not button.forAll and button.saveOnClick %}
+        <li class="submit-button-container">{{button}}</li>
+        {% endif %}
+    {% endfor %}
+    </div>
+{% endblock %}
