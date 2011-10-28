@@ -1,7 +1,7 @@
 # coding: spec
 
+from cwf.helpers.testing import RequestFactory
 from django.http import HttpResponse, Http404
-from utils.testing import RequestFactory
 from views import View
 
 class View1(View):
