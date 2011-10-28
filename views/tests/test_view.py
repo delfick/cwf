@@ -1,10 +1,11 @@
 # coding: spec
 
-from views import DictObj, View
-from django.http import Http404
-from types  import MethodType
 from django.test.client import Client
-from utils.testing import RequestFactory
+from django.http import Http404
+
+from cwf.helpers.testing import RequestFactory
+from views import DictObj, View
+from types  import MethodType
 
 describe 'DictObj':
     before_each:
