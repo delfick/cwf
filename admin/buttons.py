@@ -136,8 +136,9 @@ class ButtonAdmin(admin.ModelAdmin, ButtonAdminMixin):
         if not extra_context:
             extra_context = {}
         
-        [b.setShow(request.user) for b in self.buttons]
-        extra_context['buttons'] = self.buttons
+        if hasattr(self, 'buttons') and self.buttons:
+            [b.setShow(request.user) for b in self.buttons]
+            extra_context['buttons'] = self.buttons
         
         return super(ButtonAdmin, self).changelist_view(request, extra_context)
         
@@ -146,8 +147,9 @@ class ButtonAdmin(admin.ModelAdmin, ButtonAdminMixin):
         if not extra_context:
             extra_context = {}
         
-        [b.setShow(request.user) for b in self.buttons]
-        extra_context['buttons']=self.buttons
+        if hasattr(self, 'buttons') and self.buttons:
+            [b.setShow(request.user) for b in self.buttons]
+            extra_context['buttons'] = self.buttons
         
         result = super(ButtonAdmin, self).change_view(request, object_id, extra_context)
         
