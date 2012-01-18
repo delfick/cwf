@@ -4,6 +4,7 @@ from django.utils.encoding import force_unicode
 from django.shortcuts import get_object_or_404
 from django.contrib.admin.util import unquote
 from django.utils.safestring import mark_safe
+from django.core.urlresolvers import reverse
 from django.forms.formsets import all_valid
 from django.utils.text import capfirst
 from django.utils.html import escape
@@ -109,7 +110,7 @@ class ButtonAdminMixin(object):
             'title': _('%s: %s') % (button.desc, force_unicode(obj)),
             'module_name': capfirst(force_unicode(opts.verbose_name_plural)),
             'object': obj,
-            'root_path': self.admin_site.root_path,
+            'root_path': reverse('admin:index'),
             'app_label': app_label,
             'bread_title' : button.desc,
         }
