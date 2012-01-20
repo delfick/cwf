@@ -279,6 +279,12 @@ class View(object):
                     options.append('%s' % key)
                     
         return ';'.join(options)
+    
+    def get_or_404(self, kls, **kwargs):
+        try:
+            return kls.objects.get(**kwargs)
+        except kls.DoesNotExist:
+            self.raise404()
         
     ########################
     ###   ADMIN
