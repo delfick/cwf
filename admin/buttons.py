@@ -20,7 +20,7 @@ class Button(object):
     def __init__(self
         , url, desc
         , kls=None, saveOnClick=True, forAll=False, display=True, needSuperUser=True
-        , executeAndRedirect=False):
+        , executeAndRedirect=False, newWindow=False):
         
         if forAll:
             saveOnClick = False
@@ -29,6 +29,7 @@ class Button(object):
         self.desc = desc
         self.forAll = forAll
         self.display = display
+        self.newWindow = newWindow
         self.saveOnClick = saveOnClick
         self.needSuperUser = needSuperUser
         self.executeAndRedirect = executeAndRedirect
@@ -46,11 +47,14 @@ class Button(object):
         else:
             url = self.url
         
-        kls = ""
+        options = []
         if self.kls:
-            kls = u' class="%s"' % self.kls
+            options.append(u'class="%s"' % self.kls)
         
-        return u'<a href="%s" %s>%s</a>' % (url, kls, self.desc)
+        if self.newWindow:
+            options.append(u'target="_blank"')
+        
+        return u'<a href="%s" %s>%s</a>' % (url, ' '.join(options), self.desc)
 
     def link_saving(self):
         return u'<input type="submit" name="tool_%s" value="%s"/>' % (self.url, self.desc)
