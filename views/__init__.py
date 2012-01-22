@@ -179,11 +179,7 @@ class View(object):
         t = loader.get_template(File)
         c = RequestContext(request, state)
         
-        try:
-            render = t.render(c)
-        except Exception, error:
-            import traceback
-            raise Exception, (error, traceback.format_exc())
+        render = t.render(c)
         
         # Render !
         return HttpResponse(render)
