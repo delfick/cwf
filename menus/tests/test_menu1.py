@@ -22,9 +22,9 @@ describe 'Menu':
         self.sect3_1_1 = self.sect3_1.add('there')
         
         def getGiving(part, give):
-            section, fullUrl, alias, selected, children, options = part
+            section, appear, fullUrl, alias, selected, children, options = part
             if give is None:
-                giving = (section, fullUrl, alias, selected)
+                giving = (section, appear, fullUrl, alias, selected)
                 
             else:
                 giving = []
@@ -88,7 +88,7 @@ describe 'Menu':
         describe 'heirarchially':
             it 'should give values function parenturl and path':
                 menu = Menu(self.site1, ['c', 'hello', 'there'], self.sect3)
-                self.heirarchialRoll(menu.heirarchial(), give=[0, 2, 1]) | should.equal_to | [
+                self.heirarchialRoll(menu.heirarchial(), give=[0, 3, 2]) | should.equal_to | [
                     [ (self.sect3_1, 'Hello', ['', 'c', 'hello'])
                     , [ (self.sect3_1_1, 'There', ['', 'c', 'hello', 'there']) 
                       , [ (self.sect3_1_1_1, 'therec', ['', 'c', 'hello', 'there', 'c']) ]
@@ -101,7 +101,7 @@ describe 'Menu':
                 
             it 'should give values function parenturl and path':
                 menu = Menu(self.site1, ['c', 'hello', 'there', 'blah', 'meh'], self.sect3)
-                self.heirarchialRoll(menu.heirarchial(), give=[0, 2, 1]) | should.equal_to | [
+                self.heirarchialRoll(menu.heirarchial(), give=[0, 3, 2]) | should.equal_to | [
                     [ (self.sect3_1, 'Hello', ['', 'c', 'hello'])
                     , [ (self.sect3_1_1, 'There', ['', 'c', 'hello', 'there']) 
                       , [ (self.sect3_1_1_1, 'therec', ['', 'c', 'hello', 'there', 'c']) ]
@@ -117,7 +117,7 @@ describe 'Menu':
         describe 'layered':
             it 'should give values function parenturl and path':
                 menu = Menu(self.site1, ['c', 'hello', 'there'], self.sect3)
-                self.layeredRoll(menu.layered(), give=[0, 2, 1]) | should.equal_to | [
+                self.layeredRoll(menu.layered(), give=[0, 3, 2]) | should.equal_to | [
                       [ (self.sect3_1, 'Hello', ['', 'c', 'hello']) ]
                     , [ (self.sect3_1_1, 'There', ['', 'c', 'hello', 'there']) ]
                     , [ 
@@ -130,7 +130,7 @@ describe 'Menu':
                 
             it 'should give values function parenturl and path':
                 menu = Menu(self.site1, ['c', 'hello', 'there', 'blah', 'meh'], self.sect3)
-                self.layeredRoll(menu.layered(), give=[0, 2, 1]) | should.equal_to | [
+                self.layeredRoll(menu.layered(), give=[0, 3, 2]) | should.equal_to | [
                       [ (self.sect3_1, 'Hello', ['', 'c', 'hello']) ]
                     , [ (self.sect3_1_1, 'There', ['', 'c', 'hello', 'there']) ]
                     , [ 
@@ -221,7 +221,7 @@ describe 'Menu':
                 
             it 'should determine fullUrl properly':
                 menu = self.menu(['a', 'nice'])
-                self.roll(menu.heirarchial(), give=1) | should.equal_to | [
+                self.roll(menu.heirarchial(), give=2) | should.equal_to | [
                       [ ['', 'a']
                       , [ ['', 'a', 'nice']
                         , [ ['', 'a', 'nice', 'place'] ]
@@ -243,7 +243,7 @@ describe 'Menu':
                 
             it 'should determine alias properly':
                 menu = self.menu(['a', 'nice'])
-                self.roll(menu.heirarchial(), give=2) | should.equal_to | [
+                self.roll(menu.heirarchial(), give=3) | should.equal_to | [
                       [ 'A'
                       , [ 'Nice'
                         , [ 'Place' ]
@@ -265,7 +265,7 @@ describe 'Menu':
                 
             it 'should determine selection properly_1':
                 menu = self.menu(['b', 'bad', '2_'])
-                self.roll(menu.heirarchial(), give=3) | should.equal_to | [
+                self.roll(menu.heirarchial(), give=4) | should.equal_to | [
                       [ False
                       , [ False
                         , [ False ]
@@ -287,7 +287,7 @@ describe 'Menu':
                 
             it 'should determine selection properly_2':
                 menu = self.menu(['a', 'nice'])
-                self.roll(menu.heirarchial(), give=3) | should.equal_to | [
+                self.roll(menu.heirarchial(), give=4) | should.equal_to | [
                       [ True
                       , [ True
                         , [ False ]
@@ -342,7 +342,7 @@ describe 'Menu':
                 
             it 'should determine fullUrl properly':
                 menu = self.menu(['b', 'bad', '2_'])
-                self.roll(menu.layered(), give=1) | should.equal_to | [
+                self.roll(menu.layered(), give=2) | should.equal_to | [
                       [ ['', 'a'], ['', 'b'], ['', 'c'] ]
                     , [ ['', 'b', 'bad'] ]
                     , [ ['', 'b', 'bad', '1_'], ['', 'b', 'bad', '2_'], ['', 'b', 'bad', '3_'] ]
@@ -350,7 +350,7 @@ describe 'Menu':
                 
             it 'should determine alias properly':
                 menu = self.menu(['b', 'bad', '2_'])
-                self.roll(menu.layered(), give=2) | should.equal_to | [
+                self.roll(menu.layered(), give=3) | should.equal_to | [
                       [ 'A', 'B', 'C' ]
                     , [ 'Bad' ]
                     , [ '_1', '_2', '_3' ]
@@ -358,7 +358,7 @@ describe 'Menu':
                 
             it 'should determine selection properly_1':
                 menu = self.menu(['b', 'bad', '2_'])
-                self.roll(menu.layered(), give=3) | should.equal_to | [
+                self.roll(menu.layered(), give=4) | should.equal_to | [
                       [ False, True, False ]
                     , [ True ]
                     , [ False, True, False ]
@@ -366,7 +366,7 @@ describe 'Menu':
                 
             it 'should determine selection properly_2':
                 menu = self.menu(['a', 'nice'])
-                self.roll(menu.layered(), give=3) | should.equal_to | [
+                self.roll(menu.layered(), give=4) | should.equal_to | [
                       [ True, False, False ]
                     , [ True ]
                     , [ False ]

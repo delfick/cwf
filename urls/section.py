@@ -127,24 +127,24 @@ class Section(object):
         else:
             return self
         
-    def show(self):
+    def show(self, request=None):
         """Can only show if options say this section can show and parent can show"""
         parentShow = True
         if self.parent:
-            parentShow = self.parent.show()
+            parentShow = self.parent.show(request)
         
         if parentShow:
-            return self.options.show()
+            return self.options.show(request)
         
         return False
         
-    def appear(self):
+    def appear(self, request=None):
         """Can only appear if allowed to be displayed and shown"""
         display = self.options.display
         if callable(display):
-            display = display()
+            display = display(request)
             
-        return display and self.show()
+        return display and self.show(request)
     
     def getInfo(self, path, parentUrl=None, parentSelected=True, gen=None, request=None):
         if self.options.active:
@@ -182,15 +182,16 @@ class Section(object):
             
             if parentUrl is None:
                 parentUrl = []
-                
+            
+            appear = lambda : self.appear(request)
             if self.options.values:
                 for alias, url in self.options.values.getInfo(parentUrl, path, request=request):
                     selected, children, fullUrl = get(path, url)
-                    yield (self, fullUrl, alias, selected, children, self.options)
+                    yield (self, appear, fullUrl, alias, selected, children, self.options)
             else:
                 alias = self.getAlias()
                 selected, children, fullUrl = get(path)
-                yield (self, fullUrl, alias, selected, children, self.options)
+                yield (self, appear, fullUrl, alias, selected, children, self.options)
     
     def getAlias(self):
         alias = self.options.alias
@@ -335,11 +336,11 @@ class Options(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def show(self):
+    def show(self, request=None):
         """Determine if any dynamic conditions stand in the way of actually showing the section"""
         condition = self.condition
         if callable(condition):
-            condition = condition()
+            condition = condition(request)
         
         if condition:
             return False
@@ -465,7 +466,7 @@ class Options(object):
                             'obj' : self.getObj(), 
                             'target' : target, 
                             'section' : section, 
-                            'condition' : lambda : not self.show()
+                            'condition' : lambda request: not self.show(request)
                         }
                         
                         if self.extraContext:

@@ -11,14 +11,14 @@ class Menu(object):
         self.selectedSection = selectedSection
     
     def clean(self, info):
-        section, fullUrl, alias, selected, children, options = info
+        section, appear, fullUrl, alias, selected, children, options = info
         if fullUrl == ['']:
             fullUrl = ['', '']
         
         elif fullUrl and fullUrl[-1] == '':
             fullUrl = fullUrl[:-1]
         
-        return (section, fullUrl, alias, selected, children, options)
+        return (section, appear, fullUrl, alias, selected, children, options)
     
     def getGlobal(self):
         """Get sections in the site's menu"""
@@ -115,7 +115,7 @@ class Menu(object):
                 l = []
                 anySelected  = False
                 for part in selected:
-                    section, _, _, isSelected, children, _ = part
+                    section, _, _, _, isSelected, children, _ = part
                     if section:
                         l.append(self.clean(part))
                         

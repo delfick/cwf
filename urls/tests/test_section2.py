@@ -40,10 +40,10 @@ describe 'cwf Options':
         self.opts.condition = True
         self.opts.show() | should.be | False
         
-        self.opts.condition = lambda : True
+        self.opts.condition = lambda r: True
         self.opts.show() | should.be | False
         
-        self.opts.condition = lambda : False
+        self.opts.condition = lambda r: False
         self.opts.show() | should.be | True
         
         self.opts.condition = False

@@ -1,8 +1,7 @@
 {% load repeat %}
 {% withul %}
-{% for section, fullUrl, alias, selected, children, options in gen %}
-
-	{% if section.appear %}
+{% for section, appear, fullUrl, alias, selected, children, options in gen %}
+	{% if appear %}
 	{% if not options.needsAuth or user.is_authenticated %}
 
     <li{% if selected %}{% block selectedAttrs %} class="selected"{% endblock %}{% else %}{% block nonSelectedAttrs %}{% endblock %}{% endif %}>

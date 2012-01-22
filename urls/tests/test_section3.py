@@ -126,10 +126,12 @@ describe 'Sections':
                         fourth = next[4]
                         fifth = next[5]
                     else:
-                        fourth = result[i][4]
+                        fourth = result[i][5]
                         fifth = next[4]
-                        
-                    result[i] | should.equal_to | (next[0], next[1], next[2], next[3], fourth, fifth)
+                    
+                    result[i] | should.equal_to | (
+                        next[0], result[i][1], next[1], next[2], next[3], fourth, fifth
+                    )
                     gens.append(fourth)
                 
                 return gens
@@ -153,31 +155,31 @@ describe 'Sections':
             test(exists=False, active=True) | should | have(1).elements
             test(exists=True, active=True, condition=True) | should | have(1).elements
         
-        it 'should return a 6 element tuple':
+        it 'should return a 7 element tuple':
             for t in self.sect.getInfo(['']):
-                t | should | have(6).elements
+                t | should | have(7).elements
             
             self.sect.base(values = Values(['blah'], asSet=False))
             for t in self.sect.getInfo(['']):
-                t | should | have(6).elements
+                t | should | have(7).elements
         
         it 'should use options alias or capitalized url if alias doesnt exist':
             c = self.sect.add('place')
             for t in c.getInfo(['']):
-                t[2] | should.equal_to | 'Place'
+                t[3] | should.equal_to | 'Place'
             
             c.base(alias='nice')
             for t in c.getInfo(['']):
-                t[2] | should.equal_to | 'nice'
+                t[3] | should.equal_to | 'nice'
         
         it 'should not change alias from a values object':
             self.sect.base(values = Values(['v1', 'v2'], asSet=False))
-            [t[2] for t in self.sect.getInfo([''])] | should.equal_to | ['v1', 'v2']
+            [t[3] for t in self.sect.getInfo([''])] | should.equal_to | ['v1', 'v2']
         
         it 'should get fullUrl correct':
             for t in self.sect.getInfo(['']):
                 t[0] | should.equal_to | self.sect
-                t[1] | should.equal_to | ['']
+                t[2] | should.equal_to | ['']
             
             c = self.sect.add('some')
             c2 = self.sect.add('meh').base(alias='niceAlias')

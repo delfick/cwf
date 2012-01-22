@@ -22,7 +22,7 @@ class Dispatcher(object):
     def __call__(self, request, obj, target, section, condition, *args, **kwargs):
         if section and section.options.exists:
             if callable(condition):
-                condition = condition()
+                condition = condition(request)
             
             needsAuth = False
             if section.options.needsAuth and not request.user.is_authenticated:
