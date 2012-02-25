@@ -20,6 +20,7 @@ class Dispatcher(object):
         return view
         
     def __call__(self, request, obj, target, section, condition, *args, **kwargs):
+        self.__name__ = self.__class__.__name__
         if section and section.options.exists:
             if callable(condition):
                 condition = condition(request)
@@ -30,6 +31,7 @@ class Dispatcher(object):
             
             if not condition and not needsAuth:
                 view = self[obj]
+                self.__name__ = "Dispatcher: %s:%s" % (view.__class__.__name__, target)
                 return self[obj](request, target, section=section, *args, **kwargs)
         
         raise Http404
