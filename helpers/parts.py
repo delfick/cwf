@@ -1,5 +1,9 @@
 from cwf.urls.section import Site
 from inject import inject
+
+import __builtin__
+import inspect
+import sys
         
 ########################
 ###
@@ -140,3 +144,39 @@ def configure(settings, package, *parts, **kwargs):
     # Load in the admin configuration for this package
     config.admin()
         
+########################
+###
+###   FAILED IMPORTS
+###
+########################
+        
+def installFailedImportHandler():
+    """
+        Custom __import__ function that records failed imports
+        Useful if say you're using werzeug auto reloader
+        This way, failed imports are still checked for changes
+    """
+    original_import = __builtin__.__import__
+    def new_import(name, *args, **kwargs):
+        failed = None
+        try:
+            return original_import(name, *args, **kwargs)
+        
+        except SyntaxError, s:
+            # Record failed import and propogate error
+            failed = (name, s.filename)
+            raise
+        
+        except Exception, i:
+            if not isinstance(i, ImportError):
+                # ImportError is probably a legitimate fail
+                failed = (name, inspect.trace()[-1][1])
+            raise
+        
+        finally:
+            if failed:
+                # Import failed, put in fake module so that werkzeug knows to see if it's been changed
+                name, filename = failed
+                sys.modules[name] = type('FailedImport', (object, ), {'__file__' : filename})
+    
+    __builtin__.__import__ = new_import

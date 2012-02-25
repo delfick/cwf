@@ -1,4 +1,4 @@
-from parts import Parts, Part as P, configure
+from parts import Parts, Part as P, configure, installFailedImportHandler
 
 """
 These objects are for making life a little nicer when it comes to splitting an app into several different categories, each residing in their own folder with their own views, urls and models.
