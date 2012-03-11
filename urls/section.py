@@ -141,9 +141,17 @@ class Section(object):
     def appear(self, request=None):
         """Can only appear if allowed to be displayed and shown"""
         display = self.options.display
+        adminOnly = False
+        
         if callable(display):
             display = display(request)
-            
+        
+        if type(display) is not bool:
+            adminOnly, display = display
+        
+        if adminOnly:
+            self.options.admin = True
+        
         return display and self.show(request)
     
     def getInfo(self, path, parentUrl=None, parentSelected=True, gen=None, request=None):
@@ -184,6 +192,9 @@ class Section(object):
                 parentUrl = []
             
             appear = lambda : self.appear(request)
+            if self.options.needsAuth and not self.options.admin:
+                self.options.admin = True
+            
             if self.options.values:
                 for alias, url in self.options.values.getInfo(parentUrl, path, request=request):
                     selected, children, fullUrl = get(path, url)
@@ -284,9 +295,10 @@ class Section(object):
 
 class Options(object):
     def __init__(self
+        , admin    = False # says whether this section is showing because of admin access
         , active   = True  # says whether we should consider it at all (overrides exists and display)
         , exists   = True  # says whether the section gives a 404 when visited (overrides display)
-        , display  = True  # says whether there should be a physical link
+        , display  = True  # boolean or (adminOnly, display) says whether there should be a physical link
         , showBase = True  # says whether there should be a physical link for this. Doesn't effect children
         
         # Following three are not carried over by default during a clone unless carryAll=True is given
@@ -300,7 +312,7 @@ class Options(object):
         
         , redirect = None  # Overrides module, kls and target
         
-        , condition    = False # says whether something stands in the way of this section being shown
+        , condition    = False # boolean or (adminOnly, condition) : says whether something stands in the way of this section being shown
         , needsAuth    = False # Says whether user must be authenticated to see the section
         , extraContext = None  # Extra context to put into url pattern
         , **kwargs # Catch any unexpected arguments
@@ -326,7 +338,7 @@ class Options(object):
         """
         args = self.args
         if not kwargs.get('carryAll', False):
-            args = [a for a in self.args if a not in ['alias', 'match', 'values', 'showBase']]
+            args = [a for a in self.args if a not in ['admin', 'alias', 'match', 'values', 'showBase']]
             
         settings = dict((key, getattr(self, key)) for key in args)
         settings.update(kwargs)
@@ -338,9 +350,16 @@ class Options(object):
 
     def show(self, request=None):
         """Determine if any dynamic conditions stand in the way of actually showing the section"""
+        adminOnly = False
         condition = self.condition
         if callable(condition):
-            condition = condition(request)
+            condition = self.condition(request)
+        
+        if type(condition) is not bool:
+            adminOnly, condition = condition
+        
+        if adminOnly:
+            self.admin = True
         
         if condition:
             return False
