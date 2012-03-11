@@ -158,13 +158,21 @@ class ButtonAdmin(admin.ModelAdmin, ButtonAdminMixin):
     def changelist_view(self, request, *args, **kwargs):
         """Add buttons to changelist view"""
         response = super(ButtonAdmin, self).changelist_view(request, *args, **kwargs)
-        self.add_buttons(request, response.context_data)
+        context = {}
+        if hasattr(response, 'context_data'):
+            context = response.context_data
+        
+        self.add_buttons(request, context)
         return response
     
     def render_change_form(self, request, *args, **kwargs):
         """Add buttons to change view"""
         response = super(ButtonAdmin, self).render_change_form(request, *args, **kwargs)
-        self.add_buttons(request, response.context_data)
+        context = {}
+        if hasattr(response, 'context_data'):
+            context = response.context_data
+        
+        self.add_buttons(request, context)
         return response
     
     def response_change(self, request, obj):
