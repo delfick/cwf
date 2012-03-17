@@ -158,6 +158,11 @@ def installFailedImportHandler():
     """
     original_import = __builtin__.__import__
     def new_import(name, *args, **kwargs):
+        # Naively cope with the situation where this is called as a method
+        if type(name) not in (str, unicode) and len(args) > 0:
+            args = list(args)
+            name = args.pop(0)
+        
         failed = None
         try:
             return original_import(name, *args, **kwargs)
