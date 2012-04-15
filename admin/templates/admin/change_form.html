@@ -13,7 +13,25 @@
     <ul class="submit-row">
     {% for button in buttons %}
         {% if button.show and not button.forAll and button.saveOnClick %}
+        {% if button.group %}
+        <fieldset class="module collapse closed">
+            <h2 class="collapse-handler">{{ button.name }}</h2>
+            {% for button in button.buttons %}
+            <div class="row cells-1 numReg ">
+                <div>
+                    <div class="column span-4">
+                        <li class="submit-button-container">{{button}}</li>
+                    </div>
+                    <div class="column span-flexible">
+                        <span>{{ button.description }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </fieldset>
+        {% else %}
         <li class="submit-button-container">{{button}}</li>
+        {% endif %}
         {% endif %}
     {% endfor %}
     </div>

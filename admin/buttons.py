@@ -16,23 +16,49 @@ import rendering
 ###   BUTTON
 ########################
 
-class Button(object):
-    def __init__(self
-        , url, desc
-        , kls=None, saveOnClick=True, forAll=False, display=True, needSuperUser=True
-        , executeAndRedirect=False, newWindow=False):
-        
+class ButtonMixin(object):
+    def setShow(self, user):
+        if (self.needSuperUser and not user.is_superuser) or not self.display:
+            self.show = False
+        else:
+            self.show = True
+    
+    def setProperties(self
+        , kls=None, description = None
+        , saveOnClick=True, forAll=False, needSuperUser=True
+        , display=True, newWindow=False
+        , executeAndRedirect=False
+        ):
         if forAll:
             saveOnClick = False
-        self.url = url
         self.kls = kls
-        self.desc = desc
         self.forAll = forAll
         self.display = display
         self.newWindow = newWindow
         self.saveOnClick = saveOnClick
+        self.description = description
         self.needSuperUser = needSuperUser
         self.executeAndRedirect = executeAndRedirect
+
+class ButtonGroup(ButtonMixin):
+    def __init__(self, name, buttons, **kwargs):
+        self.name = name
+        self.buttons = buttons
+        self.setProperties(**kwargs)
+    
+    @property
+    def group(self):
+        return True
+
+class Button(ButtonMixin):
+    def __init__(self, url, desc, **kwargs):
+        self.url = url
+        self.desc = desc
+        self.setProperties(**kwargs)
+    
+    @property
+    def group(self):
+        return False
         
     def __unicode__(self):
         if not self.saveOnClick or self.forAll:
@@ -40,6 +66,9 @@ class Button(object):
         else:
             link = self.link_saving()
         return mark_safe(link)
+
+    def link_saving(self):
+        return u'<input type="submit" name="tool_%s" value="%s"/>' % (self.url, self.desc)
     
     def link_noSaving(self):
         if self.saveOnClick or not self.url.startswith('/'):
@@ -55,15 +84,6 @@ class Button(object):
             options.append(u'target="_blank"')
         
         return u'<a href="%s" %s>%s</a>' % (url, ' '.join(options), self.desc)
-
-    def link_saving(self):
-        return u'<input type="submit" name="tool_%s" value="%s"/>' % (self.url, self.desc)
-    
-    def setShow(self, user):
-        if (self.needSuperUser and not user.is_superuser) or not self.display:
-            self.show = False
-        else:
-            self.show = True
 
 ########################
 ###   BUTTON ADMIN MIXIN
@@ -85,7 +105,15 @@ class ButtonAdminMixin(object):
         info = self.model._meta.app_label, self.model._meta.module_name
         
         urls = []
-        for button in self.buttons:
+        def iter_buttons(buttons=self.buttons):
+            for button in buttons:
+                if button.group:
+                    for b in iter_buttons(button.buttons):
+                        yield b
+                else:
+                    yield button
+        
+        for button in iter_buttons():
             urls.append(
                 url(r'^(.+)/tool_%s/$' % button.url,
                     wrap(self.button_url),
