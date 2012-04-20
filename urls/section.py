@@ -355,7 +355,7 @@ class Options(object):
         if callable(condition):
             condition = self.condition(request)
         
-        if type(condition) is not bool:
+        if type(condition) in (tuple, list):
             adminOnly, condition = condition
         
         if adminOnly:

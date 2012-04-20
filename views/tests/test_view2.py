@@ -1,7 +1,8 @@
 # coding: spec
 
-from cwf.helpers.testing import RequestFactory
+from django.test import TestCase, RequestFactory
 from django.http import HttpResponse, Http404
+
 from views import View
 
 class View1(View):
@@ -38,13 +39,13 @@ class View2(View):
         extra = {'test' : 'view2'}
         return File, extra
     
-describe 'Getting result from a view':
+describe TestCase, 'Getting result from a view':
+    urls = 'templates.urls'
     before_each:
         self.view = View1()
         
         def getResult(view, target):
-            client = RequestFactory()
-            request = client.get('/')
+            request = RequestFactory().get('/')
             return view(request, target, None, None)
         
         self.getResult = getResult

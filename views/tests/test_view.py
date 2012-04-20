@@ -1,9 +1,8 @@
 # coding: spec
 
-from django.test.client import Client
+from django.test import TestCase, RequestFactory
 from django.http import Http404
 
-from cwf.helpers.testing import RequestFactory
 from views import DictObj, View
 from types  import MethodType
 
@@ -49,7 +48,8 @@ describe 'DictObj':
         self.d.stuff = 'asdf'
         self.d.items() | should.equal_to | [('a', 5), ('stuff', 'asdf')]
         
-describe 'View':
+describe TestCase, 'View':
+    urls = 'templates.urls'
     before_each:
         self.view = View()
         self.client = RequestFactory()

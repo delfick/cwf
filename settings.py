@@ -10,13 +10,16 @@ PROJECTDIR = os.sep.join(__file__.split('/')[:-1])
 TEMPLATE_DEBUG = DEBUG = False
 
 # Exposing database details is a security hole, so leave them blank here.
-DATABASE_ENGINE = 'sqlite3'
-DATABASE_NAME = ''
-DATABASE_USER = ''
-DATABASE_PASSWORD = ''
-DATABASE_HOST = ''
-DATABASE_PORT = ''
-SECRET_KEY = ''
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': '',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+    }
+}
 
 ROOT_URLCONF = 'templates.urls'
 
