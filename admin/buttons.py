@@ -17,8 +17,11 @@ import rendering
 ########################
 
 class ButtonMixin(object):
-    def setShow(self, user):
-        if (self.needSuperUser and not user.is_superuser) or not self.display:
+    def setShow(self, user, obj=None):
+        condition = self.condition
+        if callable(condition):
+            condition = self.condition(obj, self)
+        if condition is False or (self.needSuperUser and not user.is_superuser) or not self.display:
             self.show = False
         else:
             self.show = True
@@ -28,12 +31,14 @@ class ButtonMixin(object):
         , saveOnClick=True, forAll=False, needSuperUser=True
         , display=True, newWindow=False
         , executeAndRedirect=False
+        , condition = None
         ):
         if forAll:
             saveOnClick = False
         self.kls = kls
         self.forAll = forAll
         self.display = display
+        self.condition = condition
         self.newWindow = newWindow
         self.saveOnClick = saveOnClick
         self.description = description
@@ -180,7 +185,7 @@ class ButtonAdmin(admin.ModelAdmin, ButtonAdminMixin):
     
     def add_buttons(self, request, context):
         if hasattr(self, 'buttons') and self.buttons:
-            [b.setShow(request.user) for b in self.buttons]
+            [b.setShow(request.user, context.get('original')) for b in self.buttons]
             context['buttons'] = self.buttons
     
     def changelist_view(self, request, *args, **kwargs):
