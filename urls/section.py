@@ -463,12 +463,17 @@ class Options(object):
                     
             # Get redirect and call if can
             redirect = self.redirect
-            if callable(self.redirect):
-                redirect = self.redirect()
             
-            if redirect and type(redirect) in (str, unicode):
-                # Only redirect if we have a string to redirect to
-                def redirector(request, url):
+            if redirect and type(redirect) in (str, unicode) or callable(redirect):
+                # Only redirect if we have a string or callable to redirect to
+                def redirector(request, redirect):
+                    url = redirect
+                    if callable(redirect):
+                        url = redirect(request)
+                    
+                    if not url:
+                        raise Http404
+                    
                     if not url.startswith('/'):
                         if request.path.endswith('/'):
                             url = '%s%s' % (request.path, url)
@@ -477,7 +482,7 @@ class Options(object):
                     return self.redirect_to(request, url)
                 
                 view = redirector
-                kwargs = {'url' : unicode(redirect)}
+                kwargs = {'redirect' : redirect}
                 yield (pattern, view, kwargs, name)
         
             else:
