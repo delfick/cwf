@@ -2,14 +2,12 @@
 {% withul %}
 {% for section, appear, fullUrl, alias, selected, children, options in gen %}
 	{% if appear %}
-	{% if not options.needsAuth or user.is_authenticated %}
 
     <li{% if selected %}{% block selectedAttrs %} class="selected"{% endblock %}{% else %}{% block nonSelectedAttrs %}{% endblock %}{% endif %}>
         {% block insideLiLink %}<a href="{% if fullUrl|join:'/' != '' %}{{fullUrl|join:'/'}}{% else %}/{% endif %}">{{alias}}</a>{% endblock %}
         {% block insideLi %}{% endblock %}
     </li>
 
-	{%endif%}
 	{%endif%}
 
 {% endfor %}

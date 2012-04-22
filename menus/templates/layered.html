@@ -5,14 +5,12 @@
 {% for section, appear, fullUrl, alias, selected, children, options in layer %}
 
 	{% if appear %}
-	{% if not options.needsAuth or user.is_authenticated %}
 
     <li{% if selected %}{% block selectedAttrs %} class="selected"{% endblock %}{% else %}{% block nonSelectedAttrs %}{% endblock %}{% endif %}>
         {% block insideLiLink %}<a href="{{fullUrl|join:'/'}}">{{alias}}</a>{% endblock %}
         {% block insideLi %}{% endblock %}
     </li>
     
-	{%endif%}	
 	{%endif%}
 
 {% endfor %}
