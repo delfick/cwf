@@ -21,14 +21,16 @@ class ButtonMixin(object):
         condition = self.condition
         if callable(condition):
             condition = self.condition(obj, self)
-        if condition is False or (self.needSuperUser and not user.is_superuser) or not self.display:
+        
+        permissions = self.hasPermissions(user)
+        if condition is False or not permissions or not self.display:
             self.show = False
         else:
             self.show = True
     
     def setProperties(self
         , kls=None, description = None
-        , saveOnClick=True, forAll=False, needSuperUser=True
+        , saveOnClick=True, forAll=False, needSuperUser=True, needsAuth=None
         , display=True, newWindow=False
         , executeAndRedirect=False
         , condition = None
@@ -38,12 +40,34 @@ class ButtonMixin(object):
         self.kls = kls
         self.forAll = forAll
         self.display = display
+        self.needsAuth = needsAuth
         self.condition = condition
         self.newWindow = newWindow
         self.saveOnClick = saveOnClick
         self.description = description
         self.needSuperUser = needSuperUser
         self.executeAndRedirect = executeAndRedirect
+
+    def hasPermissions(self, user):
+        '''Determine if user has permissions for this section'''
+        if self.needSuperUser and not user.is_superuser:
+            return False
+        
+        needsAuth = self.needsAuth
+        if not needsAuth:
+            return True
+        
+        if type(needsAuth) is bool:
+            return user.is_authenticated()
+        else:
+            def iterAuth():
+                if type(needsAuth) in (list, tuple):
+                    for auth in needsAuth:
+                        yield auth
+                else:
+                    yield needsAuth
+            
+            return all(user.has_perm(auth) for auth in iterAuth())
 
 class ButtonGroup(ButtonMixin):
     def __init__(self, name, buttons, **kwargs):

@@ -4,6 +4,8 @@ from django.template import loader, Context, Template
 from urls.section import Site, Section, Values
 from menus import Menu
 
+import fudge
+
 @matcher
 class RenderAs(object):
     name = 'render_as'
@@ -41,6 +43,8 @@ class RenderAs(object):
 describe 'Menu templates':
     before_each:
         self.site = Site('templateTest')
+        self.request = fudge.Fake("request")
+        self.request.user = fudge.Fake("user")
         
         self.base = self.site.makeBase(inMenu=True).base(alias="Home")
         
@@ -92,7 +96,7 @@ describe 'Menu templates':
         self.sect4_4_2 = self.sect4_4.add('blah')
             
     it 'should make a global menu with base selected':
-        menu = Menu(self.site, [], self.base)
+        menu = Menu(self.request, self.site, [], self.base)
         desired = """
         <ul>
             <li class="selected"><a href="/">Home</a></li>
@@ -104,7 +108,7 @@ describe 'Menu templates':
         (menu, 'base', 'getGlobal') | should | render_as(desired)
     
     it 'should make a global menu with section other than base selected':
-        menu = Menu(self.site, ['one'], self.base)
+        menu = Menu(self.request, self.site, ['one'], self.base)
         desired = """
         <ul>
             <li><a href="/">Home</a></li>
@@ -116,7 +120,7 @@ describe 'Menu templates':
         (menu, 'base', 'getGlobal') | should | render_as(desired)
     
     it 'should make global menu and be case insensitive':
-        menu = Menu(self.site, ['oNe'], self.base)
+        menu = Menu(self.request, self.site, ['oNe'], self.base)
         desired = """
         <ul>
             <li><a href="/">Home</a></li>
@@ -128,7 +132,7 @@ describe 'Menu templates':
         (menu, 'base', 'getGlobal') | should | render_as(desired)
     
     it 'should make global menu when the url is longer than selected section':
-        menu = Menu(self.site, ['one', 'some'], self.base)
+        menu = Menu(self.request, self.site, ['one', 'some'], self.base)
         desired = """
         <ul>
             <li><a href="/">Home</a></li>
@@ -141,7 +145,7 @@ describe 'Menu templates':
         
     describe 'heirarchial menu':
         it 'should make a heirarchial menu':
-            menu = Menu(self.site, ['one'], self.sect1)
+            menu = Menu(self.request, self.site, ['one'], self.sect1)
             desired = """
             <ul>
                 <li><a href="/one/some">blah</a></li>
@@ -164,7 +168,7 @@ describe 'Menu templates':
             b2 = b.add('\d{4}').base(match='year', values=Values([2010, 2009], asSet=False))
             h = b2.add('\d+').base(match='asdf', values=Values([1], asSet=False))
             
-            menu = Menu(site, ['blah', 'meh', '2010', '1'], h.rootAncestor())
+            menu = Menu(self.request, site, ['blah', 'meh', '2010', '1'], h.rootAncestor())
             desired = """
             <ul>
                 <li><a href="/blah">latest</a></li>
@@ -188,7 +192,7 @@ describe 'Menu templates':
             (menu, 'heirarchial') | should | render_as(desired)
                 
         it 'should support sections with multiple values':
-            menu = Menu(self.site, ['one', '1_'], self.sect1)
+            menu = Menu(self.request, self.site, ['one', '1_'], self.sect1)
             desired = """
             <ul>
                 <li><a href="/one/some">blah</a></li>
@@ -201,7 +205,7 @@ describe 'Menu templates':
             (menu, 'heirarchial') | should | render_as(desired)
                 
         it 'should make a heirarchial menu and not include children when parent isnt selected':
-            menu = Menu(self.site, ['2'], self.sect2)
+            menu = Menu(self.request, self.site, ['2'], self.sect2)
             desired = """
             <ul>
                 <li class="selected"><a href="/2">meh</a></li>
@@ -212,7 +216,7 @@ describe 'Menu templates':
             (menu, 'heirarchial') | should | render_as(desired)
                 
         it 'should make a heirarchial menu and do include children when parent is selected':
-            menu = Menu(self.site, ['2', '1', '3', '4'], self.sect2)
+            menu = Menu(self.request, self.site, ['2', '1', '3', '4'], self.sect2)
             desired = """
             <ul>
                 <li><a href="/2">meh</a></li>
@@ -233,14 +237,14 @@ describe 'Menu templates':
             (menu, 'heirarchial') | should | render_as(desired)
                 
         it 'should not show sections that have display set to False':
-            menu = Menu(self.site, ['3'], self.sect3)
+            menu = Menu(self.request, self.site, ['3'], self.sect3)
             desired = ""
             
             (menu, 'heirarchial') | should | render_as(desired)
     
     describe 'layered menu':
         it 'should be able to handle no selected section':
-            menu = Menu(self.site, ['one'], self.sect1)
+            menu = Menu(self.request, self.site, ['one'], self.sect1)
             desired = """
             <ul>
                 <li><a href="/one/some">blah</a></li>
@@ -253,7 +257,7 @@ describe 'Menu templates':
             (menu, 'layered') | should | render_as(desired)
         
         it 'should only create layers from children with selected parents':
-            menu = Menu(self.site, ['2'], self.sect2)
+            menu = Menu(self.request, self.site, ['2'], self.sect2)
             desired = """
             <ul>
                 <li class="selected"><a href="/2">meh</a></li>
@@ -264,7 +268,7 @@ describe 'Menu templates':
             (menu, 'layered') | should | render_as(desired)
                 
         it 'should be able to make a layered menu':
-            menu = Menu(self.site, ['4', 'needs', 'path', '2'], self.sect4)
+            menu = Menu(self.request, self.site, ['4', 'needs', 'path', '2'], self.sect4)
             desired = """
             <ul>
                 <li><a href="/4/this">This</a></li>
@@ -291,7 +295,7 @@ describe 'Menu templates':
             (menu, 'layered') | should | render_as(desired)
             
         it 'should not show sections that have display set to False':
-            menu = Menu(self.site, ['3'], self.sect3)
+            menu = Menu(self.request, self.site, ['3'], self.sect3)
             desired = ""
             
             (menu, 'layered') | should | render_as(desired)

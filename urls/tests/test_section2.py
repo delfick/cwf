@@ -4,10 +4,14 @@ from django.views.generic.simple import redirect_to
 from urls.section import Options
 from urls import dispatch
 
+import fudge
+
 describe 'cwf Options':
     before_each:
         self.opts = Options(target='view', kls='a', module='m')
         self.opts.nonClonedAttribute = False
+        self.request = fudge.Fake("request")
+        self.request.user = fudge.Fake("user")
     
     it 'should be possible to clone an options object':
         self.opts.nonClonedAttribute | should.be | False
@@ -38,19 +42,19 @@ describe 'cwf Options':
     
     it 'should have a function saying whether there is a condition to section being viewed':
         self.opts.condition = True
-        self.opts.show() | should.be | False
+        self.opts.show(self.request) | should.be | False
         
         self.opts.condition = lambda r: True
-        self.opts.show() | should.be | False
+        self.opts.show(self.request) | should.be | False
         
         self.opts.condition = lambda r: False
-        self.opts.show() | should.be | True
+        self.opts.show(self.request) | should.be | True
         
         self.opts.condition = False
-        self.opts.show() | should.be | True
+        self.opts.show(self.request) | should.be | True
         
         self.opts.condition = None
-        self.opts.show() | should.be | True
+        self.opts.show(self.request) | should.be | True
         
     describe 'getting object':
         before_each:

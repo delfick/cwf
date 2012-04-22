@@ -106,7 +106,7 @@ class View(object):
             path.pop(0)
         
         if section:
-            state.menu = Menu(site, path, section.rootAncestor(), request=request)
+            state.menu = Menu(request, site, path, section.rootAncestor())
         
         return state
     

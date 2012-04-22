@@ -1,10 +1,13 @@
 # coding: spec
 
 from urls.section import Section, Options, Values
+import fudge
 
 describe 'Sections':
     before_each:
         self.sect = Section()
+        self.request = fudge.Fake("request")
+        self.request.user = fudge.Fake("user")
     
     it 'should implement __iter__ and return itself followed by children':
         def result():
@@ -36,31 +39,31 @@ describe 'Sections':
         c2 = self.sect.add('place')
         c3 = self.sect.add('not_nice').base(condition=True)
         
-        self.sect.show() | should.be | True
-        c1.show() | should.be | True
-        c2.show() | should.be | True
-        c3.show() | should.be | False
+        self.sect.show(self.request) | should.be | True
+        c1.show(self.request) | should.be | True
+        c2.show(self.request) | should.be | True
+        c3.show(self.request) | should.be | False
         
         self.sect.base(condition = True)
-        self.sect.show() | should.be | False
-        c1.show() | should.be | False
-        c2.show() | should.be | False
-        c3.show() | should.be | False
+        self.sect.show(self.request) | should.be | False
+        c1.show(self.request) | should.be | False
+        c2.show(self.request) | should.be | False
+        c3.show(self.request) | should.be | False
     
     it 'should only be appearable if its showable and displayable':
-        self.sect.show() | should.be | True
+        self.sect.show(self.request) | should.be | True
         self.sect.options.display | should.be | True
-        self.sect.appear() | should.be | True
+        self.sect.appear(self.request) | should.be | True
         
         self.sect.base(condition = True)
-        self.sect.show() | should.be | False
+        self.sect.show(self.request) | should.be | False
         self.sect.options.display | should.be | True
-        self.sect.appear() | should.be | False
+        self.sect.appear(self.request) | should.be | False
         
         self.sect.base(condition = False, display=False)
-        self.sect.show() | should.be | True
+        self.sect.show(self.request) | should.be | True
         self.sect.options.display | should.be | False
-        self.sect.appear() | should.be | False
+        self.sect.appear(self.request) | should.be | False
     
     it 'should be selected if parent is selected and url equals first part of path':
         c = self.sect.add('nice')
@@ -106,9 +109,9 @@ describe 'Sections':
     describe 'info':
         before_each:
 
-            def gen(children, restOfPath, parentUrl, parentSelected, request=None):
+            def gen(request, children, restOfPath, parentUrl, parentSelected):
                 for child in children:
-                    for part in child.getInfo(restOfPath, parentUrl, parentSelected, gen=gen, request=request):
+                    for part in child.getInfo(request, restOfPath, parentUrl, parentSelected, gen=gen):
                         yield part
                         
             def goThrough(gen, *expected):
@@ -142,13 +145,13 @@ describe 'Sections':
         it 'should not provide a children generator if there are no children':
             c = self.sect.add('there')
             
-            gens = self.goThrough(self.sect.getInfo([], gen=self.gen), (self.sect, [''], '/', False, self.sect.options))
+            gens = self.goThrough(self.sect.getInfo(self.request, [], gen=self.gen), (self.sect, [''], '/', False, self.sect.options))
             gens = self.goThrough(gens[0], (c, ['', 'there'], 'There', False, [], c.options))
             
         it 'should only have info if it is active':
             def test(**kwargs):
                 self.sect.base(**kwargs)
-                return [t for t in self.sect.getInfo([''])]
+                return [t for t in self.sect.getInfo(self.request, [''])]
             
             test() | should | have(1).element
             test(active=False) | should | have(0).elements
@@ -156,28 +159,28 @@ describe 'Sections':
             test(exists=True, active=True, condition=True) | should | have(1).elements
         
         it 'should return a 7 element tuple':
-            for t in self.sect.getInfo(['']):
+            for t in self.sect.getInfo(self.request, ['']):
                 t | should | have(7).elements
             
             self.sect.base(values = Values(['blah'], asSet=False))
-            for t in self.sect.getInfo(['']):
+            for t in self.sect.getInfo(self.request, ['']):
                 t | should | have(7).elements
         
         it 'should use options alias or capitalized url if alias doesnt exist':
             c = self.sect.add('place')
-            for t in c.getInfo(['']):
+            for t in c.getInfo(self.request, ['']):
                 t[3] | should.equal_to | 'Place'
             
             c.base(alias='nice')
-            for t in c.getInfo(['']):
+            for t in c.getInfo(self.request, ['']):
                 t[3] | should.equal_to | 'nice'
         
         it 'should not change alias from a values object':
             self.sect.base(values = Values(['v1', 'v2'], asSet=False))
-            [t[3] for t in self.sect.getInfo([''])] | should.equal_to | ['v1', 'v2']
+            [t[3] for t in self.sect.getInfo(self.request, [''])] | should.equal_to | ['v1', 'v2']
         
         it 'should get fullUrl correct':
-            for t in self.sect.getInfo(['']):
+            for t in self.sect.getInfo(self.request, ['']):
                 t[0] | should.equal_to | self.sect
                 t[2] | should.equal_to | ['']
             
@@ -185,7 +188,7 @@ describe 'Sections':
             c2 = self.sect.add('meh').base(alias='niceAlias')
             d = c.add('nice').base(match='blah')
             
-            gens = self.goThrough(self.sect.getInfo([], gen=self.gen), (self.sect, [''], '/', False, self.sect.options))
+            gens = self.goThrough(self.sect.getInfo(self.request, [], gen=self.gen), (self.sect, [''], '/', False, self.sect.options))
             
             gens = self.goThrough(gens[0]
                 , (c, ['', 'some'], 'Some', False, c.options)
@@ -199,7 +202,7 @@ describe 'Sections':
             c = self.sect.add('some').base(values=Values(['v1', 'v2'], asSet=False))
             d = c.add('nice')
             
-            gens = self.goThrough(self.sect.getInfo([], gen=self.gen), (self.sect, [''], '/', False, self.sect.options))
+            gens = self.goThrough(self.sect.getInfo(self.request, [], gen=self.gen), (self.sect, [''], '/', False, self.sect.options))
         
             gens = self.goThrough(gens[0]
                 , (c, ['', 'v1'], 'v1', False, c.options)
@@ -217,7 +220,7 @@ describe 'Sections':
             g = d.add('bad_place')
             
             gens = self.goThrough(
-                  self.sect.getInfo(['', 'some', 'nice', 'country'], gen=self.gen)
+                  self.sect.getInfo(self.request, ['', 'some', 'nice', 'country'], gen=self.gen)
                 , (self.sect, [''], '/', True, self.sect.options)
             )
         
@@ -239,7 +242,7 @@ describe 'Sections':
             g = d.add('bad_place')
             
             gens = self.goThrough(
-                  self.sect.getInfo(['', 'some', 'nice', 'country'], gen=self.gen)
+                  self.sect.getInfo(self.request, ['', 'some', 'nice', 'country'], gen=self.gen)
                 , (self.sect, [''], '/', True, self.sect.options)
             )
         
@@ -261,7 +264,7 @@ describe 'Sections':
             g = d.add('bad_place')
             
             gens = self.goThrough(
-                  self.sect.getInfo(['', 'some', 'nice', 'country'], gen=self.gen)
+                  self.sect.getInfo(self.request, ['', 'some', 'nice', 'country'], gen=self.gen)
                 , (self.sect, [''], '/', True, self.sect.options)
             )
         

@@ -3,7 +3,7 @@ from itertools import chain
 class Menu(object):
     """Wrapper around sections and sites for getting necessary menu information"""
     
-    def __init__(self, site, remainingUrl, selectedSection=None, request=None):
+    def __init__(self, request, site, remainingUrl, selectedSection=None):
         self.site    = site
         self.request = request
         
@@ -46,7 +46,7 @@ class Menu(object):
                         if zipped:
                             parentSelected = len(parentUrl) > 0 and all(d == e for (d, e) in zipped)
 
-            for info in section.getInfo(remaining, parentUrl, parentSelected, request=self.request):
+            for info in section.getInfo(self.request, remaining, parentUrl, parentSelected):
                 yield self.clean(info)
         
     def heirarchial(self, includeFirst=False):
@@ -69,14 +69,14 @@ class Menu(object):
                 if self.selectedSection:
                     sections = [self.selectedSection]
                 
-            for info in self.getHeirarchy(sections, path, parentUrl, parentSelected, request=self.request):
+            for info in self.getHeirarchy(self.request, sections, path, parentUrl, parentSelected):
                 yield self.clean(info)
         
-    def getHeirarchy(self, sections, path, parentUrl, parentSelected, request=None):
+    def getHeirarchy(self, request, sections, path, parentUrl, parentSelected):
         """Generator function for heirarchial menu children"""
         for section in sections:
             if section.options.showBase:
-                for info in section.getInfo(path, parentUrl, parentSelected, self.getHeirarchy, request=request):
+                for info in section.getInfo(self.request, path, parentUrl, parentSelected, self.getHeirarchy):
                     yield info
                 
             else:
@@ -87,7 +87,7 @@ class Menu(object):
                 parentSelected = parentSelected and selected
                 
                 for child in section.children:
-                    for info in child.getInfo(path, parentUrl, parentSelected, self.getHeirarchy, request=request):
+                    for info in child.getInfo(self.request, path, parentUrl, parentSelected, self.getHeirarchy):
                         yield info
         
                     
@@ -106,9 +106,9 @@ class Menu(object):
                     selected, path = section.determineSelection(path, parentSelected)
                     parentSelected = parentSelected and selected
                 
-                selected = self.getLayer(section.children, path, parentUrl, parentSelected, request=self.request)
+                selected = self.getLayer(self.request, section.children, path, parentUrl, parentSelected)
             else:
-                selected  = self.getLayer([self.selectedSection], path, parentUrl, parentSelected, request=self.request)
+                selected  = self.getLayer(self.request, [self.selectedSection], path, parentUrl, parentSelected)
             
             while selected:
                 # Whilst we still have a selected section (possibility of more layers)
@@ -131,11 +131,11 @@ class Menu(object):
                 if l:
                     yield l
 
-    def getLayer(self, sections, path, parentUrl, parentSelected, request=None):
+    def getLayer(self, request, sections, path, parentUrl, parentSelected):
         """Function to get next layer for a section"""
         for section in sections:
             if section.options.showBase:
-                for info in section.getInfo(path, parentUrl, parentSelected, self.getLayer, request=request):
+                for info in section.getInfo(request, path, parentUrl, parentSelected, self.getLayer):
                     yield info
             else:
                 if section.url:

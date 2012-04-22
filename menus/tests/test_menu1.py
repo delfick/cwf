@@ -3,6 +3,8 @@
 from urls.section import Section, Site, Values
 from menus import Menu
 
+import fudge
+
 describe 'Menu':
     before_each:
         self.site1 = Site('site1')
@@ -20,6 +22,8 @@ describe 'Menu':
         self.sect3 = Section('c')
         self.sect3_1 = self.sect3.add('hello')
         self.sect3_1_1 = self.sect3_1.add('there')
+        
+        self.request = fudge.Fake("request")
         
         def getGiving(part, give):
             section, appear, fullUrl, alias, selected, children, options = part
@@ -87,7 +91,7 @@ describe 'Menu':
         
         describe 'heirarchially':
             it 'should give values function parenturl and path':
-                menu = Menu(self.site1, ['c', 'hello', 'there'], self.sect3)
+                menu = Menu(self.request, self.site1, ['c', 'hello', 'there'], self.sect3)
                 self.heirarchialRoll(menu.heirarchial(), give=[0, 3, 2]) | should.equal_to | [
                     [ (self.sect3_1, 'Hello', ['', 'c', 'hello'])
                     , [ (self.sect3_1_1, 'There', ['', 'c', 'hello', 'there']) 
@@ -100,7 +104,7 @@ describe 'Menu':
                 ]
                 
             it 'should give values function parenturl and path':
-                menu = Menu(self.site1, ['c', 'hello', 'there', 'blah', 'meh'], self.sect3)
+                menu = Menu(self.request, self.site1, ['c', 'hello', 'there', 'blah', 'meh'], self.sect3)
                 self.heirarchialRoll(menu.heirarchial(), give=[0, 3, 2]) | should.equal_to | [
                     [ (self.sect3_1, 'Hello', ['', 'c', 'hello'])
                     , [ (self.sect3_1_1, 'There', ['', 'c', 'hello', 'there']) 
@@ -116,7 +120,7 @@ describe 'Menu':
         
         describe 'layered':
             it 'should give values function parenturl and path':
-                menu = Menu(self.site1, ['c', 'hello', 'there'], self.sect3)
+                menu = Menu(self.request, self.site1, ['c', 'hello', 'there'], self.sect3)
                 self.layeredRoll(menu.layered(), give=[0, 3, 2]) | should.equal_to | [
                       [ (self.sect3_1, 'Hello', ['', 'c', 'hello']) ]
                     , [ (self.sect3_1_1, 'There', ['', 'c', 'hello', 'there']) ]
@@ -129,7 +133,7 @@ describe 'Menu':
                     ]
                 
             it 'should give values function parenturl and path':
-                menu = Menu(self.site1, ['c', 'hello', 'there', 'blah', 'meh'], self.sect3)
+                menu = Menu(self.request, self.site1, ['c', 'hello', 'there', 'blah', 'meh'], self.sect3)
                 self.layeredRoll(menu.layered(), give=[0, 3, 2]) | should.equal_to | [
                       [ (self.sect3_1, 'Hello', ['', 'c', 'hello']) ]
                     , [ (self.sect3_1_1, 'There', ['', 'c', 'hello', 'there']) ]
@@ -145,7 +149,7 @@ describe 'Menu':
             
     describe 'Global menu':
         it 'should give an empty list if no sections':
-            menu = Menu(self.site1, [''])
+            menu = Menu(self.request, self.site1, [''])
             [t for t in menu.getGlobal()] | should.equal_to | []
         
         it 'should give a list of sections in the site that are in the menu':
@@ -155,7 +159,7 @@ describe 'Menu':
             self.site1.add(self.sect3, inMenu=False)
             self.site1.add(site=self.site2, inMenu=True)
             
-            menu = Menu(self.site1, [''])
+            menu = Menu(self.request, self.site1, [''])
             [t[0] for t in menu.getGlobal()] | should.equal_to | [self.sect2, self.sect1]
         
         it 'should give base section first':
@@ -165,7 +169,7 @@ describe 'Menu':
             self.site1.add(site=self.site2, inMenu=True)
             self.site1.add(self.sect3, inMenu=True, base=True)
             
-            menu = Menu(self.site1, [''])
+            menu = Menu(self.request, self.site1, [''])
             [t[0] for t in menu.getGlobal()] | should.equal_to | [self.sect3, self.sect2, self.sect1]
     
     describe 'nav menus': pass
@@ -184,17 +188,17 @@ describe 'Menu':
                                    )
                 )
                 
-                self.menu = lambda path : Menu(self.site1, path, base)
+                self.menu = lambda path : Menu(self.request, self.site1, path, base)
             
             it 'should work on a site object with no base or children':
-                menu = Menu(self.site3, [], None)
+                menu = Menu(self.request, self.site3, [], None)
                 self.roll(menu.heirarchial(), give=0) | should.equal_to | []
             
             it 'should work on a site object with no base':
                 sect = Section('blah')
                 self.site3.add(sect)
                 
-                menu = Menu(self.site3, [], sect)
+                menu = Menu(self.request, self.site3, [], sect)
                 self.roll(menu.heirarchial(includeFirst=True), give=0) | should.equal_to | [[sect]]
                 
             it 'should give info heirarchially':
@@ -321,17 +325,17 @@ describe 'Menu':
                                    )
                 )
                 
-                self.menu = lambda path : Menu(self.site1, path, base)
+                self.menu = lambda path : Menu(self.request, self.site1, path, base)
             
             it 'should work on a site object with no base or children':
-                menu = Menu(self.site3, [], None)
+                menu = Menu(self.request, self.site3, [], None)
                 self.roll(menu.layered(), give=0) | should.equal_to | []
             
             it 'should work on a site object with no base':
                 sect = Section('blah')
                 self.site3.add(sect)
                 
-                menu = Menu(self.site3, [], sect)
+                menu = Menu(self.request, self.site3, [], sect)
                 self.roll(menu.layered(includeFirst=True), give=0) | should.equal_to | [[sect]]
             
             it 'should give info layered only for selected sections':

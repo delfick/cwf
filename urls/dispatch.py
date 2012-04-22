@@ -26,7 +26,7 @@ class Dispatcher(object):
                 condition = condition(request)
             
             needsAuth = False
-            if section.options.needsAuth and not request.user.is_authenticated:
+            if section.options.needsAuth and not section.hasPermissions(request.user):
                 needsAuth = True
             
             if not condition and not needsAuth:

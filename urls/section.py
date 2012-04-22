@@ -127,7 +127,7 @@ class Section(object):
         else:
             return self
         
-    def show(self, request=None):
+    def show(self, request):
         """Can only show if options say this section can show and parent can show"""
         parentShow = True
         if self.parent:
@@ -138,7 +138,7 @@ class Section(object):
         
         return False
         
-    def appear(self, request=None):
+    def appear(self, request):
         """Can only appear if allowed to be displayed and shown"""
         display = self.options.display
         adminOnly = False
@@ -152,9 +152,28 @@ class Section(object):
         if adminOnly:
             self.options.admin = True
         
-        return display and self.show(request)
+        permissions = self.hasPermissions(request.user)
+        return display and permissions and self.show(request)
     
-    def getInfo(self, path, parentUrl=None, parentSelected=True, gen=None, request=None):
+    def hasPermissions(self, user):
+        '''Determine if user has permissions for this section'''
+        needsAuth = self.options.needsAuth
+        if not needsAuth:
+            return True
+        
+        if type(needsAuth) is bool:
+            return user.is_authenticated()
+        else:
+            def iterAuth():
+                if type(needsAuth) in (list, tuple):
+                    for auth in needsAuth:
+                        yield auth
+                else:
+                    yield needsAuth
+            
+            return all(user.has_perm(auth) for auth in iterAuth())
+    
+    def getInfo(self, request, path, parentUrl=None, parentSelected=True, gen=None):
         if self.options.active:
             def get(path, url=None):
                 """Helper to get children, fullUrl and determine if selected"""
@@ -180,7 +199,7 @@ class Section(object):
                     if gen:
                         # Make it a lambda, so that template can remake the generator
                         # Generator determines how to deliver info about the children
-                        children = lambda : gen(self.children, path, fullUrl, selected, request=request)
+                        children = lambda : gen(request, self.children, path, fullUrl, selected)
                 
                 # We want absolute paths
                 if fullUrl and fullUrl[0] != '':
@@ -196,7 +215,7 @@ class Section(object):
                 self.options.admin = True
             
             if self.options.values:
-                for alias, url in self.options.values.getInfo(parentUrl, path, request=request):
+                for alias, url in self.options.values.getInfo(request, parentUrl, path):
                     selected, children, fullUrl = get(path, url)
                     yield (self, appear, fullUrl, alias, selected, children, self.options)
             else:
@@ -348,7 +367,7 @@ class Options(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def show(self, request=None):
+    def show(self, request):
         """Determine if any dynamic conditions stand in the way of actually showing the section"""
         adminOnly = False
         condition = self.condition
@@ -530,7 +549,7 @@ class Values(object):
         # Not allowed to sort, so just return as is
         return values
         
-    def getValues(self, parentUrl, path, sortWithAlias=None, request=None):
+    def getValues(self, request, parentUrl, path, sortWithAlias=None):
         """Get transformed, sorted values"""
         # If we have values
         if self.values is not None:
@@ -563,10 +582,10 @@ class Values(object):
             
             return ret
         
-    def getInfo(self, parentUrl, path, request=None):
+    def getInfo(self, request, parentUrl, path):
         """Generator for (alias, url) pairs for each value"""
         # Get sorted values
-        values = self.getValues(parentUrl, path, request=request)
+        values = self.getValues(request, parentUrl, path)
             
         # Yield some information
         if values and any(v is not None for v in values):
