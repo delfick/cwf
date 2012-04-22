@@ -3,15 +3,16 @@
 
 {% withul %}
 {% for section, appear, fullUrl, alias, selected, children, options in layer %}
-
-	{% if appear %}
+    {% with appearOpts=appear %}
+    {% if appearOpts.appear %}
 
     <li{% if selected %}{% block selectedAttrs %} class="selected"{% endblock %}{% else %}{% block nonSelectedAttrs %}{% endblock %}{% endif %}>
         {% block insideLiLink %}<a href="{{fullUrl|join:'/'}}">{{alias}}</a>{% endblock %}
         {% block insideLi %}{% endblock %}
     </li>
     
-	{%endif%}
+	{% endif %}
+    {% endwith %}
 
 {% endfor %}
 {% endwithul %}

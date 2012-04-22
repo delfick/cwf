@@ -149,11 +149,8 @@ class Section(object):
         if type(display) is not bool:
             adminOnly, display = display
         
-        if adminOnly:
-            self.options.admin = True
-        
         permissions = self.hasPermissions(request.user)
-        return display and permissions and self.show(request)
+        return adminOnly, display and permissions and self.show(request)
     
     def hasPermissions(self, user):
         '''Determine if user has permissions for this section'''
@@ -211,17 +208,16 @@ class Section(object):
                 parentUrl = []
             
             appear = lambda : self.appear(request)
-            if self.options.needsAuth and not self.options.admin:
-                self.options.admin = True
+            admin = self.options.admin or self.options.needsAuth
             
             if self.options.values:
                 for alias, url in self.options.values.getInfo(request, parentUrl, path):
                     selected, children, fullUrl = get(path, url)
-                    yield (self, appear, fullUrl, alias, selected, children, self.options)
+                    yield (self, appear, fullUrl, alias, selected, children, admin, self.options)
             else:
                 alias = self.getAlias()
                 selected, children, fullUrl = get(path)
-                yield (self, appear, fullUrl, alias, selected, children, self.options)
+                yield (self, appear, fullUrl, alias, selected, children, admin, self.options)
     
     def getAlias(self):
         alias = self.options.alias
@@ -376,9 +372,6 @@ class Options(object):
         
         if type(condition) in (tuple, list):
             adminOnly, condition = condition
-        
-        if adminOnly:
-            self.admin = True
         
         if condition:
             return False

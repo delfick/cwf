@@ -11,14 +11,24 @@ class Menu(object):
         self.selectedSection = selectedSection
     
     def clean(self, info):
-        section, appear, fullUrl, alias, selected, children, options = info
+        if len(info) == 7:
+            return info
+        
+        section, appear, fullUrl, alias, selected, children, admin, options = info
         if fullUrl == ['']:
             fullUrl = ['', '']
         
         elif fullUrl and fullUrl[-1] == '':
             fullUrl = fullUrl[:-1]
         
-        return (section, appear, fullUrl, alias, selected, children, options)
+        def getAppearOptions(appear=appear, admin=admin):
+            adminOnly, appear = appear()
+            return {
+                  'appear' : appear
+                , 'admin' : adminOnly or admin
+                }
+        
+        return (section, getAppearOptions, fullUrl, alias, selected, children, options)
     
     def getGlobal(self):
         """Get sections in the site's menu"""
@@ -77,7 +87,7 @@ class Menu(object):
         for section in sections:
             if section.options.showBase:
                 for info in section.getInfo(self.request, path, parentUrl, parentSelected, self.getHeirarchy):
-                    yield info
+                    yield self.clean(info)
                 
             else:
                 if section.url:
@@ -88,7 +98,7 @@ class Menu(object):
                 
                 for child in section.children:
                     for info in child.getInfo(self.request, path, parentUrl, parentSelected, self.getHeirarchy):
-                        yield info
+                        yield self.clean(info)
         
                     
     def layered(self, includeFirst=False):
@@ -136,7 +146,7 @@ class Menu(object):
         for section in sections:
             if section.options.showBase:
                 for info in section.getInfo(request, path, parentUrl, parentSelected, self.getLayer):
-                    yield info
+                    yield self.clean(info)
             else:
                 if section.url:
                     parentUrl.append(section.url)
@@ -145,4 +155,4 @@ class Menu(object):
                 parentSelected = parentSelected and selected
                     
                 for info in self.getLayer(section.children, path, parentUrl, parentSelected):
-                    yield info
+                    yield self.clean(info)
