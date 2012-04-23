@@ -106,6 +106,7 @@ class Section(object):
         return section
     
     def add_child(self, section, first=False):
+        """Add a child to the section"""
         if first:
             self._base = section
         else:
