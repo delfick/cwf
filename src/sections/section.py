@@ -17,14 +17,20 @@ class Section(object):
     def __init__(self, url='/', name=None, parent=None):
         self.url  = url
         self.name = name
-        self.parent   = parent
+        self.parent = parent
         
-        self.children = []
+        self._base = None
+        self._children = []
+        
         self._pattern = None
         self._options = None
         if hasattr(self, 'setup'):
             if callable(self.setup):    
                 self.setup()
+        
+    ########################
+    ###   USAGE
+    ########################
     
     def add(self, url, match=None, name=None):
         """Adds a child to self.children"""
@@ -33,22 +39,18 @@ class Section(object):
         
         section = Section(url=url, name=name, parent=self)
         section.options = self.options.clone(match=match)
-        self.children.append(section)
+        self.add_child(section)
         
         return section
 
     def first(self, url="", match=None, name=None):
-        """Adds a child with the same url as the parent at the beginning of self.children"""
-        if self.children and self.children[0].url == '':
-            # Override if we already have a first section
-            self.children.pop(0)
-        
+        """Adds a child with the same url as the parent as self.base"""
         if name is None:
             name = self.name
         
         section = Section(url=url, name=name, parent=self)
         section.options = self.options.clone(match=match)
-        self.children.insert(0, section)
+        self.add_child(section, first=True)
         
         return section
         
@@ -67,16 +69,49 @@ class Section(object):
         self.options.set_everything(**kwargs)
         return self
     
-    def adopt(self, *sections):
+    def adopt(self, *sections, **kwargs):
         '''
-            Adopt a section as it's own child
+            Adopt zero or more sections as it's own
             Will also replace this section's parent with itself
+            If clone is specified as a keyword argument to be True, then sections will be cloned
+            Otherwise, sections will just have their parent overriden
         '''
+        clone = kwargs.get('clone')
         for section in sections:
-            section.parent = self
-            self.children.append(section)
+            if clone:
+                section = section.clone(parent=self)
+            else:
+                section.parent = self
+            
+            self.add_child(section)
         
         return self
+    
+    def merge(self, section, take_base=False):
+        '''
+            Copy children from a section into this section.
+            Will only replace self._base if take_base is True
+        '''
+        if take_base and section._base:
+            if section._base:
+                self._base = section._base.clone(parent=self)
+            else:
+                self._base = None
+        
+        self._children = [child.clone(parent=self) for child in section._children]
+        return self
+    
+    def copy(self, section):
+        """Create a copy of the given section and add as a child"""
+        section = section.clone(parent=section)
+        self.add_child(section)
+        return section
+    
+    def add_child(self, section, first=False):
+        if first:
+            self._base = section
+        else:
+            self._children.append(section)
         
     ########################
     ###   SPECIAL
@@ -99,6 +134,14 @@ class Section(object):
             alias = self.url.capitalize()
         return alias
     
+    @property
+    def children(self):
+        if self._base:
+            yield self._base
+        
+        for child in self._children:
+            yield child
+    
     def __iter__(self):
         """Return self followed by all children"""
         yield self
@@ -118,42 +161,72 @@ class Section(object):
     ########################
     ###   URL PATTERNS
     ########################
-        
-    def path_to(self, section, path, steer):
-        """Used to get include path to specified section"""
-        inside = section == self
-        return path, inside
 
-    def patterns(self, stopAt=None):
-        """Return patterns object for this section"""
-        return patterns('', *list(self.pattern_list(stopAt)))
+    def patterns(self, **kwargs):
+        """
+            Return patterns object for this section
+            A django patterns object
+                with (pattern, view, kwarg, name) tuples for the section and it's children
+            Each pattern will only go up the parent chain untill no parent or section is stop_at
+        """
+        yield patterns('', *list(self.pattern_list(**kwargs)))
+    
+    def include_patterns(self, namespace, app_name, include_as=None):
+        """
+            Return patterns object for this section using an include
+            Equivelant to:
+                (path, include(patterns(children_only=True, stop_at=self, start=False), namespace, app_name))
+            
+            Where path is determined by self.include_path(include_as)
+        """
+        path = self.include_path(include_as)
+        includer = include(self.patterns(children_only=True, stop_at=self), namespace, app_name)
+        return (path, includer)
         
-    def pattern_list(self, stopAt=None):
+    def pattern_list(self, children_only=False, stop_at=None, start=True):
         """Return list of url patterns for this section and its children"""
         if self.options.promote_children or not self.children:
             # If not showing base, then there is no direct url to that section
-            # But it's part of the url will be respected by the children
-            yield self.url_pattern(stopAt)
+            # But the children will respect the part of the url that belongs to this section
+            pattern = self.url_pattern(stop_at, start=start)
+            view, kwargs = self.options.url_view(self)
+            yield (pattern, view, kwargs, self.name)
         
         # Yield children
         for child in self.children:
-            for url_pattern in child.pattern_list(stopAt):
+            for url_pattern in child.pattern_list(stop_at, start=start):
                 yield url_pattern
+        
+    ########################
+    ###   URL UTILITY
+    ########################
     
-    def url_pattern(self, stopAt=None):
+    def url_pattern(self, stop_at=None, end=None):
         """Get tuple to be used for url pattern for this section"""
-        url_parts = self.determine_url_parts(stopAt)
-        pattern = self.options.create_pattern(url_parts)
-        view, kwargs = self.options.url_view(self)
-        return (pattern, view, kwargs, self.name)
+        url_parts = self.determine_url_parts(stop_at)
+        return self.options.create_pattern(url_parts, end=end)
+        
+    def include_path(self, include_as=None):
+        """
+            Determine path to this includer
+            Will use self.url_pattern without trailing $
+            unless include_as is specified which will override this
+        """
+        if include_as:
+            while include_as.endswith("/"):
+                include_as = include_as[:-1]
+            return "^%s/" % include_as
+        
+        # No include_as specified
+        return self.url_pattern(stop_at=self, end=False, start=False)
 
-    def determine_url_parts(self, stopAt=None):
+    def determine_url_parts(self, stop_at=None):
         """Get list of patterns making the full pattern for this section"""
         if not self._url_parts:
             url_parts = []
-            if self.parent and not self is stopAt:
+            if self.parent and not self is stop_at:
                 # Get parent patterns
-                url_parts = list(self.parent.determine_url_parts(stopAt))
+                url_parts = list(self.parent.determine_url_parts(stop_at))
             
             match = self.options.match
             if match:
@@ -167,6 +240,18 @@ class Section(object):
     ########################
     ###   UTILITY
     ########################
+    
+    def clone(self, **kwargs):
+        """
+            Create a clone of this section
+            Will keep references to old children, but not clone them
+        """
+        for attr in ('url', 'name', 'parent'):
+            if attr not in kwargs:
+                kwargs[attr] = getattr(self, attr)
+        new = Section(**kwargs)
+        new.options = self.options.clone(all=True)
+        return new
     
     def rootAncestor(self):
         """Find ancestor that has no parent"""

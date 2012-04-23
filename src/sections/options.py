@@ -152,7 +152,7 @@ class Options(object):
     ###   CLONE
     ########################
     
-    def clone(self, **kwargs):
+    def clone(self, all=False, **kwargs):
         """
             Return a copy of this object with new options.
             It Determines current options, updates with new options
@@ -162,7 +162,10 @@ class Options(object):
         for _, required in self.setters():
             passon.extend(required)
         
-        no_propogate = ('admin', 'alias', 'match', 'values', 'show_base')
+        if all:
+            no_propogate = ()
+        else:
+            no_propogate = ('admin', 'alias', 'match', 'values', 'show_base')
         values = dict((name, kwargs[arg]) for arg in passon if arg not in no_propogate and arg in kwargs)
         
         cloned = Options()
@@ -173,38 +176,56 @@ class Options(object):
     ###   URL PATTERN
     ########################
     
-    def create_pattern(self, url_parts):
+    def create_pattern(self, url_parts, end=True, start=True):
         '''Determine pattern for this url'''
-        if type(pattern) in (str, unicode):
-            pattern = [pattern]
-        
-        # Pattern was nothing, make anything url
-        if len(pattern) is 1 and pattern[0] is None:
-            return '^.*'
-        
-        # Turn pattern back into a single string
-        if len(pattern) is 1 and pattern[0] == '':
-            pattern = ''
-        else:
-            pattern = '/'.join(pattern)
-            
-        # Remove duplicate slashes
-        pattern = regexes['multiSlash'].sub('/', pattern)
+        pattern = self.string_from_url_parts()
+        if pattern is None:
+            if start:
+                return '^.*'
+            else:
+                return '.*'
         
         # Pattern was empty string or multiple slashes, make empty url
         if pattern in ('/', ''):
-            return '^$'
-        
-        # Removing leading slash
-        # Already deduplicated slashes
-        if pattern[0] == '/':
-            pattern = pattern[1:]
-        
-        # Turn pattern into regex
-        if pattern.endswith('/'):
-            pattern = '^%s$' % pattern
+            pattern = ''
         else:
-            pattern = '^%s/$' % pattern
+            # Removing leading  and trailing slashes
+            # Already deduplicated slashes
+            
+            if pattern[0] == '/':
+                pattern = pattern[1:]
+            
+            if pattern[-1] == '/':
+                pattern = pattern[:-1]
+        
+        if start:
+            pattern = "^%s$" % pattern
+        
+        if end:
+            pattern = "%s$" % pattern
+        
+        return pattern
+    
+    def string_from_url_parts(self, url_parts):
+        """
+            Get a string from url_parts that is joined by slashes and has no multiple slashes
+            If url_parts itself is None, then None will be returned
+        """
+        if type(url_parts) in (str, unicode):
+            url_parts = [url_parts]
+        
+        # Pattern was nothing, make anything url
+        if len(url_parts) is 1 and url_parts[0] is None:
+            return None
+        else:
+            # Turn url_parts back into a single string
+            if len(url_parts) is 1 and url_parts[0] == '':
+                pattern = ''
+            else:
+                pattern = '/'.join(url_parts)
+                
+            # Remove duplicate slashes
+            return regexes['multiSlash'].sub('/', pattern)
 
     ########################
     ###   URL VIEW
