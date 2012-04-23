@@ -42,7 +42,7 @@ class Section(object):
         return section
 
     def first(self, url="", match=None, name=None):
-        """Adds a child with the same url as the parent as self.base"""
+        """Adds a child with the same url as the parent as self._base"""
         if name is None:
             name = self.name
         
@@ -52,10 +52,10 @@ class Section(object):
         
         return section
         
-    def base(self, *args, **kwargs):
+    def configure(self, *args, **kwargs):
         """
             Extends self.options with the given keywords.
-            It also accepts positional arguements but doesn't use them.
+            It also accepts positional arguments but doesn't use them.
             This is purely so I can use it like this
             section.add('asdf').baes(''
                 , kw1 = value1
@@ -66,6 +66,10 @@ class Section(object):
         """
         self.options.set_everything(**kwargs)
         return self
+        
+    ########################
+    ###   SECTION ADDERS
+    ########################
     
     def adopt(self, *sections, **kwargs):
         '''
@@ -105,12 +109,12 @@ class Section(object):
         self.add_child(section)
         return section
     
-    def add_child(self, section, first=False):
+    def add_child(self, section, first=False, consider_for_menu=True):
         """Add a child to the section"""
         if first:
-            self._base = section
+            self._base = (section, consider_for_menu)
         else:
-            self._children.append(section)
+            self._children.append((section, consider_for_menu))
         
     ########################
     ###   SPECIAL
@@ -135,11 +139,31 @@ class Section(object):
     
     @property
     def children(self):
+        """
+            Get all the children
+            Children are from self._base and self._children.
+            All children are a tuple of (child, consider_for_menu)
+        """
         if self._base:
+            yield self._base[1]
+        
+        for child, _ in self._children:
+            yield child
+    
+    @property
+    def menu_sections(self):
+        """
+            Get all the children that are considered for the menu
+            Children are from self._base and self._children.
+            All children are a tuple of (child, consider_for_menu)
+            Yield only those whose consider_for_menu is truthy
+        """
+        if self._base and self._base[1]:
             yield self._base
         
-        for child in self._children:
-            yield child
+        for child, consider_for_menu in self._children:
+            if consider_for_menu:
+                yield child
     
     def __iter__(self):
         """Return self followed by all children"""
