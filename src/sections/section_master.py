@@ -53,6 +53,9 @@ class SectionMaster(object):
     def url_parts_value(self, section):
         '''Determine list of url parts of parent and this section'''
         urls = []
+        if not section:
+            return []
+        
         if section.parent:
             urls.extend(self.memoized.url_parts(section.parent))
         
@@ -102,33 +105,40 @@ class SectionMaster(object):
     ########################
     ###   INFO
     ########################
+
+    def iter_section(self, section, path):
+        """
+            Yield (url, alias) pairs for this section
+            If section isn't active, nothing is yielded
+            If section has values, url, alias is yielded for each value
+            if Section has no values, it's own url and alias is yielded
+        """
+        if not section.options.conditional('active', self.request):
+            # Section not even active
+            return
+        
+        if section.options.values:
+            # This section has multiple items to show in the menu
+            parent_url_parts = self.memoized.url_parts(section.parent)
+            for url, alias in section.options.values.get_info(self.request, path, parent_url_parts):
+                yield url, alias
+        else:
+            # This item only has one item to show in the menu
+            yield section.url, section.alias
     
     def get_info(self, section, path):
         '''
             Yield Info objects for this section
             Used by templates to render the menus
         '''
-        if not section.options.conditional('active', self.request):
-            # Section not even active
-            return
-        
-        def iter_info():
-            if section.options.values():
-                # This section has multiple items to show in the menu
-                parent_url_parts = self.url_parts(parent)
-                for url, alias in section.options.values.get_info(self.request, self.path, parent_url_parts):
-                    yield url, alias
-            else:
-                # This item only has one item to show in the menu
-                yield section.url, section.alias
-        
-        for url, alias in iter_info():
-            info = Info(url, alias, section, parent)
+        for url, alias in self.iter_section(section, path):
+            info = Info(url, alias, section)
+            path_copy = list(path)
             
             # Use SectionMaster logic to keep track of parent_url and parent_selected
             # By giving it the info instead of section
-            appear = lambda: self.memoized.exists(info) and self.memoized.display(info) and self.memoized.show(info)
-            selected = lambda: self.memoized.selected(info, path=path)
+            appear = lambda : self.memoized.exists(info) and self.memoized.display(info) and self.memoized.show(info)
+            selected = lambda: self.memoized.selected(info, path=path_copy)
             url_parts = lambda: self.memoized.url_parts(info)
             
             # Give lazily loaded stuff to info and yield it
@@ -141,10 +151,9 @@ class SectionMaster(object):
 
 class Info(object):
     '''Object to hold information used by templates'''
-    def __init__(self, url, alias, section, parent):
+    def __init__(self, url, alias, section):
         self.url = url
         self.alias = alias
-        self.parent = parent
         self.section = section
     
     def setup(self, appear, selected, url_parts):

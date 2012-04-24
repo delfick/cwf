@@ -38,6 +38,13 @@ describe "Memoize logic":
             fake_id.expects_call().with_args(self.obj).returns(self.obj_id)
             self.slf.results = {self.typ:{self.obj_id:value}}
             memoized(self.slf, self.typ, self.obj, kw=kwa) |should| be(value)
+        
+        it "can take in None as a value":
+            value = fudge.Fake("value")
+            self.slf.results = {self.typ:{}}
+            self.calculator.expects("%s_value" % self.typ).with_args(None).returns(value).times_called(1)
+            memoized(self.slf, self.typ, None) |should| be(value)
+            memoized(self.slf, self.typ, None) |should| be(value)
     
     describe "memoizer":
         before_each:
@@ -92,7 +99,7 @@ describe "SectionMaster":
             self.master.request |should| be(self.request)
         
         @fudge.test
-        it "creates a mmoized class that memoizes url_parts, show, exists, display, selected with master as calculator":
+        it "creates a memoized class that memoizes url_parts, show, exists, display, selected with master as calculator":
             kwa1 = fudge.Fake("kwa1")
             kwa2 = fudge.Fake("kwa2")
             obj1 = fudge.Fake("obj1")
@@ -183,6 +190,9 @@ describe "SectionMaster":
                     getattr(self.master, "%s_value" % namespace)(self.section) |should| be(result[namespace])
         
         describe "Getting url parts":
+            it "returns empty list if given None":
+                self.master.url_parts_value(None) |should| equal_to([])
+            
             @fudge.test
             it "if no parent then it returns list of ['', section.url] with no leading slash":
                 self.section.url = '/hi'
@@ -280,3 +290,139 @@ describe "SectionMaster":
                     for path, url in tests:
                         self.section.url = url
                         self.master.selected_value(self.section, path) |should| equal_to((False, []))
+    
+    describe "Getting info":
+        before_each:
+            self.url = fudge.Fake("url")
+            self.path = fudge.Fake("path")
+            self.alias = fudge.Fake("alias")
+            self.values = fudge.Fake("values")
+            self.parent = fudge.Fake("parent")
+            self.options = fudge.Fake("options")
+            
+            self.section = fudge.Fake("section")
+            self.fake_memoized = fudge.Fake("memoized")
+            self.patched = fudge.patch_object(self.master, 'memoized', self.fake_memoized)
+        
+        after_each:
+            self.patched.restore()
+        
+        describe "Getting url and alias from a section":
+            @fudge.test
+            it "yields nothing if active conditional is False":
+                self.section.options = self.options
+                self.options.expects("conditional").with_args('active', self.request).returns(False)
+                list(self.master.iter_section(self.section, self.path)) |should| equal_to([])
+            
+            @fudge.test
+            it "yields section.url, section.alias if no values":
+                self.section.url = self.url
+                self.section.alias = self.alias
+                self.section.options = self.options
+                self.section.options.values = None
+                self.options.expects("conditional").with_args('active', self.request).returns(True)
+                list(self.master.iter_section(self.section, self.path)) |should| equal_to([(self.url, self.alias)])
+            
+            @fudge.test
+            it "yields url, alias for each value if has values":
+                url1 = fudge.Fake("url1")
+                url2 = fudge.Fake("url2")
+                alias1 = fudge.Fake("alias1")
+                alias2 = fudge.Fake("alias2")
+                things = [(url1, alias1), (url2, alias2)]
+                
+                self.section.parent = self.parent
+                self.section.options = self.options
+                self.section.options.values = self.values
+                parent_url_parts = fudge.Fake("parent_url_parts")
+                self.fake_memoized.expects("url_parts").with_args(self.parent).returns(parent_url_parts)
+                self.values.expects("get_info").with_args(self.request, self.path, parent_url_parts).returns(things)
+                self.options.expects("conditional").with_args('active', self.request).returns(True)
+                list(self.master.iter_section(self.section, self.path)) |should| equal_to(things)
+    
+        describe "Getting info for each (url, alias) in section":
+            before_each:
+                self.path = [9, 9, 9]
+                self.fake_iter_section = fudge.Fake("iter_section")
+                self.patched_iter_section = fudge.patch_object(self.master, 'iter_section', self.fake_iter_section)
+            
+            after_each:
+                self.patched_iter_section.restore()
+            
+            @fudge.test
+            it "yields Info object for each (url, alias) for the section":
+                self.fake_iter_section.expects_call().with_args(self.section, self.path).returns([(1, 2), (3, 4)])
+                result = list(self.master.get_info(self.section, self.path))
+                result |should| have(2).infos
+                all(type(r) == Info for r in result) |should| be(True)
+            
+            describe "With each info":
+                def get_info(self, path=None):
+                    """Generate one info object and return it"""
+                    if path is None:
+                        path = self.path
+                    
+                    (self.fake_iter_section.expects_call()
+                        .with_args(self.section, path).returns([(self.url, self.alias)])
+                        )
+                    results = list(self.master.get_info(self.section, path))
+                    results |should| have(1).info
+                    return results[0]
+                    
+                @fudge.test
+                it "gives Info the url, alias, section and parent":
+                    info = self.get_info(self.path)
+                    info.url |should| be(self.url)
+                    info.alias |should| be(self.alias)
+                    info.section |should| be(self.section)
+                
+                @fudge.test
+                it "gives info selected as method that says whether info can be selected for given path":
+                    info = self.get_info([])
+                    result = fudge.Fake("result")
+                    self.fake_memoized.expects("selected").with_args(info, path=[]).returns(result)
+                    info.selected() |should| be(result)
+                
+                @fudge.test
+                it "path given to selected is a copy of the path given to get_info":
+                    path = [1, 2, 3]
+                    info = self.get_info(path)
+                    path.append(4)
+                    path[1] = 5
+                    result = fudge.Fake("result")
+                    self.fake_memoized.expects("selected").with_args(info, path=[1, 2, 3]).returns(result)
+                    info.selected() |should| be(result)
+                
+                @fudge.test
+                it "gives info url_parts as method that gets url_parts from info":
+                    info = self.get_info()
+                    result = fudge.Fake("result")
+                    self.fake_memoized.expects("url_parts").with_args(info).returns(result)
+                    info.url_parts() |should| be(result)
+                
+                describe "info.appear":
+                    @fudge.test
+                    it "method that says whether info exists, can be displayed, and can be shown":
+                        info = self.get_info()
+                        (self.fake_memoized.remember_order()
+                            .expects("exists").with_args(info).returns(True)
+                            .expects("display").with_args(info).returns(True)
+                            .expects("show").with_args(info).returns(True)
+                            )
+                        
+                        info.appear() |should| be(True)
+                    
+                    @fudge.test
+                    it "doesn't call display or show if exists is False":
+                        info = self.get_info()
+                        self.fake_memoized.expects("exists").with_args(info).returns(False)
+                        info.appear() |should| be(False)
+                    
+                    @fudge.test
+                    it "doesn't call show if display is False":
+                        info = self.get_info()
+                        (self.fake_memoized
+                            .expects("exists").with_args(info).returns(True)
+                            .expects("display").with_args(info).returns(False)
+                            )
+                        info.appear() |should| be(False)
