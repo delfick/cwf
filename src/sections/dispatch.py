@@ -15,9 +15,9 @@ class Dispatcher(object):
         
     def get_view(self, location):
         '''Ensure view for given location is in self.views and then return that view'''
-        if view not in self.views:
-            self.views[view] = self.find_view(view)
-        return self.views[view]
+        if location not in self.views:
+            self.views[location] = self.find_view(location)
+        return self.views[location]
     
     def find_view(self, location):
         '''Find the kls for the given location'''
@@ -25,8 +25,8 @@ class Dispatcher(object):
             # Already a class
             return location
         else:
-            obj = key.split('.')
-            path, name = key[:-1], key[-1]
+            obj = location.split('.')
+            path, name = obj[:-1], obj[-1]
             pkg = __import__('.'.join(path), globals(), locals(), [name], -1)
             return getattr(pkg, name)
     
@@ -37,7 +37,7 @@ class Dispatcher(object):
         '''
         # Non-threadsafe hack to make amonpy happy
         self.__name__ = self.__class__.__name__
-        section = kwargs['section']
+        section = kwargs.get('section')
         if section and section.reachable(request):
             view = self.get_view(kls)
             self.__name__ = "Dispatcher: %s:%s" % (view.__class__.__name__, target)
