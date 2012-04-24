@@ -47,6 +47,7 @@ describe "Memoize logic":
             self.memoized = fudge.Fake("memoized")
             self.slf.memoized = self.memoized
         
+        @fudge.test
         it "returns a function that calls self.memoized with given type and object":
             kwa = fudge.Fake("kwa")
             value = fudge.Fake("value")
@@ -63,6 +64,7 @@ describe "Memoize logic":
             result.memoized.im_func |should| be(memoized)
             result.calculator |should| be(self.calculator)
         
+        @fudge.test
         it "puts properties for each namespace that will call memoized with that namespace and provided arguments":
             kwa1 = fudge.Fake("kwa1")
             kwa2 = fudge.Fake("kwa2")
@@ -89,6 +91,7 @@ describe "SectionMaster":
         it "sets request from what is passed in":
             self.master.request |should| be(self.request)
         
+        @fudge.test
         it "creates a mmoized class that memoizes url_parts, show, exists, display, selected with master as calculator":
             kwa1 = fudge.Fake("kwa1")
             kwa2 = fudge.Fake("kwa2")
@@ -141,6 +144,7 @@ describe "SectionMaster":
             before_each:
                 self.namespaces = ('show', 'display', 'exists')
             
+            @fudge.test
             it "returns False if has parent and parent says no":
                 self.fake_memoized.remember_order()
                 for namespace in self.namespaces:
@@ -150,6 +154,7 @@ describe "SectionMaster":
                 for namespace in self.namespaces:
                     getattr(self.master, "%s_value" % namespace)(self.section) |should| be(False)
             
+            @fudge.test
             it "returns what options says if there is a parent and it says yes":
                 self.options.remember_order()
                 self.fake_memoized.remember_order()
@@ -164,6 +169,7 @@ describe "SectionMaster":
                 for namespace in self.namespaces:
                     getattr(self.master, "%s_value" % namespace)(self.section) |should| be(result[namespace])
                     
+            @fudge.test
             it "returns what options says if there is no parent":
                 self.options.remember_order()
                 result = {}
@@ -177,6 +183,7 @@ describe "SectionMaster":
                     getattr(self.master, "%s_value" % namespace)(self.section) |should| be(result[namespace])
         
         describe "Getting url parts":
+            @fudge.test
             it "if no parent then it returns list of ['', section.url] with no leading slash":
                 self.section.url = '/hi'
                 self.section.parent = None
@@ -186,6 +193,7 @@ describe "SectionMaster":
                 self.section2.parent = None
                 self.master.url_parts_value(self.section2) |should| equal_to(['', 'hi'])
         
+            @fudge.test
             it "prepends section.url with parts from parent if it has one":
                 (self.fake_memoized.expects("url_parts")
                     .with_args(self.parent).returns(['', 'one', 'two'])
@@ -199,3 +207,76 @@ describe "SectionMaster":
                 self.section2.url = 'hi'
                 self.section2.parent = self.parent2
                 self.master.url_parts_value(self.section2) |should| equal_to(['', 'four', 'hi'])
+
+        describe "Getting selected":
+            before_each:
+                self.url = fudge.Fake("url")
+                self.path = fudge.Fake("path")
+                self.section.url = self.url
+            
+            @fudge.test
+            it "returns (False, []) if no path is provided":
+                self.section.parent = None
+                self.master.selected_value(self.section, None) |should| equal_to((False, []))
+            
+            @fudge.test
+            it "returns (False, []) if both parent isn't selected and path isn't provided":
+                self.section.parent = self.parent
+                self.fake_memoized.expects("selected").with_args(self.parent).returns(False)
+                self.master.selected_value(self.section, None) |should| equal_to((False, []))
+            
+            @fudge.test
+            it "returns (False, []) if parent isn't selected":
+                self.section.parent = self.parent
+                self.fake_memoized.expects("selected").with_args(self.parent).returns(False)
+                self.master.selected_value(self.section, self.path) |should| equal_to((False, []))
+            
+            @fudge.test
+            it "returns (True, path) if promote_children conditional for section is True":
+                self.section.parent = None
+                self.section.options = self.options
+                self.options.expects("conditional").with_args("promote_children", self.request).returns(True)
+                self.master.selected_value(self.section, self.path) |should| equal_to((True, self.path))
+            
+            describe "Looking at path and url":
+                before_each:
+                    self.section.url = None
+                    self.section.parent = None
+                    self.section.options = self.options
+                    self.options.expects("conditional").with_args("promote_children", self.request).returns(False)
+                
+                @fudge.test
+                it "returns (True, path[1:]) if path[0] is '' and url is '/'":
+                    tests = [
+                          ([''], '/', [])
+                        , (['', 'three'], '/', ['three'])
+                        , (['', 'five', 'six', 'seven'], '/', ['five', 'six', 'seven'])
+                        ]
+                    
+                    for path, url, leftover in tests:
+                        self.section.url = url
+                        self.master.selected_value(self.section, path) |should| equal_to((True, leftover))
+                
+                @fudge.test
+                it "returns (True, path[1:]) if path[0] == url":
+                    tests = [
+                          (['one'], 'one', [])
+                        , (['two', 'three'], 'two', ['three'])
+                        , (['four', 'five', 'six', 'seven'], 'four', ['five', 'six', 'seven'])
+                        ]
+                    
+                    for path, url, leftover in tests:
+                        self.section.url = url
+                        self.master.selected_value(self.section, path) |should| equal_to((True, leftover))
+                
+                @fudge.test
+                it "returns (False, []) if path[0] isn't url":
+                    tests = [
+                          (['one'], 'klj')
+                        , (['two', 'three'], 'sdfg')
+                        , (['four', 'five', 'six', 'seven'], 'asdf')
+                        ]
+                    
+                    for path, url in tests:
+                        self.section.url = url
+                        self.master.selected_value(self.section, path) |should| equal_to((False, []))

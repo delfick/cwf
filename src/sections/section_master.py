@@ -91,20 +91,13 @@ class SectionMaster(object):
         if not parentSelected or not path:
             return False, []
         
-        if not self.options.conditional('show_base', self.request):
+        if section.options.conditional('promote_children', self.request):
             return True, path
         
-        # We have path and url
-        if path[0] == '' and url == '/':
-            selected = True
+        if (path[0] == '' and url == '/') or (path[0].lower() == str(url).lower()):
+            return True, path[1:]
         else:
-            selected = path[0].lower() == str(url).lower()
-        
-        if not selected:
             return False, []
-        
-        # Only return remaining path if this section is selected
-        return selected, path[1:]
         
     ########################
     ###   INFO
