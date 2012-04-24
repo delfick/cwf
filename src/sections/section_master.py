@@ -15,8 +15,8 @@ def memoized(self, typ, obj, **kwargs):
 
 def memoizer(typ):
     '''Return function that uses memoized for particular type'''
-    def memoized(self, obj):
-        return self.memoized(typ, obj)
+    def memoized(self, obj, **kwargs):
+        return self.memoized(typ, obj, **kwargs)
     return memoized
 
 def make_memoizer(calculator, *namespaces):
@@ -27,13 +27,13 @@ def make_memoizer(calculator, *namespaces):
     '''
     attrs = {}
     results = {}
-    for value in values:
+    for value in namespaces:
         results[value] = {}
-        attrs[value] = property(memoizer(value))
+        attrs[value] = memoizer(value)
     
+    attrs['results'] = results
     attrs['memoized'] = memoized
     attrs['calculator'] = calculator
-    
     return type("Memoizer", (object, ), attrs)
 
 ########################
@@ -44,7 +44,7 @@ class SectionMaster(object):
     '''Determine information for sections for a given request'''
     def __init__(self, request):
         self.request = request
-        self.memoized = make_memoizer(self, 'url_parts', 'show', 'exists', 'display', 'selected')
+        self.memoized = make_memoizer(self, 'url_parts', 'show', 'exists', 'display', 'selected')()
         
     ########################
     ###   MEMOIZED VALUES
@@ -70,28 +70,28 @@ class SectionMaster(object):
         '''Determine if section and parent can be shown'''
         if section.parent and not self.memoized.show(section.parent):
             return False
-        return section.options.show(request)
+        return section.options.show(self.request)
     
     def display_value(self, section):
         '''Determine if section and parent can be displayed'''
         if section.parent and not self.memoized.display(section.parent):
             return False
-        return section.options.display(request)
+        return section.options.display(self.request)
     
     def exists_value(self, section):
         '''Determine if section and parent exists'''
         if section.parent and not self.memoized.exists(section.parent):
             return False
-        return section.options.exists(request)
+        return section.options.exists(self.request)
     
-    def selected_value(self, section, request, path):
+    def selected_value(self, section, path):
         """Return True and rest of path if selected else False and no path."""
         url = section.url
         parentSelected = not section.parent or self.memoized.selected(section.parent)
         if not parentSelected or not path:
             return False, []
         
-        if not self.options.conditional('show_base', request):
+        if not self.options.conditional('show_base', self.request):
             return True, path
         
         # We have path and url
@@ -110,12 +110,12 @@ class SectionMaster(object):
     ###   INFO
     ########################
     
-    def get_info(self, request, section, path, parent=None, gen=None):
+    def get_info(self, section, path):
         '''
             Yield Info objects for this section
             Used by templates to render the menus
         '''
-        if not section.options.conditional('active', request):
+        if not section.options.conditional('active', self.request):
             # Section not even active
             return
         
@@ -123,11 +123,11 @@ class SectionMaster(object):
             if section.options.values():
                 # This section has multiple items to show in the menu
                 parent_url_parts = self.url_parts(parent)
-                for url, alias in section.options.values.get_info(request, section, path, parent_url_parts):
+                for url, alias in section.options.values.get_info(self.request, self.path, parent_url_parts):
                     yield url, alias
             else:
                 # This item only has one item to show in the menu
-                yield self.url, self.alias
+                yield section.url, section.alias
         
         for url, alias in iter_info():
             info = Info(url, alias, section, parent)
@@ -135,13 +135,13 @@ class SectionMaster(object):
             # Use SectionMaster logic to keep track of parent_url and parent_selected
             # By giving it the info instead of section
             appear = lambda: self.memoized.exists(info) and self.memoized.display(info) and self.memoized.show(info)
-            selected = lambda: self.memoized.selected(info, request=request, path=path)
+            selected = lambda: self.memoized.selected(info, path=path)
             url_parts = lambda: self.memoized.url_parts(info)
             
             # Give lazily loaded stuff to info and yield it
             info.setup(appear, selected, url_parts)
             yield info
-        
+
 ########################
 ###   INFO OBJECT
 ########################
