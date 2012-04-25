@@ -119,7 +119,11 @@ class Options(object):
                     else:
                         needed = 1
                     
-                    args = inspect.getargspec(val).args
+                    check = val
+                    if not inspect.isfunction(check) and not inspect.ismethod(check):
+                        check = getattr(val, '__call__')
+                    
+                    args = inspect.getargspec(check).args
                     num_args = len(args)
                     if num_args != needed:
                         raise ConfigurationError(
@@ -136,7 +140,7 @@ class Options(object):
             )
         for name, val in vals:
             if val is not Empty:
-                if type(val) not in (str, unicode) and not callable(val):
+                if val is not None and type(val) not in (str, unicode) and not callable(val):
                     raise ConfigurationError(
                         "%s must be either a string or a callble, not %s (%s)" % (
                             name, type(val), val
@@ -317,8 +321,9 @@ class Options(object):
         if all:
             no_propogate = ()
         else:
-            no_propogate = ('admin', 'alias', 'match', 'values', 'show_base')
-        values = dict((name, kwargs[arg]) for arg in passon if arg not in no_propogate and arg in kwargs)
+            no_propogate = ('alias', 'match', 'values', 'promote_children')
+        values = dict((arg, getattr(self, arg)) for arg in passon if arg not in no_propogate)
+        values.update(kwargs)
         
         cloned = Options()
         cloned.set_everything(**values)
@@ -336,23 +341,25 @@ class Options(object):
         else:
             return val
     
-    def hasPermissions(self, user):
+    def has_permissions(self, user):
         '''Determine if user has permissions given these options'''
-        needsAuth = self.needsAuth
-        if not needsAuth:
+        needs_auth = self.needs_auth
+        if not needs_auth:
             return True
         
-        if type(needsAuth) is bool:
-            return user.is_authenticated()
+        # Determine if user is authenticated
+        authenticated = user.is_authenticated()
+        if type(needs_auth) is bool:
+            return authenticated
         else:
             def iterAuth():
-                if type(needsAuth) in (list, tuple):
-                    for auth in needsAuth:
+                if type(needs_auth) in (list, tuple):
+                    for auth in needs_auth:
                         yield auth
                 else:
-                    yield needsAuth
+                    yield needs_auth
             
-            return all(user.has_perm(auth) for auth in iterAuth())
+            return authenticated and all(user.has_perm(auth) for auth in iterAuth())
     
     def clean_module_name(self, name):
         '''
