@@ -154,30 +154,6 @@ class Options(object):
                 )
 
     ########################
-    ###   CLONE
-    ########################
-    
-    def clone(self, all=False, **kwargs):
-        """
-            Return a copy of this object with new options.
-            It Determines current options, updates with new options
-            And returns a new Options object with these options
-        """
-        passon = []
-        for _, required in self.setters():
-            passon.extend(required)
-        
-        if all:
-            no_propogate = ()
-        else:
-            no_propogate = ('admin', 'alias', 'match', 'values', 'show_base')
-        values = dict((name, kwargs[arg]) for arg in passon if arg not in no_propogate and arg in kwargs)
-        
-        cloned = Options()
-        cloned.set_everything(**values)
-        return cloned
-
-    ########################
     ###   URL PATTERN
     ########################
     
@@ -308,6 +284,26 @@ class Options(object):
             # Not active or doesn't exist
             return False
         return self.has_permissions(request.user)
+    
+    def clone(self, all=False, **kwargs):
+        """
+            Return a copy of this object with new options.
+            It Determines current options, updates with new options
+            And returns a new Options object with these options
+        """
+        passon = []
+        for _, required in self.setters():
+            passon.extend(required)
+        
+        if all:
+            no_propogate = ()
+        else:
+            no_propogate = ('admin', 'alias', 'match', 'values', 'show_base')
+        values = dict((name, kwargs[arg]) for arg in passon if arg not in no_propogate and arg in kwargs)
+        
+        cloned = Options()
+        cloned.set_everything(**values)
+        return cloned
 
     ########################
     ###   UTILITY
