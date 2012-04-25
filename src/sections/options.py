@@ -1,5 +1,8 @@
+from django.http import Http404
+
 from errors import ConfigurationError
 from dispatch import dispatcher
+
 import inspect
 import re
 
@@ -9,7 +12,7 @@ import re
 
 regexes = {
       'multiSlash' : re.compile('/+')
-    , 'valid_import' : re.compile('^[\w_]+[0-9a-zA-Z_]*$')
+    , 'valid_import' : re.compile('^[a-zA-Z_]+[0-9a-zA-Z_]*$')
     }
 
 class Empty(object): pass
@@ -168,26 +171,21 @@ class Options(object):
             * Prepend with ^ if start is True
             * Append with $ if end is True
         '''
-        pattern = self.string_from_url_parts()
+        pattern = self.string_from_url_parts(url_parts)
         if pattern is None:
             # No url_parts, give anything pattern
             pattern = '.*'
-            
-        elif pattern in ('/', ''):
-            # url_parts was empty string or multiple slashes, make empty url
-            pattern = ''
         
-        else:
-            # Removing leading  and trailing slashes
-            # Already deduplicated slashes    
-            if pattern[0] == '/':
-                pattern = pattern[1:]
-            
-            if pattern[-1] == '/':
-                pattern = pattern[:-1]
+        # Removing leading  and trailing slashes
+        # Already deduplicated slashes    
+        if pattern and pattern[0] == '/':
+            pattern = pattern[1:]
+        
+        if pattern and pattern[-1] == '/':
+            pattern = pattern[:-1]
         
         if start:
-            pattern = "^%s$" % pattern
+            pattern = "^%s" % pattern
         
         if end:
             pattern = "%s$" % pattern
@@ -230,10 +228,10 @@ class Options(object):
         """
         if self.redirect:
             # Redirect overrides other options
-            return self.redirect_view(self.redirect, section)
+            return self.redirect_view(self.redirect)
         
         target = self.target
-        if callble(target):
+        if callable(target):
             # Target already a callable
             return target, self.extra_context
         
@@ -244,7 +242,7 @@ class Options(object):
         kwargs.update(dict(kls=kls, target=target, section=section))
         return view, kwargs
 
-    def redirect_view(self, redirect, section):
+    def redirect_view(self, redirect):
         '''
             Return function to be used for redirection
             If url is relative, it will make it absolute by joining with request.path
@@ -255,15 +253,16 @@ class Options(object):
             if callable(redirect):
                 url = redirect(request)
             
-            if not url:
+            if url is None:
                 raise Http404
-            
+             
             if not url.startswith('/'):
-                if request.path.endswith('/'):
-                    url = '%s%s' % (request.path, url)
-                else:
-                    url = '%s/%s' % (request.path, url)
+                url = '%s%s' % (request.path, url)
+                url = regexes['multiSlash'].sub('/', url)
+            
             return self.redirect_to(request, url)
+        
+        # Return view that redirects, and extra_context
         return redirector, self.extra_context
         
     def get_view_kls(self):
@@ -277,19 +276,19 @@ class Options(object):
             return self.kls
         
         kls = self.clean_module_name(self.kls)
-        if not module:
+        if not self.module:
             # No module, return kls as a string
             return kls
         
-        if type(self.module) not in (str, unicode):
+        if type(self.module) in (str, unicode):
             # Module is a string, concatenate with kls
             module = self.clean_module_name(self.module)
-            return "%s.%s" % (self.module, self.kls)
+            return "%s.%s" % (module, kls)
         
         else:
             # Module is an object
             # getattr each part of kls from it
-            result = module
+            result = self.module
             for next in kls.split('.'):
                 result = getattr(result, next)
             return result
@@ -355,22 +354,24 @@ class Options(object):
             
             return all(user.has_perm(auth) for auth in iterAuth())
     
-    def clean_module_name(self, kls):
+    def clean_module_name(self, name):
         '''
-            * Remove dots from beginning and end of kls string
+            * Remove dots from beginning and end of the string
             * Complain about spaces and non-ascii characters
         '''
-        while kls.startswith('.'):
-            kls = kls[1:]
+        while name.startswith('.'):
+            name = name[1:]
         
-        while kls.endswith('.'):
-            kls = kls[:-1]
+        while name.endswith('.'):
+            name = name[:-1]
         
-        if ' ' in kls:
-            raise ConfigurationError("%s is not a valid import location" % kls)
+        if ' ' in name:
+            raise ConfigurationError("'%s' is not a valid import location (has spaces)" % name)
         
-        for part in kls.split('.'):
-            if not regexes['valid_import'].match(kls):
-                raise ConfigurationError("%s is not a valid import location" % kls)
+        for part in name.split('.'):
+            if not regexes['valid_import'].match(part):
+                raise ConfigurationError(
+                    "'%s' is not a valid import location ('%s' isn't a valid variable name)" % (name, part)
+                )
         
-        return kls
+        return name
