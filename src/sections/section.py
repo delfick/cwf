@@ -1,5 +1,4 @@
 from django.conf.urls.defaults import include, patterns
-from django.http import Http404
 
 from errors import ConfigurationError
 from dispatch import dispatcher
