@@ -57,7 +57,7 @@ class Options(object):
         self.match = None
         self.values = None
         self.needs_auth = False
-        self.promote_children = True
+        self.promote_children = False
 
     ########################
     ###   SETTERS
@@ -67,7 +67,7 @@ class Options(object):
         '''Determine each setter method and required args for that method'''
         for method in ('set_conditionals', 'set_view', 'set_menu'):
             func = getattr(self, method)
-            required = dict(arg for arg in inspect.getargspec(func).args if arg != 'self')
+            required = list(arg for arg in inspect.getargspec(func).args if arg != 'self')
             yield func, required
     
     def set_everything(self, **kwargs):
@@ -77,32 +77,37 @@ class Options(object):
             And that the setters don't duplicate settings
         '''
         taken = []
-        for method, required in self.setters():            
+        for method, required in self.setters():
             values = {}
             for arg in required:
                 if arg in taken:
                     raise ConfigurationError("%s takes argument (%s) already taken elsewhere..." % (method, arg))
-                    taken.append(arg)
+                
                 if arg in kwargs:
+                    taken.append(arg)
                     values[arg] = kwargs[arg]
-            func(**values)
+            method(**values)
         
         leftover = set(kwargs.keys()) - set(taken)
         if leftover:
+            leftover = ', '.join("'%s'" % name for name in sorted(leftover))
             raise ConfigurationError("Arguments provided into set_everything that wasn't consumed (%s)" % leftover)
     
-    def set_conditionals(self, admin=Empty, active=Empty, exists=Empty, display=Empty):
+    def set_conditionals(self, admin=Empty, active=Empty, exists=Empty, display=Empty, promote_children=Empty):
         '''
             Set conditionals
             These are either booleans or callable objects that take in one argument
             ConfigurationError will be raised if this is not the case
         '''
-        vals = (('admin', admin), ('active', active), ('exists', exists), ('display', display), ('show_base', show_base))
+        vals = (
+              ('admin', admin), ('active', active), ('exists', exists)
+            , ('display', display), ('promote_children', promote_children)
+            )
         for name, val in vals:
             if val is not Empty:
                 if type(val) is not bool and not callable(val):
                     raise ConfigurationError(
-                        "Conditionals must be boolean or callable(request). Not %s (%s=%s)" % (type(val), name, val)
+                        "Conditionals must be boolean or callable(request), not %s (%s=%s)" % (type(val), name, val)
                         )
                 
                 if callable(val):
@@ -128,22 +133,22 @@ class Options(object):
             )
         for name, val in vals:
             if val is not Empty:
-                if type(val) not in (str, unicode) and val is not callable(val):
+                if type(val) not in (str, unicode) and not callable(val):
                     raise ConfigurationError(
                         "%s must be either a string or a callble, not %s (%s)" % (
-                            name, type(self.redirect), self.redirect
+                            name, type(val), val
                         )
                     )
                 setattr(self, name, val)
     
-    def set_menu(self, alias=Empty, match=Empty, values=Empty, needs_auth=Empty, promote_children=Empty):
+    def set_menu(self, alias=Empty, match=Empty, values=Empty, needs_auth=Empty):
         '''Set options for what appears in the menu'''
         vals = (('alias', alias), ('match', match), ('values', values), ('needs_auth', needs_auth))
         for name, val in vals:
             if val is not Empty:
                 setattr(self, name, val)
         
-        if not hasattr(values, 'getInfo'):
+        if values is not Empty and (not hasattr(values, 'get_info') or not callable(values.get_info)):
             raise ConfigurationError(
                 "Values must have a get_info method to get information from. %s does not" % self.values
                 )
