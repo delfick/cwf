@@ -2,26 +2,10 @@ from errors import ConfigurationError
 
 class Values(object):
     '''Holds multiple values for a single section'''
-    def __init__(self, values=None, each=None, sorter=None, as_set=True, sort_after_transform=True):
-        if not values:
-            values = []
-        
-        # each: Transform each value in values individually into alias, url_part
-        #   Must be callable((request, path, parent_url_parts), value)->(alias, url_part)
-        self.each = each
-        if not callable(self.each):
-            raise ConfigurationError("each must be a callable, not %s" % self.each)
-        
+    def __init__(self, values=None, each=None, sorter=False, as_set=True, sort_after_transform=True):
         # values: The values to use
         #   Can be list or callable((request, path, parent_url_parts))->[]
         self.values = values
-        
-        # sorter: Function to sort values
-        #   If boolean: Determines whether sorting happens at all
-        #   If callable: Used as sorted(values, sorter)
-        self.sorter = sorter
-        if type(sorter) is not bool and not callable(self.sorter):
-            raise ConfigurationError("Sorter must be a callable, not %s" % self.sorter)
         
         # as_set: Determine if values should be considered a set to remove duplicates
         #   Sorter will be used after values transformed into a set
@@ -29,6 +13,19 @@ class Values(object):
         
         # sort_after_transform: Determine if sorting happens after self.each is used
         self.sort_after_transform = sort_after_transform
+        
+        # each: Transform each value in values individually into alias, url_part
+        #   Must be callable((request, path, parent_url_parts), value)->(alias, url_part)
+        self.each = each
+        if self.each and not callable(self.each):
+            raise ConfigurationError("each must be a callable, not %s" % self.each)
+        
+        # sorter: Function to sort values
+        #   If boolean: Determines whether sorting happens at all
+        #   If callable: Used as sorted(values, sorter)
+        self.sorter = sorter
+        if type(sorter) is not bool and not callable(self.sorter):
+            raise ConfigurationError("Sorter must be a callable, not %s" % self.sorter)
     
     def get_info(self, request, path, parent_url_parts):
         """Yield (alias, url) for each value"""
@@ -37,16 +34,16 @@ class Values(object):
         values = self.get_values(info)
             
         # Yield some information
-        if values and any(v is not None for v in values):
-            for alias, url in values:
-                yield alias, url
+        for val in values:
+            if val:
+                yield val
     
     def get_values(self, info):
         """Get transformed, sorted values"""
         if not self.values:
             return None
         
-        values = normalised_values(info)
+        values = self.normalised_values(info)
         
         # Sort if we have to
         if not self.sort_after_transform:
