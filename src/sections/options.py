@@ -158,21 +158,28 @@ class Options(object):
     ########################
     
     def create_pattern(self, url_parts, end=True, start=True):
-        '''Determine pattern for this url'''
+        '''
+            Determine pattern for this url
+            If no url parts, use '.*'
+            if url parts is empty or just slashes, use ''
+            Otherwise join url parts with slashes
+            
+            * Ensure no leading or trailing slashes
+            * Prepend with ^ if start is True
+            * Append with $ if end is True
+        '''
         pattern = self.string_from_url_parts()
         if pattern is None:
-            if start:
-                return '^.*'
-            else:
-                return '.*'
-        
-        # Pattern was empty string or multiple slashes, make empty url
-        if pattern in ('/', ''):
+            # No url_parts, give anything pattern
+            pattern = '.*'
+            
+        elif pattern in ('/', ''):
+            # url_parts was empty string or multiple slashes, make empty url
             pattern = ''
+        
         else:
             # Removing leading  and trailing slashes
-            # Already deduplicated slashes
-            
+            # Already deduplicated slashes    
             if pattern[0] == '/':
                 pattern = pattern[1:]
             
@@ -192,7 +199,7 @@ class Options(object):
             Get a string from url_parts that is joined by slashes and has no multiple slashes
             If url_parts itself is None, then None will be returned
         """
-        if type(url_parts) in (str, unicode):
+        if type(url_parts) not in (list, tuple):
             url_parts = [url_parts]
         
         # Pattern was nothing, make anything url
@@ -213,24 +220,37 @@ class Options(object):
     ########################
     
     def url_view(self, section):
-        """Return url view for these options"""
+        """
+            Return url view for these options
+            If redirect is specified, return redirect view
+            If target is already callable, return target along with extra_content
+            
+            Otherwise, determine view kls
+            and return dispatcher as view, along with kls, target, section and extra_content
+        """
         if self.redirect:
             # Redirect overrides other options
             return self.redirect_view(self.redirect, section)
         
         target = self.target
-        if type(target) not in (str, unicode):
-            # Target already a callabel
+        if callble(target):
+            # Target already a callable
             return target, self.extra_context
         
         kls = self.get_view_kls()
         view = dispatcher
-        kwargs = dict(kls=kls, target=target, section=section)
+        kwargs = {}
+        kwargs.update(self.extra_context)
+        kwargs.update(dict(kls=kls, target=target, section=section))
         return view, kwargs
 
     def redirect_view(self, redirect, section):
-        '''Return function to be used for redirection'''
-        def redirector(request, redirect=redirect):
+        '''
+            Return function to be used for redirection
+            If url is relative, it will make it absolute by joining with request.path
+            If no url, a 404 will be raised
+        '''
+        def redirector(request, redirect=redirect, **kwargs):
             url = redirect
             if callable(redirect):
                 url = redirect(request)
