@@ -37,12 +37,12 @@ class Options(object):
         # module: Where to find the kls if the kls is specified as a string. (can be object or location)
         # target: The function on the kls to invoke
         # redirect will override kls, module and target
-        # extra_content: Extra request context to give the view
+        # extra_context: Extra request context to give the view
         self.kls = None
         self.module = None
         self.target = None
         self.redirect = None
-        self.extra_content = None
+        self.extra_context = None
         
         # Determine what to show in the menu
         # alias: what appears in the menu
@@ -125,11 +125,11 @@ class Options(object):
                     
                 setattr(self, name, val)
     
-    def set_view(self, kls=Empty, module=Empty, target=Empty, redirect=Empty, extra_content=Empty):
+    def set_view(self, kls=Empty, module=Empty, target=Empty, redirect=Empty, extra_context=Empty):
         '''Set options for specifying the view'''
         vals = (
               ('kls', kls), ('module', module), ('target', target)
-            , ('redirect', redirect), ('extra_content', extra_content)
+            , ('redirect', redirect), ('extra_context', extra_context)
             )
         for name, val in vals:
             if val is not Empty:

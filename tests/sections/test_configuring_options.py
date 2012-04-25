@@ -5,7 +5,7 @@ from src.sections.options import Options
 
 import fudge
 
-describe "Options":
+describe "Configuring Options":
     before_each:
         self.defaults = (
             # Conditionals
@@ -19,7 +19,7 @@ describe "Options":
             , ('module',  None)
             , ('target',  None)
             , ('redirect',  None)
-            , ('extra_content',  None)
+            , ('extra_context',  None)
             
             # menu stuff
             , ('alias',  None)
@@ -50,7 +50,7 @@ describe "Options":
         """
         before_each:
             self.specification = {
-                  Options.set_view.im_func : ('kls', 'module', 'target', 'redirect', 'extra_content')
+                  Options.set_view.im_func : ('kls', 'module', 'target', 'redirect', 'extra_context')
                 , Options.set_menu.im_func : ('alias', 'match', 'values', 'needs_auth')
                 , Options.set_conditionals.im_func : ('admin', 'active', 'exists', 'display', 'promote_children')
                 }
@@ -277,7 +277,7 @@ describe "Options":
                         self.check_expectation(self.setter, val)
                 
                 it "works with multiple arguments":
-                    kwargs = {'extra_content' : "", 'module' : fudge.Fake("callable"), 'target': lambda one: 1}
+                    kwargs = {'extra_context' : "", 'module' : fudge.Fake("callable"), 'target': lambda one: 1}
                     not_set = {'kls' : fudge.Fake('kls'), 'redirect' : fudge.Fake('redirect')}
                     self.check_multiple_arguments(self.setter, kwargs=kwargs, not_set=not_set)
             
