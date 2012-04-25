@@ -252,11 +252,11 @@ describe "Configuring Options":
                     self.check_multiple_arguments(self.setter, kwargs=kwargs, not_set=not_set)
             
             describe "Setting View options":
-                """These must be string or callable"""
+                """These must be string, callable or None"""
                 before_each:
                     self.setter = Options.set_view.im_func
                 
-                it "complains if any argument is neither string or callable":
+                it "complains if any argument is neither string, callable or None":
                     kls = type('obj', (object, ), {})
                     for val, typ in (
                           (0, int), (1, int)
@@ -264,7 +264,6 @@ describe "Configuring Options":
                         , ([], list), ([1], list)
                         , ({}, dict), ({1:2}, dict)
                         , (kls(), kls)
-                        , (None, type(None))
                         ):
                         self.check_expectation(self.setter, val
                             , error = "%%(name)s must be either a string or a callble, not %s (%s)" % (typ, val)
@@ -273,7 +272,7 @@ describe "Configuring Options":
                 it "sets argument on class if it's valid":
                     kls_func = lambda self, request: 1
                     obj = type('obj', (object, ), {'method' : kls_func})()
-                    for val in ("", "asdf", obj.method, fudge.Fake('callable'), lambda one: 1, lambda one, two: 2):
+                    for val in (None, "", "asdf", obj.method, fudge.Fake('callable'), lambda one: 1, lambda one, two: 2):
                         self.check_expectation(self.setter, val)
                 
                 it "works with multiple arguments":
