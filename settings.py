@@ -40,6 +40,7 @@ NOSE_ARGS = [
     , '--pdb'
     , '--noy-ignore-kls=TestCase'
     , '--noy-ignore-kls=TransactionTestCase'
+    , '--noy-default-kls=TestCase'
     ]
 
 ########################

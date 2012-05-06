@@ -21,9 +21,6 @@ class Section(object):
         
         self._pattern = None
         self._options = None
-        if hasattr(self, 'setup'):
-            if callable(self.setup):    
-                self.setup()
         
     ########################
     ###   USAGE
@@ -34,24 +31,20 @@ class Section(object):
         if not url:
             raise ConfigurationError("Use section.first() to add a section with same url as parent")
         
-        section = Section(url=url, name=name, parent=self)
-        section.options = self.options.clone(match=match)
+        section = self.make_section(url, match, name)
         self.add_child(section)
-        
         return section
 
     def first(self, url="", match=None, name=None):
         """Adds a child with the same url as the parent as self._base"""
         if name is None:
             name = self.name
-        iasdf
-        section = Section(url=url, name=name, parent=self)
-        section.options = self.options.clone(match=match)
-        self.add_child(section, first=True)
         
+        section = self.make_section(url, match, name)
+        self.add_child(section, first=True)
         return section
         
-    def configure(self, *args, **kwargs):
+    def configure(self, **kwargs):
         """
             Extends self.options with the given keywords.
             It also accepts positional arguments but doesn't use them.
@@ -69,6 +62,17 @@ class Section(object):
     ########################
     ###   SECTION ADDERS
     ########################
+    
+    def make_section(self, url, match, name):
+        """
+            Create a new section based on current one
+            * Gives new section parent of this
+            * Gives it provided url and name
+            * Gives new section clone of this section's options with match overridden
+        """
+        section = Section(url=url, name=name, parent=self)
+        section.options = self.options.clone(match=match)
+        return section
     
     def adopt(self, *sections, **kwargs):
         '''
