@@ -2,6 +2,7 @@ from django.conf.urls.defaults import include, patterns
 
 from errors import ConfigurationError
 from dispatch import dispatcher
+from options import Options
 
 ########################
 ###   SECTION
@@ -150,7 +151,7 @@ class Section(object):
             All children are a tuple of (child, consider_for_menu)
         """
         if self._base:
-            yield self._base[1]
+            yield self._base[0]
         
         for child, _ in self._children:
             yield child
@@ -164,7 +165,7 @@ class Section(object):
             Yield only those whose consider_for_menu is truthy
         """
         if self._base and self._base[1]:
-            yield self._base
+            yield self._base[0]
         
         for child, consider_for_menu in self._children:
             if consider_for_menu:

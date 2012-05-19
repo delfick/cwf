@@ -310,27 +310,115 @@ describe "Section":
                 self.section._children |should| equal_to([(self.new_section, self.consider_for_menu)])
         
     describe "Options":
-        it "is lazily loaded"
-        it "is created as a type of Options"
+        @fudge.patch("src.sections.section.Options")
+        it "is lazily loaded", fakeOptions:
+            section = Section()
+            options = fudge.Fake("options")
+            fakeOptions.expects_call().times_called(1).returns(options)
+            
+            section.options |should| be(options)
+            section.options |should| be(options)
+        
+        @fudge.patch("src.sections.section.Options")
+        it "can be set to something else", fakeOptions:
+            # Don't put expectations on fakeOptions
+            new_options = fudge.Fake("new_options")
+            section = Section()
+            section.options = new_options
+            section.options |should| be(new_options)
     
     describe "Alias":
-        it "uses self.options.alias"
-        it "uses capitialized url if no options.alias"
+        before_each:
+            self.section = Section()
+            self.alias = fudge.Fake("alias")
+        
+        @fudge.test
+        it "uses self.options.alias":
+            self.section.options.alias = self.alias
+            self.section.alias |should| be(self.alias)
+        
+        @fudge.test
+        it "uses capitialized url if no options.alias":
+            url = fudge.Fake("url")
+            capitialized_url = fudge.Fake("capitialized_url")
+            url.expects("capitalize").returns(capitialized_url)
+            
+            self.section.url = url
+            self.section.options.alias = None
+            
+            self.section.alias |should| be(capitialized_url)
     
     describe "Children":
-        it "yields self._base first"
-        it "yields all other children after base"
-        it "ignores base if it isn't defined"
-        it "considers base and children as tuples of (item, _)"
+        before_each:
+            self.cfm = fudge.Fake("cfm")
+            self.base = fudge.Fake("base")
+            self.child1 = fudge.Fake("child1")
+            self.child2 = fudge.Fake("child2")
+            
+            self.section = Section()
+            self.section._base = (self.base, self.cfm)
+            self.section._children = [(self.child1, self.cfm), (self.child2, self.cfm)]
+            
+        it "yields self._base first":
+            list(self.section.children)[0] |should| be(self.base)
+        
+        it "yields all other children after base":
+            list(self.section.children) |should| equal_to([self.base, self.child1, self.child2])
+        
+        it "ignores base if it isn't defined":
+            self.section._base = None
+            list(self.section.children) |should| equal_to([self.child1, self.child2])
+        
+        it "works if added via add_child":
+            self.section._base = None
+            self.section._children = []
+            self.section.add_child(self.child1, consider_for_menu=self.cfm)
+            self.section.add_child(self.base, first=True)
+            self.section.add_child(self.child2)
+            list(self.section.children) |should| equal_to([self.base, self.child1, self.child2])        
     
     describe "menu sections":
-        it "yields self._base first"
-        it "yields children after self._base"
-        it "doesn't yield self._base or children if consider_for_menu is Falsey"
+        before_each:
+            self.cfmb = fudge.Fake("cfmb")
+            self.cfm1 = fudge.Fake("cfm1")
+            self.cfm2 = fudge.Fake("cfm2")
+            
+            self.base = fudge.Fake("base")
+            self.child1 = fudge.Fake("child1")
+            self.child2 = fudge.Fake("child2")
+            
+            self.section = Section()
+            self.section._base = (self.base, self.cfmb)
+            self.section._children = [(self.child1, self.cfm1), (self.child2, self.cfm2)]
+            
+        it "yields self._base first":
+            list(self.section.menu_sections)[0] |should| be(self.base)
+        
+        it "yields children after self._base":
+            list(self.section.menu_sections) |should| equal_to([self.base, self.child1, self.child2])
+        
+        it "doesn't yield self._base or children if consider_for_menu is Falsey":
+            self.section._base = (self.base, False)
+            list(self.section.menu_sections) |should| equal_to([self.child1, self.child2])
+            
+            self.section._children = [(self.child1, False), (self.child2, False)]
+            list(self.section.menu_sections) |should| be_empty
     
     describe "Itering section":
-        it "yields self first"
-        it "yields all children after self"
+        before_each:
+            # iter function to return whatever self.childs is
+            # It is used as iter function for self.children
+            __iter__ = lambda s: self.childs
+            self.children = type("children", (object, ), {'__iter__' : __iter__})()
+            self.section = type("Section", (Section, ), {'children' : self.children})()
+        
+        it "yields self first":
+            self.childs = (t for t in [(1, ), (2, ), (3, )])
+            list(self.section) |should| equal_to([self.section, 1, 2, 3])
+            
+        it "yields all children after self":
+            self.childs = (t for t in [(1, 2, 3), (4, ), (5, 6, )])
+            list(self.section) |should| equal_to([self.section, 1, 2, 3, 4, 5, 6])
     
     describe "Patterns":
         describe "Getting patterns as normal patterns": pass
