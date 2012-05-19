@@ -97,20 +97,22 @@ class Section(object):
             Copy children from a section into this section.
             Will only replace self._base if take_base is True
         '''
-        if take_base and section._base:
+        if take_base:
             if section._base:
                 self._base = section._base.clone(parent=self)
             else:
                 self._base = None
         
-        self._children = [child.clone(parent=self) for child in section._children]
+        for child, consider_for_menu in section._children:
+            self.add_child(child.clone(parent=self), consider_for_menu=consider_for_menu)
+        
         return self
     
     def copy(self, section):
         """Create a copy of the given section and add as a child"""
-        section = section.clone(parent=section)
+        section = section.clone(parent=self)
         self.add_child(section)
-        return section
+        return self
     
     def add_child(self, section, first=False, consider_for_menu=True):
         """Add a child to the section"""
