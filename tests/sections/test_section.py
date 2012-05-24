@@ -755,7 +755,72 @@ describe "Section":
                     self.fake_parent_url_parts.expects_call().with_args(self.stop_at).returns(self.parts)
                     self.section.determine_url_parts(self.stop_at) |should| equal_to([self.p1, self.p2, own])
     
-    describe "Cloning": pass
+    describe "Cloning":
+        @fudge.test
+        it "defaults url, name and parent to values on the section":
+            url = fudge.Fake("url")
+            name = fudge.Fake("name")
+            parent = fudge.Fake("parent")
+            
+            section = Section(url, name, parent)
+            
+            new = fudge.Fake("new")
+            fakeSection = (fudge.Fake("Section").expects_call()
+                .with_args(url=url, name=name, parent=parent).returns(new)
+                )
+            
+            fake_options = fudge.Fake("options").expects("clone")
+            section.options = fake_options
+            
+            with fudge.patched_context("src.sections.section", "Section", fakeSection):
+                section.clone() |should| be(new)
+            
+        it "doesn't override url, name or parent":
+            url = fudge.Fake("url")
+            name = fudge.Fake("name")
+            parent = fudge.Fake("parent")
+            section = Section(url, name, parent)
+            
+            new_url = fudge.Fake("new_url")
+            new_name = fudge.Fake("new_name")
+            new_parent = fudge.Fake("new_parent")
+            
+            new = fudge.Fake("new")
+            fakeSection = (fudge.Fake("Section").expects_call()
+                .with_args(url=new_url, name=new_name, parent=new_parent).returns(new)
+                )
+            
+            fake_options = fudge.Fake("options").expects("clone")
+            section.options = fake_options
+            
+            with fudge.patched_context("src.sections.section", "Section", fakeSection):
+                section.clone(url=new_url, name=new_name, parent=new_parent) |should| be(new)
+            
+        it "creates a clone of options for the new section":
+            section = Section()
+            new_options = fudge.Fake("new")
+            fake_options = fudge.Fake("options").expects("clone").with_args(all=True).returns(new_options)
+            section.options = fake_options
+            section.clone().options |should| be(new_options)
+            
+        it "returns new section":
+            a = fudge.Fake("a")
+            b = fudge.Fake("b")
+            new = fudge.Fake("new")
+            name = fudge.Fake("name")
+            parent = fudge.Fake("parent")
+            new_url = fudge.Fake("new_url")
+            section = Section(name=name, parent=parent)
+            
+            fakeSection = (fudge.Fake("Section").expects_call()
+                .with_args(url=new_url, name=name, parent=parent, a=a, b=b).returns(new)
+                )
+            
+            fake_options = fudge.Fake("options").expects("clone")
+            section.options = fake_options
+            
+            with fudge.patched_context("src.sections.section", "Section", fakeSection):
+                section.clone(url=new_url, a=a, b=b) |should| be(new)
     
     describe "Getting root ancestor":
         it "returns itself if no parent":
