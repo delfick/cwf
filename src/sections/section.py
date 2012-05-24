@@ -299,8 +299,10 @@ class Section(object):
     def rootAncestor(self):
         """Find ancestor that has no parent"""
         result = self
-        while result.parent:
-            parent = result.parent
+        parents = []
+        while result.parent and result.parent not in parents:
+            parents.append(result.parent)
+            result = result.parent
         return result
     
     def reachable(self, request):

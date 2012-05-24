@@ -756,5 +756,66 @@ describe "Section":
                     self.section.determine_url_parts(self.stop_at) |should| equal_to([self.p1, self.p2, own])
     
     describe "Cloning": pass
-    describe "Getting root ancestor": pass
-    describe "Determining if reachable": pass
+    
+    describe "Getting root ancestor":
+        it "returns itself if no parent":
+            section = Section(parent=None)
+            section.rootAncestor() |should| be(section)
+        
+        it "looks at chain of parents to find root ancestor":
+            p1 = fudge.Fake("p1")
+            p2 = fudge.Fake("p2")
+            p3 = fudge.Fake("p3")
+            
+            p1.parent = None
+            p2.parent = None
+            p3.parent = None
+            
+            section = Section(parent=p1)
+            section.rootAncestor() |should| be(p1)
+            
+            p1.parent = p2
+            section.rootAncestor() |should| be(p2)
+            
+            p2.parent = p3
+            section.rootAncestor() |should| be(p3)
+        
+        it "copes with circular dependencies":
+            p1 = fudge.Fake("p1")
+            p2 = fudge.Fake("p2")
+            
+            p1.parent = p2
+            p2.parent = p1
+            section = Section(parent=p1)
+            section.rootAncestor() |should| be(p2)
+    
+    describe "Determining if reachable":
+        before_each:
+            self.request = fudge.Fake("request")
+            self.section = Section()
+        
+        @fudge.test
+        it "returns False if there is a parent and parent isn't reachable":
+            parent = fudge.Fake("parent").expects("reachable").with_args(self.request).returns(False)
+            self.section.parent = parent
+            self.section.reachable(self.request) |should| be(False)
+                
+        @fudge.test
+        it "returns whether section is reachable if no parent":
+            result = fudge.Fake("result")
+            self.section.parent = None
+            
+            fake_reachable = fudge.Fake("reachable").expects_call().returns(result)
+            with fudge.patched_context(self.section.options, 'reachable', fake_reachable):
+                self.section.reachable(self.request) |should| be(result)
+        
+        @fudge.test
+        it "returns whether section is reachable if parent and parent is reachable":
+            result = fudge.Fake("result")
+            
+            parent = fudge.Fake("parent").expects("reachable").with_args(self.request).returns(True)
+            self.section.parent = parent
+            
+            fake_reachable = fudge.Fake("reachable").expects_call().returns(result)
+            with fudge.patched_context(self.section.options, 'reachable', fake_reachable):
+                self.section.reachable(self.request) |should| be(result)
