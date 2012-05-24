@@ -244,8 +244,12 @@ class Section(object):
             unless include_as is specified which will override this
         """
         if include_as:
+            while include_as.startswith("^"):
+                include_as = include_as[1:]
+            
             while include_as.endswith("/"):
                 include_as = include_as[:-1]
+            
             return "^%s/" % include_as
         
         # No include_as specified
@@ -253,20 +257,28 @@ class Section(object):
 
     def determine_url_parts(self, stop_at=None):
         """Get list of patterns making the full pattern for this section"""
-        if not self._url_parts:
-            url_parts = []
-            if self.parent and not self is stop_at:
-                # Get parent patterns
-                url_parts = list(self.parent.determine_url_parts(stop_at))
-            
-            match = self.options.match
-            if match:
-                url_parts.append("(?P<%s>%s)" % (match, self.url))
-            else:
-                url_parts.append(self.url)
-            
+        if not hasattr(self, '_url_parts'):
+            url_parts = self.parent_url_parts(stop_at)
+            url_parts.append(self.own_url_part())
             self._url_parts = url_parts
-        return self._url_parts
+        return self._url_parts    
+    
+    def parent_url_parts(self, stop_at):
+        """Get url_parts from parent"""
+        parts = []
+        if self.parent and not self is stop_at:
+            # Get parent patterns
+            parts = list(self.parent.determine_url_parts(stop_at))
+        return parts
+    
+    def own_url_part(self):
+        """Get url part for this section"""
+        part = self.url
+        match = self.options.match
+        if match:
+            part = "(?P<%s>%s)" % (match, self.url)
+        
+        return part
         
     ########################
     ###   UTILITY

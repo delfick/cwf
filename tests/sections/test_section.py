@@ -4,6 +4,7 @@ from src.sections.errors import ConfigurationError
 from src.sections.section import Section
 
 import fudge
+import re
 
 describe "Section":
     describe "Initialisation":
@@ -614,9 +615,145 @@ describe "Section":
                     pattern_list|should| equal_to([first, p1a, p1b, p2, p3a, p3b])
     
     describe "Url creation":
-        describe "Getting pattern for url": pass
-        describe "Getting path for pattern include": pass
-        describe "Getting different parts that make up the url": pass
+        describe "Getting pattern for url":
+            before_each:
+                self.end = fudge.Fake("end")
+                self.stop_at = fudge.Fake("stop_at")
+                self.url_parts = fudge.Fake('url_parts')
+                
+                self.fake_determine_url_parts = fudge.Fake("determine_url_parts")
+                self.section = type("Section", (Section, ), {'determine_url_parts' : self.fake_determine_url_parts})()
+            
+            @fudge.test
+            it "asks options to create patterns from the url_parts determine_url_parts returns":
+                result = fudge.Fake("result")
+                fake_create_pattern = (fudge.Fake("create_pattern").expects_call()
+                    .with_args(self.url_parts, end=self.end).returns(result)
+                    )
+                
+                self.fake_determine_url_parts.expects_call().with_args(self.stop_at).returns(self.url_parts)
+                
+                with fudge.patched_context(self.section.options, 'create_pattern', fake_create_pattern):
+                    self.section.url_pattern(self.stop_at, self.end) |should| be(result)
+                
+        describe "Getting path for pattern include":
+            before_each:
+                self.fake_url_pattern = fudge.Fake("url_pattern")
+                self.section = type("Section", (Section, ), {'url_pattern' : self.fake_url_pattern})()
+                
+            describe "When include_as is specified":
+                @fudge.test
+                it "returns include_as":
+                    include_as = "^blah/"
+                    self.section.include_path(include_as) |should| equal_to("^blah/")
+                
+                @fudge.test
+                it "ensures only one caret at the start":
+                    include_as = "^^^^^^^blah/"
+                    self.section.include_path(include_as) |should| equal_to("^blah/")
+                
+                @fudge.test
+                it "ensures only one slash at the end":
+                    include_as = "^blah/////"
+                    self.section.include_path(include_as) |should| equal_to("^blah/")
+                
+                @fudge.test
+                it "ensures both prepend with caret and append with slash":
+                    include_as = "blah"
+                    self.section.include_path(include_as) |should| equal_to("^blah/")
+                
+            describe "When include_as is not specified":
+                @fudge.test
+                it "defaults to asking url_pattern":
+                    result = fudge.Fake("result")
+                    (self.fake_url_pattern.expects_call()
+                        .with_args(stop_at=self.section, end=False, start=False).returns(result)
+                        )
+                    self.section.include_path() |should| be(result)
+        
+        describe "Getting different parts that make up the url":
+            describe "Getting own url part":
+                before_each:
+                    self.url = fudge.Fake("url")
+                    self.section = Section(self.url)
+                
+                it "returns self.url if not a matching section":
+                    self.section.options.match = False
+                    self.section.own_url_part() |should| be(self.url)
+                    
+                it "returns named captured group if a matching section":
+                    self.section.options.match = fudge.Fake("thematch")
+                    self.section.own_url_part() |should| equal_to("(?P<fake:thematch>fake:url)")
+                    
+                    self.section.url = 'abc'
+                    self.section.options.match = 'match'
+                    regex = self.section.own_url_part()
+                    
+                    m = re.match(regex, 'abc')
+                    m.groupdict()['match'] |should| equal_to("abc")
+            
+            describe "Getting url parts from parent":
+                before_each:
+                    self.p1 = fudge.Fake("p1")
+                    self.p2 = fudge.Fake("p2")
+                    self.parts = [self.p1, self.p2]
+                    self.stop_at = fudge.Fake("stop_at")
+                    
+                    self.parent = fudge.Fake("parent")
+                    self.section = Section(parent=self.parent)
+                
+                it "returns nothing if no parent":
+                    self.section.parent = None
+                    self.section.parent_url_parts(None) |should| be_empty
+                
+                it "returns nothing if self is stop_at":
+                    self.section.parent_url_parts(self.section) |should| be_empty
+                
+                @fudge.test
+                it "returns result of asking parent for url_parts if parent and not stopping at this section":
+                    self.parent.expects("determine_url_parts").with_args(self.stop_at).returns(self.parts)
+                    self.section.parent_url_parts(self.stop_at) |should| equal_to(self.parts)
+                
+                @fudge.test
+                it "can modify result without affecting url_parts of the parent":
+                    self.parent.expects("determine_url_parts").with_args(self.stop_at).returns(self.parts)
+                    parts = self.section.parent_url_parts(self.stop_at)
+                    parts |should| equal_to(self.parts)
+                    
+                    parts.append(1)
+                    parts |should_not| equal_to(self.parts)
+                    parts |should| equal_to([self.p1, self.p2, 1])
+                    self.parts |should| equal_to([self.p1, self.p2])
+            
+            describe "Getting combination of parent and self":
+                before_each:
+                    self.p1 = fudge.Fake("p1")
+                    self.p2 = fudge.Fake("p2")
+                    self.parts = [self.p1, self.p2]
+                    self.stop_at = fudge.Fake("stop_at")
+                    
+                    self.fake_own_url_part = fudge.Fake("own_url_part")
+                    self.fake_parent_url_parts = fudge.Fake("parent_url_parts")
+                    
+                    self.section = type("Section", (Section, ),
+                        { 'own_url_part' : self.fake_own_url_part
+                        , 'parent_url_parts' : self.fake_parent_url_parts
+                        }
+                    )()
+                
+                @fudge.test
+                it "returns self._url_parts if already defined":
+                    url_parts = fudge.Fake("url_parts")
+                    self.section._url_parts = url_parts
+                    self.section.determine_url_parts() |should| be(url_parts)
+                    self.section.determine_url_parts(self.stop_at) |should| be(url_parts)
+                
+                @fudge.test
+                it "returns parent url parts appended with own url part":
+                    own = fudge.Fake("own")
+                    self.fake_own_url_part.expects_call().returns(own)
+                    self.fake_parent_url_parts.expects_call().with_args(self.stop_at).returns(self.parts)
+                    self.section.determine_url_parts(self.stop_at) |should| equal_to([self.p1, self.p2, own])
     
     describe "Cloning": pass
     describe "Getting root ancestor": pass
