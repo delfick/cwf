@@ -421,9 +421,197 @@ describe "Section":
             list(self.section) |should| equal_to([self.section, 1, 2, 3, 4, 5, 6])
     
     describe "Patterns":
-        describe "Getting patterns as normal patterns": pass
-        describe "Getting patterns as includes": pass
-        describe "Getting list of normal patterns": pass
+        describe "Getting patterns as normal patterns":
+            before_each:
+                self.fake_pattern_list = fudge.Fake("pattern_list")
+                self.section = type("Section", (Section, ), {'pattern_list' : self.fake_pattern_list})()
+            
+            @fudge.test
+            it "uses django patterns factory with self.pattern_list":
+                kw1 = fudge.Fake('kw1')
+                kw2 = fudge.Fake('kw2')
+                kw3 = fudge.Fake('kw3')
+                
+                p1 = fudge.Fake("p1")
+                p2 = fudge.Fake("p2")
+                p3 = fudge.Fake("p3")
+                
+                patterns = fudge.Fake("patterns")
+                
+                (self.fake_pattern_list.expects_call()
+                    .with_args(a=kw1, c=kw2, e=kw3).returns([p1, p2, p3])
+                    )
+                
+                fake_patterns = (fudge.Fake("patterns").expects_call()
+                    .with_args('', p1, p2, p3).returns(patterns)
+                    )
+            
+                with fudge.patched_context("src.sections.section", "patterns", fake_patterns):
+                    list(self.section.patterns(a=kw1, c=kw2, e=kw3)) |should| equal_to([patterns])
+        
+        describe "Getting patterns as includes":
+            before_each:
+                self.app_name = fudge.Fake("app_name")
+                self.namespace = fudge.Fake("namespace")
+                self.include_as = fudge.Fake("include_as")
+                self.include_path = fudge.Fake("include_path")
+                
+                self.fake_patterns = fudge.Fake("patterns")
+                self.fake_include_path = fudge.Fake("include_path")
+                self.section = type("Section", (Section, ),
+                    { 'patterns' : self.fake_patterns
+                    , 'include_path' : self.fake_include_path
+                    }
+                )()
+            
+            @fudge.test
+            it "returns (path, _) where path is from include_path":
+                self.fake_include_path.expects_call().with_args(self.include_as).returns(self.include_path)
+                self.fake_patterns.expects_call().returns([])
+                path, _ = self.section.include_patterns(self.namespace, self.app_name, self.include_as)
+                path |should| be(self.include_path)
+            
+            @fudge.test
+            it "returns (_, includer) where includer is django url include with self.patterns":
+                includer = fudge.Fake("includer")
+                patterns = fudge.Fake("patterns")
+                
+                self.fake_include_path.expects_call().returns(self.include_path)
+                
+                (self.fake_patterns.expects_call()
+                    .with_args(children_only=True, stop_at=self.section).returns(patterns)
+                    )
+                
+                fake_include = (fudge.Fake("include").expects_call()
+                    .with_args(patterns, self.namespace, self.app_name).returns(includer)
+                    )
+                
+                with fudge.patched_context("src.sections.section", "include", fake_include):
+                    _, result = self.section.include_patterns(self.namespace, self.app_name, self.include_as)
+                    result |should| be(includer)
+        
+        describe "Getting pattern list for section itself":
+            before_each:
+                self.start = fudge.Fake("start")
+                self.stop_at = fudge.Fake("stop_at")
+                self.children_only = fudge.Fake("children_only")
+                
+                self.view = fudge.Fake("view")
+                self.name = fudge.Fake("name")
+                self.kwargs = fudge.Fake("kwargs")
+                self.pattern = fudge.Fake("pattern")
+                
+                self.fake_url_pattern = fudge.Fake("url_pattern")
+                self.section = type("Section", (Section, ), {'url_pattern' : self.fake_url_pattern})(name=self.name)
+            
+            @fudge.test
+            it "gets pattern from url_pattern":
+                self.fake_url_pattern.expects_call().with_args(self.stop_at, start=self.start).returns(self.pattern)
+                fake_url_view = fudge.Fake("url_view").expects_call().returns([1, 2])
+                
+                with fudge.patched_context(self.section.options, 'url_view', fake_url_view):
+                    p, _, _, _ = self.section.pattern_list_first(self.stop_at, self.start)
+                    p |should| be(self.pattern)
+            
+            @fudge.test
+            it "gets view and kwargs from options.url_view":
+                self.fake_url_pattern.expects_call().returns(self.pattern)
+                fake_url_view = (fudge.Fake("url_view").expects_call()
+                    .with_args(self.section).returns([self.view, self.kwargs])
+                    )
+                
+                with fudge.patched_context(self.section.options, 'url_view', fake_url_view):
+                    _, v, k, _ = self.section.pattern_list_first(self.stop_at, self.start)
+                    v |should| be(self.view)
+                    k |should| be(self.kwargs)
+            
+            @fudge.test
+            it "also returns self.name":
+                self.fake_url_pattern.expects_call().returns(self.pattern)
+                fake_url_view = fudge.Fake("url_view").expects_call().returns([1, 2])
+                
+                with fudge.patched_context(self.section.options, 'url_view', fake_url_view):
+                    _, _, _, n = self.section.pattern_list_first(self.stop_at, self.start)
+                    n |should| be(self.name)
+        
+        describe "Getting list of normal patterns":
+            before_each:
+                self.start = fudge.Fake("start")
+                self.stop_at = fudge.Fake("stop_at")
+                self.children_only = fudge.Fake("children_only")
+                
+                self.fake_pattern_list_first = fudge.Fake("pattern_list_first")
+                self.section = type("Section", (Section, ), {'pattern_list_first' : self.fake_pattern_list_first})()
+            
+            describe "With no children":
+                before_each:
+                    self.section._base = None
+                    self.section._children = []
+                
+                @fudge.test
+                it "yields nothing if promoting children":
+                    self.section.options.promote_children = True
+                    list(self.section.pattern_list()) |should| be_empty
+                
+                @fudge.test
+                it "yields pattern list for only itself if not promoting children":
+                    first = fudge.Fake("first")
+                    
+                    (self.fake_pattern_list_first.expects_call()
+                        .with_args(self.stop_at, self.start).returns(first)
+                        )
+                    
+                    self.section.options.promote_children = False
+                    list(
+                        self.section.pattern_list(self.children_only, self.stop_at, self.start)
+                    ) |should| equal_to([first])
+            
+            describe "With children":
+                before_each:
+                    self.c1 = fudge.Fake("child1")
+                    self.c2 = fudge.Fake("child2")
+                    self.c3 = fudge.Fake("cihld3")
+                    
+                    self.section.add_child(self.c1, first=True)
+                    self.section.add_child(self.c2)
+                    self.section.add_child(self.c3)
+                
+                @fudge.test
+                it "yields only children if promoting children":
+                    p1a = fudge.Fake("pattern1a")
+                    p1b = fudge.Fake("pattern1b")
+                    p2 = fudge.Fake("pattern2")
+                    p3a = fudge.Fake("pattern3a")
+                    p3b = fudge.Fake("pattern3b")
+                    
+                    self.c1.expects("pattern_list").with_args(self.stop_at, start=self.start).returns([p1a, p1b])
+                    self.c2.expects("pattern_list").with_args(self.stop_at, start=self.start).returns([p2])
+                    self.c3.expects("pattern_list").with_args(self.stop_at, start=self.start).returns([p3a, p3b])
+                    
+                    self.section.options.promote_children = True
+                    pattern_list = list(self.section.pattern_list(stop_at=self.stop_at, start=self.start))
+                    pattern_list|should| equal_to([p1a, p1b, p2, p3a, p3b])
+                
+                @fudge.test
+                it "yields itself followed by the children if not promoting children":
+                    first = fudge.Fake("first")
+                    p1a = fudge.Fake("pattern1a")
+                    p1b = fudge.Fake("pattern1b")
+                    p2 = fudge.Fake("pattern2")
+                    p3a = fudge.Fake("pattern3a")
+                    p3b = fudge.Fake("pattern3b")
+                    
+                    self.c1.expects("pattern_list").with_args(self.stop_at, start=self.start).returns([p1a, p1b])
+                    self.c2.expects("pattern_list").with_args(self.stop_at, start=self.start).returns([p2])
+                    self.c3.expects("pattern_list").with_args(self.stop_at, start=self.start).returns([p3a, p3b])
+                    
+                    (self.fake_pattern_list_first.expects_call()
+                        .with_args(self.stop_at, self.start).returns(first)
+                        )
+                    
+                    self.section.options.promote_children = False
+                    pattern_list = list(self.section.pattern_list(self.children_only, stop_at=self.stop_at, start=self.start))
+                    pattern_list|should| equal_to([first, p1a, p1b, p2, p3a, p3b])
     
     describe "Url creation":
         describe "Getting pattern for url": pass

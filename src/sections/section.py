@@ -214,17 +214,19 @@ class Section(object):
         
     def pattern_list(self, children_only=False, stop_at=None, start=True):
         """Return list of url patterns for this section and its children"""
-        if self.options.promote_children or not self.children:
-            # If not showing base, then there is no direct url to that section
-            # But the children will respect the part of the url that belongs to this section
-            pattern = self.url_pattern(stop_at, start=start)
-            view, kwargs = self.options.url_view(self)
-            yield (pattern, view, kwargs, self.name)
+        if not self.options.promote_children or not self.children:
+            yield self.pattern_list_first(stop_at, start)
         
         # Yield children
         for child in self.children:
             for url_pattern in child.pattern_list(stop_at, start=start):
                 yield url_pattern
+        
+    def pattern_list_first(self, stop_at, start):
+        """Yield pattern list for this section"""
+        pattern = self.url_pattern(stop_at, start=start)
+        view, kwargs = self.options.url_view(self)
+        return (pattern, view, kwargs, self.name)
         
     ########################
     ###   URL UTILITY
