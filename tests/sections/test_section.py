@@ -3,8 +3,8 @@
 from src.sections.errors import ConfigurationError
 from src.sections.section import Section
 
+from contextlib import contextmanager
 import fudge
-import re
 
 describe "Section":
     describe "Initialisation":
@@ -376,7 +376,46 @@ describe "Section":
             self.section.add_child(self.child1, consider_for_menu=self.cfm)
             self.section.add_child(self.base, first=True)
             self.section.add_child(self.child2)
-            list(self.section.children) |should| equal_to([self.base, self.child1, self.child2])        
+            list(self.section.children) |should| equal_to([self.base, self.child1, self.child2])
+
+    describe "Determining url children":
+        before_each:
+            self.options_with_target = fudge.Fake("options").has_attr(target=True)
+            self.options_without_target = fudge.Fake("options").has_attr(target=None)
+            self.section_with_target = type("Section", (Section, ), {'options' : self.options_with_target})()
+            self.section_without_target = type("Section", (Section, ), {'options' : self.options_without_target})()
+
+        def child_with_target(self):
+            return fudge.Fake("child").has_attr(options=self.options_with_target)
+
+        def child_without_target(self):
+            return fudge.Fake("child").has_attr(options=self.options_without_target)
+
+        @contextmanager
+        def using_children(self, section, children):
+            patched = fudge.patch_object(section, 'children', children)
+            yield section
+            patched.restore()
+
+        it "yields self if there is a defined target":
+            list(self.section_with_target.url_children) |should| equal_to([self.section_with_target])
+
+        it "does not yield self if there is not a defined target":
+            list(self.section_without_target.url_children) |should| equal_to([])
+
+        it "yields all children that have a defined target":
+            c1 = self.child_with_target()
+            c2 = self.child_with_target()
+            c3 = self.child_without_target()
+            c4 = self.child_with_target()
+
+            # Parent with target is included first
+            with self.using_children(self.section_with_target, [c1, c2, c3, c4]) as sect:
+                list(sect.url_children) |should| equal_to([sect, c1, c2, c4])
+
+            # Parent without target isn't included in list
+            with self.using_children(self.section_without_target, [c1, c2, c3, c4]) as sect:
+                list(sect.url_children) |should| equal_to([c1, c2, c4])
     
     describe "menu sections":
         before_each:
@@ -404,7 +443,37 @@ describe "Section":
             
             self.section._children = [(self.child1, False), (self.child2, False)]
             list(self.section.menu_sections) |should| be_empty
-    
+
+    describe "Determining if section has children":
+        @contextmanager
+        def using_children(self, section, children):
+            patched = fudge.patch_object(section, 'children', children)
+            yield section
+            patched.restore()
+
+        it "returns whether section has any children":
+            section = Section()
+
+            def yielded_with_children():
+                yield 1
+                yield 2
+
+            def yielded_without_children():
+                if False:
+                    yield 1
+
+            with self.using_children(section, yielded_with_children()) as sect:
+                sect.has_children |should| be(True)
+
+            with self.using_children(section, yielded_without_children()) as sect:
+                sect.has_children |should| be(False)
+
+            with self.using_children(section, [1, 2]) as sect:
+                sect.has_children |should| be(True)
+
+            with self.using_children(section, []) as sect:
+                sect.has_children |should| be(False)
+
     describe "Itering section":
         before_each:
             # iter function to return whatever self.childs is
@@ -422,338 +491,72 @@ describe "Section":
             list(self.section) |should| equal_to([self.section, 1, 2, 3, 4, 5, 6])
     
     describe "Patterns":
-        describe "Getting patterns as normal patterns":
-            before_each:
-                self.fake_pattern_list = fudge.Fake("pattern_list")
-                self.section = type("Section", (Section, ), {'pattern_list' : self.fake_pattern_list})()
-            
-            @fudge.test
-            it "uses django patterns factory with self.pattern_list":
-                kw1 = fudge.Fake('kw1')
-                kw2 = fudge.Fake('kw2')
-                kw3 = fudge.Fake('kw3')
-                
+        before_each:
+            self.section = Section()
+
+        describe "Getting expanded list":
+            @fudge.patch("src.sections.section.patterns", "src.sections.section.PatternList")
+            it "uses a PatternList object with django patterns generator", fake_patterns, fakePatternList:
                 p1 = fudge.Fake("p1")
                 p2 = fudge.Fake("p2")
                 p3 = fudge.Fake("p3")
-                
-                patterns = fudge.Fake("patterns")
-                
-                (self.fake_pattern_list.expects_call()
-                    .with_args(a=kw1, c=kw2, e=kw3).returns([p1, p2, p3])
-                    )
-                
-                fake_patterns = (fudge.Fake("patterns").expects_call()
-                    .with_args('', p1, p2, p3).returns(patterns)
-                    )
-            
-                with fudge.patched_context("src.sections.section", "patterns", fake_patterns):
-                    list(self.section.patterns(a=kw1, c=kw2, e=kw3)) |should| equal_to([patterns])
-        
-        describe "Getting patterns as includes":
+                pp1 = fudge.Fake("pp1")
+                pp2 = fudge.Fake("pp2")
+                pp3 = fudge.Fake("pp3")
+
+                fakePatternList.expects_call().with_args(self.section).returns([p1, p2, p3])
+                fake_patterns.expects_call().with_args('', p1, p2, p3).returns([pp1, pp2, pp3])
+                list(self.section.patterns()) |should| equal_to([pp1, pp2, pp3])
+
+        describe "Getting as includes":
             before_each:
                 self.app_name = fudge.Fake("app_name")
                 self.namespace = fudge.Fake("namespace")
-                self.include_as = fudge.Fake("include_as")
-                self.include_path = fudge.Fake("include_path")
-                
                 self.fake_patterns = fudge.Fake("patterns")
-                self.fake_include_path = fudge.Fake("include_path")
-                self.section = type("Section", (Section, ),
-                    { 'patterns' : self.fake_patterns
-                    , 'include_path' : self.fake_include_path
-                    }
-                )()
-            
-            @fudge.test
-            it "returns (path, _) where path is from include_path":
-                self.fake_include_path.expects_call().with_args(self.include_as).returns(self.include_path)
-                self.fake_patterns.expects_call().returns([])
-                path, _ = self.section.include_patterns(self.namespace, self.app_name, self.include_as)
-                path |should| be(self.include_path)
-            
-            @fudge.test
-            it "returns (_, includer) where includer is django url include with self.patterns":
-                includer = fudge.Fake("includer")
+                self.section = type("Section", (Section, ), {'patterns' : self.fake_patterns})()
+
+            @fudge.patch("src.sections.section.include", "src.sections.section.PatternList")
+            it "returns include_path from PatternList as first item in tuple", fake_include, fakePatternList:
+                end = fudge.Fake("end")
+                path = fudge.Fake("path")
+                start = fudge.Fake("start")
+                include_as = fudge.Fake("include_as")
+
+                # Make fake PatternList instance
+                pattern_list = (fudge.Fake("pattern_list").expects("include_path")
+                    .with_args(include_as, start, end).returns(path)
+                    )
+                fakePatternList.expects_call().with_args(self.section).returns(pattern_list)
+
+                # Patterns are for the includer
+                self.fake_patterns.expects_call()
+
+                fake_include.expects_call()
+                p, _ = self.section.include_patterns(self.namespace, self.app_name
+                    , include_as=include_as, start=start, end=end
+                    )
+
+                # Make sure we got the path returned from PatternList
+                p |should| be(path)
+
+            @fudge.patch("src.sections.section.include", "src.sections.section.PatternList")
+            it "returns includer function using django include generator as second item in tuple", fake_include, fakePatternList:
                 patterns = fudge.Fake("patterns")
-                
-                self.fake_include_path.expects_call().returns(self.include_path)
-                
-                (self.fake_patterns.expects_call()
-                    .with_args(children_only=True, stop_at=self.section).returns(patterns)
-                    )
-                
-                fake_include = (fudge.Fake("include").expects_call()
-                    .with_args(patterns, self.namespace, self.app_name).returns(includer)
-                    )
-                
-                with fudge.patched_context("src.sections.section", "include", fake_include):
-                    _, result = self.section.include_patterns(self.namespace, self.app_name, self.include_as)
-                    result |should| be(includer)
-        
-        describe "Getting pattern list for section itself":
-            before_each:
-                self.start = fudge.Fake("start")
-                self.stop_at = fudge.Fake("stop_at")
-                self.children_only = fudge.Fake("children_only")
-                
-                self.view = fudge.Fake("view")
-                self.name = fudge.Fake("name")
-                self.kwargs = fudge.Fake("kwargs")
-                self.pattern = fudge.Fake("pattern")
-                
-                self.fake_url_pattern = fudge.Fake("url_pattern")
-                self.section = type("Section", (Section, ), {'url_pattern' : self.fake_url_pattern})(name=self.name)
-            
-            @fudge.test
-            it "gets pattern from url_pattern":
-                self.fake_url_pattern.expects_call().with_args(self.stop_at, start=self.start).returns(self.pattern)
-                fake_url_view = fudge.Fake("url_view").expects_call().returns([1, 2])
-                
-                with fudge.patched_context(self.section.options, 'url_view', fake_url_view):
-                    p, _, _, _ = self.section.pattern_list_first(self.stop_at, self.start)
-                    p |should| be(self.pattern)
-            
-            @fudge.test
-            it "gets view and kwargs from options.url_view":
-                self.fake_url_pattern.expects_call().returns(self.pattern)
-                fake_url_view = (fudge.Fake("url_view").expects_call()
-                    .with_args(self.section).returns([self.view, self.kwargs])
-                    )
-                
-                with fudge.patched_context(self.section.options, 'url_view', fake_url_view):
-                    _, v, k, _ = self.section.pattern_list_first(self.stop_at, self.start)
-                    v |should| be(self.view)
-                    k |should| be(self.kwargs)
-            
-            @fudge.test
-            it "also returns self.name":
-                self.fake_url_pattern.expects_call().returns(self.pattern)
-                fake_url_view = fudge.Fake("url_view").expects_call().returns([1, 2])
-                
-                with fudge.patched_context(self.section.options, 'url_view', fake_url_view):
-                    _, _, _, n = self.section.pattern_list_first(self.stop_at, self.start)
-                    n |should| be(self.name)
-        
-        describe "Getting list of normal patterns":
-            before_each:
-                self.start = fudge.Fake("start")
-                self.stop_at = fudge.Fake("stop_at")
-                self.children_only = fudge.Fake("children_only")
-                
-                self.fake_pattern_list_first = fudge.Fake("pattern_list_first")
-                self.section = type("Section", (Section, ), {'pattern_list_first' : self.fake_pattern_list_first})()
-            
-            describe "With no children":
-                before_each:
-                    self.section._base = None
-                    self.section._children = []
-                
-                @fudge.test
-                it "yields nothing if promoting children":
-                    self.section.options.promote_children = True
-                    list(self.section.pattern_list()) |should| be_empty
-                
-                @fudge.test
-                it "yields pattern list for only itself if not promoting children":
-                    first = fudge.Fake("first")
-                    
-                    (self.fake_pattern_list_first.expects_call()
-                        .with_args(self.stop_at, self.start).returns(first)
-                        )
-                    
-                    self.section.options.promote_children = False
-                    list(
-                        self.section.pattern_list(self.children_only, self.stop_at, self.start)
-                    ) |should| equal_to([first])
-            
-            describe "With children":
-                before_each:
-                    self.c1 = fudge.Fake("child1")
-                    self.c2 = fudge.Fake("child2")
-                    self.c3 = fudge.Fake("cihld3")
-                    
-                    self.section.add_child(self.c1, first=True)
-                    self.section.add_child(self.c2)
-                    self.section.add_child(self.c3)
-                
-                @fudge.test
-                it "yields only children if promoting children":
-                    p1a = fudge.Fake("pattern1a")
-                    p1b = fudge.Fake("pattern1b")
-                    p2 = fudge.Fake("pattern2")
-                    p3a = fudge.Fake("pattern3a")
-                    p3b = fudge.Fake("pattern3b")
-                    
-                    self.c1.expects("pattern_list").with_args(self.stop_at, start=self.start).returns([p1a, p1b])
-                    self.c2.expects("pattern_list").with_args(self.stop_at, start=self.start).returns([p2])
-                    self.c3.expects("pattern_list").with_args(self.stop_at, start=self.start).returns([p3a, p3b])
-                    
-                    self.section.options.promote_children = True
-                    pattern_list = list(self.section.pattern_list(stop_at=self.stop_at, start=self.start))
-                    pattern_list|should| equal_to([p1a, p1b, p2, p3a, p3b])
-                
-                @fudge.test
-                it "yields itself followed by the children if not promoting children":
-                    first = fudge.Fake("first")
-                    p1a = fudge.Fake("pattern1a")
-                    p1b = fudge.Fake("pattern1b")
-                    p2 = fudge.Fake("pattern2")
-                    p3a = fudge.Fake("pattern3a")
-                    p3b = fudge.Fake("pattern3b")
-                    
-                    self.c1.expects("pattern_list").with_args(self.stop_at, start=self.start).returns([p1a, p1b])
-                    self.c2.expects("pattern_list").with_args(self.stop_at, start=self.start).returns([p2])
-                    self.c3.expects("pattern_list").with_args(self.stop_at, start=self.start).returns([p3a, p3b])
-                    
-                    (self.fake_pattern_list_first.expects_call()
-                        .with_args(self.stop_at, self.start).returns(first)
-                        )
-                    
-                    self.section.options.promote_children = False
-                    pattern_list = list(self.section.pattern_list(self.children_only, stop_at=self.stop_at, start=self.start))
-                    pattern_list|should| equal_to([first, p1a, p1b, p2, p3a, p3b])
-    
-    describe "Url creation":
-        describe "Getting pattern for url":
-            before_each:
-                self.end = fudge.Fake("end")
-                self.stop_at = fudge.Fake("stop_at")
-                self.url_parts = fudge.Fake('url_parts')
-                
-                self.fake_determine_url_parts = fudge.Fake("determine_url_parts")
-                self.section = type("Section", (Section, ), {'determine_url_parts' : self.fake_determine_url_parts})()
-            
-            @fudge.test
-            it "asks options to create patterns from the url_parts determine_url_parts returns":
-                result = fudge.Fake("result")
-                fake_create_pattern = (fudge.Fake("create_pattern").expects_call()
-                    .with_args(self.url_parts, end=self.end).returns(result)
-                    )
-                
-                self.fake_determine_url_parts.expects_call().with_args(self.stop_at).returns(self.url_parts)
-                
-                with fudge.patched_context(self.section.options, 'create_pattern', fake_create_pattern):
-                    self.section.url_pattern(self.stop_at, self.end) |should| be(result)
-                
-        describe "Getting path for pattern include":
-            before_each:
-                self.fake_url_pattern = fudge.Fake("url_pattern")
-                self.section = type("Section", (Section, ), {'url_pattern' : self.fake_url_pattern})()
-                
-            describe "When include_as is specified":
-                @fudge.test
-                it "returns include_as":
-                    include_as = "^blah/"
-                    self.section.include_path(include_as) |should| equal_to("^blah/")
-                
-                @fudge.test
-                it "ensures only one caret at the start":
-                    include_as = "^^^^^^^blah/"
-                    self.section.include_path(include_as) |should| equal_to("^blah/")
-                
-                @fudge.test
-                it "ensures only one slash at the end":
-                    include_as = "^blah/////"
-                    self.section.include_path(include_as) |should| equal_to("^blah/")
-                
-                @fudge.test
-                it "ensures both prepend with caret and append with slash":
-                    include_as = "blah"
-                    self.section.include_path(include_as) |should| equal_to("^blah/")
-                
-            describe "When include_as is not specified":
-                @fudge.test
-                it "defaults to asking url_pattern":
-                    result = fudge.Fake("result")
-                    (self.fake_url_pattern.expects_call()
-                        .with_args(stop_at=self.section, end=False, start=False).returns(result)
-                        )
-                    self.section.include_path() |should| be(result)
-        
-        describe "Getting different parts that make up the url":
-            describe "Getting own url part":
-                before_each:
-                    self.url = fudge.Fake("url")
-                    self.section = Section(self.url)
-                
-                it "returns self.url if not a matching section":
-                    self.section.options.match = False
-                    self.section.own_url_part() |should| be(self.url)
-                    
-                it "returns named captured group if a matching section":
-                    self.section.options.match = fudge.Fake("thematch")
-                    self.section.own_url_part() |should| equal_to("(?P<fake:thematch>fake:url)")
-                    
-                    self.section.url = 'abc'
-                    self.section.options.match = 'match'
-                    regex = self.section.own_url_part()
-                    
-                    m = re.match(regex, 'abc')
-                    m.groupdict()['match'] |should| equal_to("abc")
-            
-            describe "Getting url parts from parent":
-                before_each:
-                    self.p1 = fudge.Fake("p1")
-                    self.p2 = fudge.Fake("p2")
-                    self.parts = [self.p1, self.p2]
-                    self.stop_at = fudge.Fake("stop_at")
-                    
-                    self.parent = fudge.Fake("parent")
-                    self.section = Section(parent=self.parent)
-                
-                it "returns nothing if no parent":
-                    self.section.parent = None
-                    self.section.parent_url_parts(None) |should| be_empty
-                
-                it "returns nothing if self is stop_at":
-                    self.section.parent_url_parts(self.section) |should| be_empty
-                
-                @fudge.test
-                it "returns result of asking parent for url_parts if parent and not stopping at this section":
-                    self.parent.expects("determine_url_parts").with_args(self.stop_at).returns(self.parts)
-                    self.section.parent_url_parts(self.stop_at) |should| equal_to(self.parts)
-                
-                @fudge.test
-                it "can modify result without affecting url_parts of the parent":
-                    self.parent.expects("determine_url_parts").with_args(self.stop_at).returns(self.parts)
-                    parts = self.section.parent_url_parts(self.stop_at)
-                    parts |should| equal_to(self.parts)
-                    
-                    parts.append(1)
-                    parts |should_not| equal_to(self.parts)
-                    parts |should| equal_to([self.p1, self.p2, 1])
-                    self.parts |should| equal_to([self.p1, self.p2])
-            
-            describe "Getting combination of parent and self":
-                before_each:
-                    self.p1 = fudge.Fake("p1")
-                    self.p2 = fudge.Fake("p2")
-                    self.parts = [self.p1, self.p2]
-                    self.stop_at = fudge.Fake("stop_at")
-                    
-                    self.fake_own_url_part = fudge.Fake("own_url_part")
-                    self.fake_parent_url_parts = fudge.Fake("parent_url_parts")
-                    
-                    self.section = type("Section", (Section, ),
-                        { 'own_url_part' : self.fake_own_url_part
-                        , 'parent_url_parts' : self.fake_parent_url_parts
-                        }
-                    )()
-                
-                @fudge.test
-                it "returns self._url_parts if already defined":
-                    url_parts = fudge.Fake("url_parts")
-                    self.section._url_parts = url_parts
-                    self.section.determine_url_parts() |should| be(url_parts)
-                    self.section.determine_url_parts(self.stop_at) |should| be(url_parts)
-                
-                @fudge.test
-                it "returns parent url parts appended with own url part":
-                    own = fudge.Fake("own")
-                    self.fake_own_url_part.expects_call().returns(own)
-                    self.fake_parent_url_parts.expects_call().with_args(self.stop_at).returns(self.parts)
-                    self.section.determine_url_parts(self.stop_at) |should| equal_to([self.p1, self.p2, own])
+                includer = fudge.Fake("includer")
+
+                # include_path gets path for first item of returned tuple
+                pattern_list = fudge.Fake("pattern_list").expects("include_path")
+                fakePatternList.expects_call().with_args(self.section).returns(pattern_list)
+
+                # Patterns are passed into include
+                self.fake_patterns.expects_call().returns(patterns)
+
+                # includer generates the includer
+                fake_include.expects_call().with_args(patterns, self.namespace, self.app_name).returns(includer)
+                _, i = self.section.include_patterns(self.namespace, self.app_name)
+
+                # Make sure we got the includer function
+                i |should| be(includer)
     
     describe "Cloning":
         @fudge.test

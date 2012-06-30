@@ -5,6 +5,98 @@ from dispatch import dispatcher
 from options import Options
 
 ########################
+###   PATTERN LIST
+########################
+
+class PatternList(object):
+    """
+        Encapsulate logic in creating a pattern_list
+    """
+    def __init__(self, section, start=True, stop_at=None):
+        self.end = not section.has_children
+        self.start = start
+        self.section = section
+        
+        if stop_at is None:
+            stop_at = self.section
+        self.stop_at = stop_at
+    
+    def __iter__(self):
+        return self.pattern_list()
+    
+    def pattern_list(self):
+        """Return list of url patterns for this section and its children"""
+        # Yield children
+        for child in self.section.url_children:
+            if child is self.section:
+                yield self.pattern_tuple()
+            else:
+                for url_pattern in PatternList(child, start=False, stop_at=self.stop_at):
+                    yield url_pattern
+    
+    def pattern_tuple(self):
+        """Yield pattern list for this section"""
+        pattern = self.create_pattern(self.determine_url_parts(), self.start, self.end)
+        view, kwargs = self.url_view()
+        return (pattern, view, kwargs, self.section.name)
+        
+    def include_path(self, include_as=None, start=False, end=False):
+        """
+            Determine path to this includer
+            Will use self.url_pattern without trailing $
+            unless include_as is specified which will override this
+        """
+        if not include_as:
+            url_parts = self.determine_url_parts()
+        else:
+            while include_as.startswith("^"):
+                include_as = include_as[1:]
+            
+            while include_as.endswith("/"):
+                include_as = include_as[:-1]
+            
+            url_parts = [include_as]
+        
+        return self.create_pattern(url_parts, start=start, end=end)
+        
+    ########################
+    ###   URL UTILITY
+    ########################
+    
+    def create_pattern(self, url_parts, start, end):
+        """Use create_pattern on section.options to create a url pattern"""
+        return self.section.options.create_pattern(url_parts, start=start, end=end)
+    
+    def url_view(self):
+        """Return (view, kwargs) for this section"""
+        return self.section.options.url_view(self.section)
+    
+    def url_part(self):
+        """Get url part for this section"""
+        part = self.section.url
+        match = self.section.options.match
+        if match:
+            part = "(?P<%s>%s)" % (match, part)
+        
+        return part
+
+    def determine_url_parts(self):
+        """Get list of patterns making the full pattern for this section"""
+        if not hasattr(self, '_url_parts'):
+            url_parts = self.parent_url_parts()
+            url_parts.append(self.url_part())
+            self._url_parts = url_parts
+        return self._url_parts    
+    
+    def parent_url_parts(self):
+        """Get url_parts from parent"""
+        parts = []
+        if self.section.parent and not self.section is self.stop_at:
+            # Get parent patterns
+            parts = PatternList(self.section.parent, stop_at=self.stop_at).determine_url_parts()
+        return parts
+
+########################
 ###   SECTION
 ########################
 
@@ -157,6 +249,19 @@ class Section(object):
             yield child
     
     @property
+    def url_children(self):
+        """
+            Yield self and all children
+            Skips those without a target
+        """
+        if self.options.target:
+            yield self
+        
+        for child in self.children:
+            if child.options.target:
+                yield child
+    
+    @property
     def menu_sections(self):
         """
             Get all the children that are considered for the menu
@@ -170,6 +275,11 @@ class Section(object):
         for child, consider_for_menu in self._children:
             if consider_for_menu:
                 yield child
+    
+    @property
+    def has_children(self):
+        """Return whether section has children"""
+        return bool(any(self.children))
     
     def __iter__(self):
         """Return self followed by all children"""
@@ -191,94 +301,27 @@ class Section(object):
     ###   URL PATTERNS
     ########################
 
-    def patterns(self, **kwargs):
+    def patterns(self):
         """
             Return patterns object for this section
             A django patterns object
                 with (pattern, view, kwarg, name) tuples for the section and it's children
-            Each pattern will only go up the parent chain untill no parent or section is stop_at
         """
-        yield patterns('', *list(self.pattern_list(**kwargs)))
+        pattern_list = list(PatternList(self))
+        for pattern in patterns('', *pattern_list):
+            yield pattern
     
-    def include_patterns(self, namespace, app_name, include_as=None):
+    def include_patterns(self, namespace, app_name, include_as=None, start=False, end=False):
         """
             Return patterns object for this section using an include
             Equivelant to:
-                (path, include(patterns(children_only=True, stop_at=self, start=False), namespace, app_name))
+                (path, include(patterns(), namespace, app_name))
             
-            Where path is determined by self.include_path(include_as)
+            Where path is determined by self.include_path(include_as, start, end)
         """
-        path = self.include_path(include_as)
-        includer = include(self.patterns(children_only=True, stop_at=self), namespace, app_name)
+        path = PatternList(self).include_path(include_as, start, end)
+        includer = include(self.patterns(), namespace, app_name)
         return (path, includer)
-        
-    def pattern_list(self, children_only=False, stop_at=None, start=True):
-        """Return list of url patterns for this section and its children"""
-        if not self.options.promote_children or not self.children:
-            yield self.pattern_list_first(stop_at, start)
-        
-        # Yield children
-        for child in self.children:
-            for url_pattern in child.pattern_list(stop_at, start=start):
-                yield url_pattern
-        
-    def pattern_list_first(self, stop_at, start):
-        """Yield pattern list for this section"""
-        pattern = self.url_pattern(stop_at, start=start)
-        view, kwargs = self.options.url_view(self)
-        return (pattern, view, kwargs, self.name)
-        
-    ########################
-    ###   URL UTILITY
-    ########################
-    
-    def url_pattern(self, stop_at=None, end=None):
-        """Get tuple to be used for url pattern for this section"""
-        url_parts = self.determine_url_parts(stop_at)
-        return self.options.create_pattern(url_parts, end=end)
-        
-    def include_path(self, include_as=None):
-        """
-            Determine path to this includer
-            Will use self.url_pattern without trailing $
-            unless include_as is specified which will override this
-        """
-        if include_as:
-            while include_as.startswith("^"):
-                include_as = include_as[1:]
-            
-            while include_as.endswith("/"):
-                include_as = include_as[:-1]
-            
-            return "^%s/" % include_as
-        
-        # No include_as specified
-        return self.url_pattern(stop_at=self, end=False, start=False)
-
-    def determine_url_parts(self, stop_at=None):
-        """Get list of patterns making the full pattern for this section"""
-        if not hasattr(self, '_url_parts'):
-            url_parts = self.parent_url_parts(stop_at)
-            url_parts.append(self.own_url_part())
-            self._url_parts = url_parts
-        return self._url_parts    
-    
-    def parent_url_parts(self, stop_at):
-        """Get url_parts from parent"""
-        parts = []
-        if self.parent and not self is stop_at:
-            # Get parent patterns
-            parts = list(self.parent.determine_url_parts(stop_at))
-        return parts
-    
-    def own_url_part(self):
-        """Get url part for this section"""
-        part = self.url
-        match = self.options.match
-        if match:
-            part = "(?P<%s>%s)" % (match, self.url)
-        
-        return part
         
     ########################
     ###   UTILITY
