@@ -7,7 +7,7 @@ import os
 HOMEDIR = os.sep.join(__file__.split('/')[:3])
 PROJECTDIR = os.sep.join(__file__.split('/')[:-1])
 PROJECTNAME = os.path.dirname(__file__).split(os.sep)[-1]
-
+APPEND_SLASH = True
 TEMPLATE_DEBUG = DEBUG = False
 
 # Exposing database details is a security hole, so leave them blank here.
