@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.sections.section import PatternList
+from src.sections.pattern_list import PatternList
 import fudge
 import re
 
@@ -63,7 +63,7 @@ describe "PatternList":
             self.section.url_children = [self.section]
             list(self.lst_kls(self.section).pattern_list()) |should| equal_to([result])
         
-        @fudge.patch("src.sections.section.PatternList")
+        @fudge.patch("src.sections.pattern_list.PatternList")
         it "returns all yielded from itering a PatternList from child if not the section", fakePatternList:
             u1 = fudge.Fake("u1")
             u2 = fudge.Fake("u2")
@@ -77,7 +77,7 @@ describe "PatternList":
             
             list(self.lst_kls(self.section, stop_at=self.stop_at).pattern_list()) |should| equal_to([u1, u2, u3, u4])
         
-        @fudge.patch("src.sections.section.PatternList")
+        @fudge.patch("src.sections.pattern_list.PatternList")
         it "works on multiple children", fakePatternList:
             u1 = fudge.Fake("u1")
             u2 = fudge.Fake("u2")
@@ -299,7 +299,7 @@ describe "PatternList":
             self.lst.stop_at = self.section
             self.lst.parent_url_parts() |should| be_empty
         
-        @fudge.patch("src.sections.section.PatternList")
+        @fudge.patch("src.sections.pattern_list.PatternList")
         it "creates a new PatternList for the parent and returns result of determine_url_parts", fakePatternList:
             parts = fudge.Fake("parts")
             pattern_list = fudge.Fake("pattern_list").expects("determine_url_parts").returns(parts)
