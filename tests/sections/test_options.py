@@ -277,7 +277,7 @@ describe "Options":
                 self.options.create_pattern(self.url_parts, start=True, end=False) |should| equal_to(expected)
         
         @fudge.test
-        it "appends with $ if end is True":
+        it "appends with /$ if end is True":
             (self.fake_string_from_url_parts.expects_call()
                             .with_args(self.url_parts).returns(None)
                 .next_call().with_args(self.url_parts).returns('')
@@ -288,11 +288,11 @@ describe "Options":
                 .next_call().with_args(self.url_parts).returns("/ghjd/")
                 )
             
-            for expected in ('.*$', '$', '$', 'asdf$', 'jlkl$', 'qwer$', 'ghjd$'):
+            for expected in ('.*/$', '/$', '/$', 'asdf/$', 'jlkl/$', 'qwer/$', 'ghjd/$'):
                 self.options.create_pattern(self.url_parts, start=False, end=True) |should| equal_to(expected)
         
         @fudge.test
-        it "prepends with ^ and appends with $ if both start and end are True":
+        it "prepends with ^ and appends with /$ if both start and end are True":
             (self.fake_string_from_url_parts.expects_call()
                             .with_args(self.url_parts).returns(None)
                 .next_call().with_args(self.url_parts).returns('')
@@ -303,7 +303,7 @@ describe "Options":
                 .next_call().with_args(self.url_parts).returns("/ghjd/")
                 )
             
-            for expected in ('^.*$', '^$', '^$', '^asdf$', '^jlkl$', '^qwer$', '^ghjd$'):
+            for expected in ('^.*/$', '^/$', '^/$', '^asdf/$', '^jlkl/$', '^qwer/$', '^ghjd/$'):
                 self.options.create_pattern(self.url_parts, start=True, end=True) |should| equal_to(expected)
     
     describe "Getting string from url_parts":

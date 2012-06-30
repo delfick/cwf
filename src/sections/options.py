@@ -192,7 +192,7 @@ class Options(object):
             pattern = "^%s" % pattern
         
         if end:
-            pattern = "%s$" % pattern
+            pattern = "%s/$" % pattern
         
         return pattern
     
@@ -242,7 +242,8 @@ class Options(object):
         kls = self.get_view_kls()
         view = dispatcher
         kwargs = {}
-        kwargs.update(self.extra_context)
+        if self.extra_context:
+            kwargs.update(self.extra_context)
         kwargs.update(dict(kls=kls, target=target, section=section))
         return view, kwargs
 
