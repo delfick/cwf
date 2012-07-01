@@ -56,15 +56,17 @@ class SectionMaster(object):
         if not section:
             return []
         
-        if section.parent:
+        if hasattr(section, 'parent') and section.parent:
             urls.extend(self.memoized.url_parts(section.parent))
         
         url = section.url
         if url.startswith("/"):
             url = url[1:]
         
-        urls.append(url)
-        if urls[0] != '':
+        if not section.options.promote_children:
+            urls.append(url)
+
+        if not urls or urls[0] != '':
             urls.insert(0, '')
         
         return urls
@@ -154,7 +156,9 @@ class Info(object):
     def __init__(self, url, alias, section):
         self.url = url
         self.alias = alias
+        self.parent = section.parent
         self.section = section
+        self.options = section.options
     
     def setup(self, appear, selected, url_parts):
         self.appear = appear
