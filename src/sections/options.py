@@ -239,13 +239,14 @@ class Options(object):
             # Target already a callable
             return target, self.extra_context
         
-        kls = self.get_view_kls()
-        view = dispatcher
-        kwargs = {}
-        if self.extra_context:
-            kwargs.update(self.extra_context)
-        kwargs.update(dict(kls=kls, target=target, section=section))
-        return view, kwargs
+        if target:
+            kls = self.get_view_kls()
+            view = dispatcher
+            kwargs = {}
+            if self.extra_context:
+                kwargs.update(self.extra_context)
+            kwargs.update(dict(kls=kls, target=target, section=section))
+            return view, kwargs
 
     def redirect_view(self, redirect):
         '''
@@ -322,7 +323,7 @@ class Options(object):
         if all:
             no_propogate = ()
         else:
-            no_propogate = ('alias', 'match', 'values', 'promote_children')
+            no_propogate = ('alias', 'match', 'values', 'promote_children', 'target')
         values = dict((arg, getattr(self, arg)) for arg in passon if arg not in no_propogate)
         values.update(kwargs)
         

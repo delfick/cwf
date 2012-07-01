@@ -16,10 +16,11 @@ class PatternList(object):
     
     def pattern_list(self):
         """Return list of url patterns for this section and its children"""
-        # Yield children
         for child in self.section.url_children:
             if child is self.section:
-                yield self.pattern_tuple()
+                pattern_tuple = self.pattern_tuple()
+                if pattern_tuple:
+                    yield pattern_tuple
             else:
                 for url_pattern in PatternList(child, start=False, stop_at=self.stop_at):
                     yield url_pattern
@@ -27,8 +28,10 @@ class PatternList(object):
     def pattern_tuple(self):
         """Yield pattern list for this section"""
         pattern = self.create_pattern(self.determine_url_parts(), self.start, self.end)
-        view, kwargs = self.url_view()
-        return (pattern, view, kwargs, self.section.name)
+        view_info = self.url_view()
+        if view_info:
+            view, kwargs = view_info
+            return (pattern, view, kwargs, self.section.name)
         
     def include_path(self, include_as=None, start=False, end=False):
         """
@@ -54,17 +57,17 @@ class PatternList(object):
     ########################
     
     def create_pattern(self, url_parts, start, end):
-        """Use create_pattern on section.options to create a url pattern"""
-        return self.section.options.create_pattern(url_parts, start=start, end=end)
+        """Use create_pattern on section.url_options to create a url pattern"""
+        return self.section.url_options.create_pattern(url_parts, start=start, end=end)
     
     def url_view(self):
         """Return (view, kwargs) for this section"""
-        return self.section.options.url_view(self.section)
+        return self.section.url_options.url_view(self.section)
     
     def url_part(self):
         """Get url part for this section"""
         part = self.section.url
-        match = self.section.options.match
+        match = self.section.url_options.match
         if match:
             part = "(?P<%s>%s)" % (match, part)
         

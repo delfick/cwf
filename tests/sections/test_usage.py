@@ -25,6 +25,17 @@ add1 = section.add('add1').configure(target=make_view('/base/add1/'))
 add12 = add1.add('add12').configure(target=make_view('/base/add1/add12/'))
 add123 = add12.add('add123').configure(target=make_view('/base/add1/add12/add123/'))
 
+# Add with no target and no children
+add_nt0 = section.add('add_nt0')
+
+# Add with no target and children
+add_nt1 = section.add('add_nt1')
+add_nt12 = add_nt1.add('add_nt12').configure(target=make_view('/base/add_nt1/add_nt12/'))
+
+# Add with no target and no children but a first
+add_ntf0 = section.add('add_ntf0')
+add_ntf0.first().configure(target=make_view('/base/add_ntf0/'))
+
 # Get the urlpatterns from the section to test against
 urlpatterns = section.patterns()
 
@@ -41,11 +52,26 @@ describe "Using Sections":
             This is done by defining each url to explicitly return that url
         """
         ret = self.client.get(url)
-        ret.status_code |should| be(200)
+        ret.status_code |should| equal_to(200)
         ret.content |should| equal_to(url)
+
+    def refute(self, url):
+        """
+            Ensure that going to a url gets back a 404
+        """
+        ret = self.client.get(url)
+        ret.status_code |should| equal_to(404)
     
     it "works for a normal adds":
         self.ensure('/base/add0/')
         self.ensure('/base/add1/')
         self.ensure('/base/add1/add12/')
         self.ensure('/base/add1/add12/add123/')
+
+    it "doesn't give urls to those without a target":
+        self.refute('/base/add_nt0/')
+        self.refute('/base/add_nt1/')
+        self.ensure('/base/add_nt1/add_nt12/')
+
+    it "gives urls to those without a section, but have a first":
+        self.ensure('/base/add_ntf0/')

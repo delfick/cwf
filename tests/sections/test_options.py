@@ -173,14 +173,14 @@ describe "Options":
                 self.options.clone(all=True) |should| be(cloned)
         
         @fudge.test
-        it "passes on everything set by the setters except for alias, match, values and promote_children if all is False":
+        it "passes on everything set by the setters except for alias, match, values, target and promote_children if all is False":
             keys = []
             for _, requirements in self.options.setters():
                 keys.extend(requirements)
             
             kwargs = {}
             for requirement in keys:
-                if requirement not in ('alias', 'match', 'values', 'promote_children'):
+                if requirement not in ('alias', 'match', 'values', 'promote_children', 'target'):
                     next = fudge.Fake(requirement)
                     setattr(self.options, requirement, next)
                     kwargs[requirement] = next
@@ -357,6 +357,12 @@ describe "Options":
             for target in (self.target, lambda: 1):
                 self.options.target = target
                 self.options.url_view(self.section) |should| equal_to((target, self.extra_context))
+        
+        @fudge.test
+        it "returns None if target isn't defined":
+            self.options.target = None
+            self.options.extra_context = {}
+            self.options.url_view(self.section) |should| be(None)
         
         @fudge.patch("src.sections.options.dispatcher")
         it "returns (dispatcher, {self.get_view_kls(), target, section}) otherwise", fake_dispatcher:

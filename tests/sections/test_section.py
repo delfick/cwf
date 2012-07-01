@@ -327,6 +327,21 @@ describe "Section":
             section = Section()
             section.options = new_options
             section.options |should| be(new_options)
+        
+    describe "Url Options":
+        before_each:
+            self.base = Section()
+            self.base_options = self.base.options
+
+            self.section = Section()
+            self.section_options = self.section.options
+
+        it "returns options on _base if defined":
+            self.section.add_child(self.base, first=True)
+            self.section.url_options |should| be(self.base.options)
+
+        it "returns options on section if no _base":
+            self.section.url_options |should| be(self.section_options)
     
     describe "Alias":
         before_each:
@@ -380,16 +395,7 @@ describe "Section":
 
     describe "Determining url children":
         before_each:
-            self.options_with_target = fudge.Fake("options").has_attr(target=True)
-            self.options_without_target = fudge.Fake("options").has_attr(target=None)
-            self.section_with_target = type("Section", (Section, ), {'options' : self.options_with_target})()
-            self.section_without_target = type("Section", (Section, ), {'options' : self.options_without_target})()
-
-        def child_with_target(self):
-            return fudge.Fake("child").has_attr(options=self.options_with_target)
-
-        def child_without_target(self):
-            return fudge.Fake("child").has_attr(options=self.options_without_target)
+            self.section = Section()
 
         @contextmanager
         def using_children(self, section, children):
@@ -397,25 +403,15 @@ describe "Section":
             yield section
             patched.restore()
 
-        it "yields self if there is a defined target":
-            list(self.section_with_target.url_children) |should| equal_to([self.section_with_target])
+        it "yields all children first before itself":
+            c1 = fudge.Fake("child1")
+            c2 = fudge.Fake("child2")
+            c3 = fudge.Fake("child3")
+            with self.using_children(self.section, [c1, c2, c3]):
+                list(self.section.url_children) |should| equal_to([c1, c2, c3, self.section])
 
-        it "does not yield self if there is not a defined target":
-            list(self.section_without_target.url_children) |should| equal_to([])
-
-        it "yields all children that have a defined target":
-            c1 = self.child_with_target()
-            c2 = self.child_with_target()
-            c3 = self.child_without_target()
-            c4 = self.child_with_target()
-
-            # Parent with target is included first
-            with self.using_children(self.section_with_target, [c1, c2, c3, c4]) as sect:
-                list(sect.url_children) |should| equal_to([sect, c1, c2, c4])
-
-            # Parent without target isn't included in list
-            with self.using_children(self.section_without_target, [c1, c2, c3, c4]) as sect:
-                list(sect.url_children) |should| equal_to([c1, c2, c4])
+        it "yields just itself if no children":
+            list(self.section.url_children) |should| equal_to([self.section])
     
     describe "menu sections":
         before_each:
@@ -506,7 +502,7 @@ describe "Section":
 
                 fakePatternList.expects_call().with_args(self.section).returns([p1, p2, p3])
                 fake_patterns.expects_call().with_args('', p1, p2, p3).returns([pp1, pp2, pp3])
-                list(self.section.patterns()) |should| equal_to([pp1, pp2, pp3])
+                self.section.patterns() |should| equal_to([pp1, pp2, pp3])
 
         describe "Getting as includes":
             before_each:

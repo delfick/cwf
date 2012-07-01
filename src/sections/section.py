@@ -132,6 +132,19 @@ class Section(object):
     @options.setter
     def options(self, val):
         self._options = val
+
+    @property
+    def url_options(self):
+        """
+            Get url options for this section.
+            If the section has a base, then use options on that
+            Otherwise just use options on the section itself
+        """
+        if hasattr(self, '_base') and self._base:
+            base, _ = self._base
+            return base.options
+        else:
+            return self.options
     
     @property
     def alias(self):
@@ -156,15 +169,12 @@ class Section(object):
     @property
     def url_children(self):
         """
-            Yield self and all children
-            Skips those without a target
+            Yield all children followed by self
+            This ensures longer urls are specified before shorter urls
         """
-        if self.options.target:
-            yield self
-        
         for child in self.children:
-            if child.options.target:
-                yield child
+            yield child
+        yield self
     
     @property
     def menu_sections(self):
@@ -213,8 +223,7 @@ class Section(object):
                 with (pattern, view, kwarg, name) tuples for the section and it's children
         """
         pattern_list = list(PatternList(self))
-        for pattern in patterns('', *pattern_list):
-            yield pattern
+        return patterns('', *pattern_list)
     
     def include_patterns(self, namespace, app_name, include_as=None, start=False, end=False):
         """
