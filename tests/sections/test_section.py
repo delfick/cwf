@@ -188,13 +188,18 @@ describe "Section":
                     section.parent |should| be(self.section)
                 
             @fudge.test
-            it "uses clone with parent=self if clone=True is specified":
+            it "uses clone with parent=self if clone=True is specified and merges clones with original":
                 cloned_section1 = fudge.Fake("cloned_section1")
                 cloned_section2 = fudge.Fake("cloned_section2")
                 cloned_section3 = fudge.Fake("cloned_section3")
                 self.section1.expects('clone').with_args(parent=self.section).returns(cloned_section1)
                 self.section2.expects('clone').with_args(parent=self.section).returns(cloned_section2)
                 self.section3.expects('clone').with_args(parent=self.section).returns(cloned_section3)
+
+                # Merges cloned sections with selves
+                cloned_section1.expects('merge').with_args(self.section1, take_base=True)
+                cloned_section2.expects('merge').with_args(self.section2, take_base=True)
+                cloned_section3.expects('merge').with_args(self.section3, take_base=True)
                 
                 (self.fake_add_child.expects_call()
                     .with_args(cloned_section1)
@@ -207,7 +212,8 @@ describe "Section":
             @fudge.test
             it "returns self":
                 self.fake_add_child.expects_call()
-                self.section2.provides("clone")
+                cloned = fudge.Fake("cloned").expects("merge").with_args(self.section2, take_base=True)
+                self.section2.provides("clone").returns(cloned)
                 
                 self.section.adopt(self.section1) |should| be(self.section)
                 self.section.adopt(self.section2, clone=True) |should| be(self.section)
@@ -231,7 +237,7 @@ describe "Section":
                 self.section = type("Section", (Section, ), {'add_child' : self.fake_add_child})()
             
             @fudge.test
-            it "will add clones of children in new section":
+            it "will add clones of children in new section and merge clones with respective child":
                 self.new_section._children = [(self.child1, self.cfm1), (self.child2, self.cfm2)]
                 
                 cloned_child1 = fudge.Fake("cloned_child1")
@@ -239,41 +245,47 @@ describe "Section":
                 self.child1.expects("clone").with_args(parent=self.section).returns(cloned_child1)
                 self.child2.expects("clone").with_args(parent=self.section).returns(cloned_child2)
                 
+                cloned_child1.expects("merge").with_args(self.child1, take_base=True)
+                cloned_child2.expects("merge").with_args(self.child2, take_base=True)
+
                 (self.fake_add_child.expects_call()
-                    .with_args(cloned_child1, consider_for_menu=self.cfm1)
-                    .next_call().with_args(cloned_child2, consider_for_menu=self.cfm2)
+                    .with_args(cloned_child1, consider_for_menu=self.cfm1).returns(cloned_child1)
+                    .next_call().with_args(cloned_child2, consider_for_menu=self.cfm2).returns(cloned_child2)
                     )
                 
                 self.section.merge(self.new_section)
             
             @fudge.test
-            it "will replace self._base with None if take_base is true and new section has no base":
+            it "will not replace self._base new section has no base":
                 old_base = fudge.Fake("old_base")
-                self.section._base = old_base
-                self.new_section._base = None
-                
+                self.section._base = (old_base, True)
                 self.section.merge(self.new_section, take_base=True)
-                self.section._base |should| be(None)
+                self.section._base |should| equal_to((old_base, True))
             
             @fudge.test
             it "will replace self._base with clone of new section base if take_base is true":
                 old_base = fudge.Fake("old_base")
                 new_base = fudge.Fake("new_base")
-                self.section._base = old_base
-                self.new_section._base = new_base
+                section = Section()
+                new_section = Section()
+
+                section.add_child(old_base, first=True)
+                new_section.add_child(new_base, first=True)
                 
-                cloned_new_base = fudge.Fake("cloned_new_base")
-                new_base.expects("clone").with_args(parent=self.section).returns(cloned_new_base)
-                
-                self.section.merge(self.new_section, take_base=True)
-                self.section._base |should| be(cloned_new_base)
+                cloned_new_base = fudge.Fake("cloned_new_base").expects("merge").with_args(new_base, take_base=True)
+                new_base.expects("clone").with_args(parent=section).returns(cloned_new_base)
+
+                section.merge(new_section, take_base=True)
+                section._base |should| equal_to((cloned_new_base, True))
             
             @fudge.test
             it "returns self":
                 self.section.merge(self.new_section) |should| be(self.section)
                 self.section.merge(self.new_section, take_base=True) |should| be(self.section)
                 
-                self.new_section._base = fudge.Fake("base").expects("clone")
+                cloned_base = fudge.Fake("cloned_base").provides("merge")
+                self.new_section._base = (fudge.Fake("base").provides("clone").returns(cloned_base), True)
+                self.fake_add_child.expects_call().returns(cloned_base)
                 self.section.merge(self.new_section, take_base=True) |should| be(self.section)
         
         describe "Adding a copy of a section":
@@ -309,6 +321,10 @@ describe "Section":
                 self.section.add_child(self.new_section, first=False, consider_for_menu=self.consider_for_menu)
                 self.section._base |should| be(self.original_base)
                 self.section._children |should| equal_to([(self.new_section, self.consider_for_menu)])
+
+            it "returns the section being added":
+                self.section.add_child(self.new_section, first=True) |should| be(self.new_section)
+                self.section.add_child(self.new_section, first=False) |should| be(self.new_section)
         
     describe "Options":
         @fudge.patch("src.sections.section.Options")
@@ -574,6 +590,7 @@ describe "Section":
             with fudge.patched_context("src.sections.section", "Section", fakeSection):
                 section.clone() |should| be(new)
             
+        @fudge.test
         it "doesn't override url, name or parent":
             url = fudge.Fake("url")
             name = fudge.Fake("name")
@@ -595,13 +612,15 @@ describe "Section":
             with fudge.patched_context("src.sections.section", "Section", fakeSection):
                 section.clone(url=new_url, name=new_name, parent=new_parent) |should| be(new)
             
+        @fudge.test
         it "creates a clone of options for the new section":
             section = Section()
-            new_options = fudge.Fake("new")
+            new_options = fudge.Fake("new_options")
             fake_options = fudge.Fake("options").expects("clone").with_args(all=True).returns(new_options)
             section.options = fake_options
             section.clone().options |should| be(new_options)
             
+        @fudge.test
         it "returns new section":
             a = fudge.Fake("a")
             b = fudge.Fake("b")

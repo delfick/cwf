@@ -82,11 +82,13 @@ class Section(object):
         clone = kwargs.get('clone')
         for section in sections:
             if clone:
-                section = section.clone(parent=self)
+                new_section = section.clone(parent=self)
+                new_section.merge(section, take_base=True)
             else:
-                section.parent = self
+                new_section = section
+                new_section.parent = self
             
-            self.add_child(section)
+            self.add_child(new_section)
         
         return self
     
@@ -95,14 +97,15 @@ class Section(object):
             Copy children from a section into this section.
             Will only replace self._base if take_base is True
         '''
-        if take_base:
-            if section._base:
-                self._base = section._base.clone(parent=self)
-            else:
-                self._base = None
+        if take_base and hasattr(section, '_base') and section._base:
+            base, consider_for_menu = section._base
+            cloned_base = base.clone(parent=self)
+            next = self.add_child(cloned_base, first=True, consider_for_menu=consider_for_menu)
+            next.merge(base, take_base=True)
         
         for child, consider_for_menu in section._children:
-            self.add_child(child.clone(parent=self), consider_for_menu=consider_for_menu)
+            next = self.add_child(child.clone(parent=self), consider_for_menu=consider_for_menu)
+            next.merge(child, take_base=True)
         
         return self
     
@@ -118,6 +121,7 @@ class Section(object):
             self._base = (section, consider_for_menu)
         else:
             self._children.append((section, consider_for_menu))
+        return section
         
     ########################
     ###   SPECIAL
