@@ -25,7 +25,7 @@ class Section(object):
     ########################
     
     def add(self, url, match=None, name=None):
-        """Adds a child to self.children"""
+        """Creates a new section and uses add_child to add it as a child"""
         if not url:
             raise ConfigurationError("Use section.first() to add a section with same url as parent")
         
@@ -34,7 +34,7 @@ class Section(object):
         return section
 
     def first(self, url="", match=None, name=None):
-        """Adds a child with the same url as the parent as self._base"""
+        """Creates a new section and adds it as a base with add_child(first=True)"""
         if name is None:
             name = self.name
         
@@ -47,7 +47,7 @@ class Section(object):
             Extends self.options with the given keywords.
             It also accepts positional arguments but doesn't use them.
             This is purely so I can use it like this
-            section.add('asdf').baes(''
+            section.add('asdf').configure(''
                 , kw1 = value1
                 , kw2 = value2
                 , kw3 = value3
@@ -76,43 +76,39 @@ class Section(object):
         '''
             Adopt zero or more sections as it's own
             Will also replace this section's parent with itself
-            If clone is specified as a keyword argument to be True, then sections will be cloned
-            Otherwise, sections will just have their parent overriden
+            
+            If clone is specified as a keyword argument to be True then section is copied
+            Otherwise, sections will just have their parent overriden and added as a child
         '''
         clone = kwargs.get('clone')
         for section in sections:
             if clone:
-                new_section = section.clone(parent=self)
-                new_section.merge(section, take_base=True)
+                self.copy(section, consider_for_menu=kwargs.get("consider_for_menu"))
             else:
-                new_section = section
-                new_section.parent = self
-            
-            self.add_child(new_section)
+                section.parent=self
+                self.add_child(section, consider_for_menu=kwargs.get("consider_for_menu"))
         
         return self
     
     def merge(self, section, take_base=False):
         '''
             Copy children from a section into this section.
-            Will only replace self._base if take_base is True
+            Will only copy section._base if take_base is True
         '''
         if take_base and hasattr(section, '_base') and section._base:
             base, consider_for_menu = section._base
-            cloned_base = base.clone(parent=self)
-            next = self.add_child(cloned_base, first=True, consider_for_menu=consider_for_menu)
-            next.merge(base, take_base=True)
+            self.copy(base, first=True, consider_for_menu=consider_for_menu)
         
         for child, consider_for_menu in section._children:
-            next = self.add_child(child.clone(parent=self), consider_for_menu=consider_for_menu)
-            next.merge(child, take_base=True)
+            self.copy(child, consider_for_menu=consider_for_menu)
         
         return self
     
-    def copy(self, section):
-        """Create a copy of the given section and add as a child"""
-        section = section.clone(parent=self)
-        self.add_child(section)
+    def copy(self, section, first=False, consider_for_menu=None):
+        """Create a clone of the given section, merge clone with original; and add clone as a child"""
+        cloned = section.clone(parent=self)
+        self.add_child(cloned, first=first, consider_for_menu=consider_for_menu)
+        cloned.merge(section, take_base=True)
         return self
     
     def add_child(self, section, first=False, consider_for_menu=True):
