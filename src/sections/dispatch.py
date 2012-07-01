@@ -1,8 +1,6 @@
 '''
     Central dispatch logic for all views
 '''
-from django.http import Http404
-
 class Dispatcher(object):
     '''
         Object used to determine what function to call for a request
@@ -33,16 +31,13 @@ class Dispatcher(object):
     def __call__(self, request, kls, target, *args, **kwargs):
         '''
             For this location, target, section and condition return the result of invoking the correct view
-            If no appropiate view found or request doesn't have permissions, a 404 will be raised
+            It is assumed this is created by Section.patterns in which case Http404 is already raised if section is unreachable
         '''
         # Non-threadsafe hack to make amonpy happy
         self.__name__ = self.__class__.__name__
-        section = kwargs.get('section')
-        if section and section.reachable(request):
-            view = self.get_view(kls)
-            self.__name__ = "Dispatcher: %s:%s" % (view.__class__.__name__, target)
-            return view(request, target, *args, **kwargs)
+        view = self.get_view(kls)
+        self.__name__ = "Dispatcher: %s:%s" % (view.__class__.__name__, target)
+        return view(request, target, *args, **kwargs)
         
-        raise Http404
 
 dispatcher = Dispatcher()

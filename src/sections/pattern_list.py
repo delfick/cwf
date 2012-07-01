@@ -31,7 +31,7 @@ class PatternList(object):
         view_info = self.url_view()
         if view_info:
             view, kwargs = view_info
-            return (pattern, view, kwargs, self.section.name)
+            return self.section, (pattern, view, kwargs, self.section.name)
         
     def include_path(self, include_as=None, start=False, end=False):
         """

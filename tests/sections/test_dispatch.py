@@ -57,33 +57,20 @@ describe "Dispatcher":
             self.target = fudge.Fake("target")
             self.result = fudge.Fake("result")
             self.request = fudge.Fake("request")
-            self.section = fudge.Fake("section")
             self.dispatcher = Dispatcher()
         
         @fudge.test
-        it "raises Http404 if no section is provided in kwargs":
-            caller = lambda: self.dispatcher(self.request, self.kls, self.target)
-            Http404 |should| be_thrown_by(caller)
-        
-        @fudge.test
-        it "raises Http404 if section is provided but not reachable for the request":
-            self.section.expects("reachable").with_args(self.request).returns(False)
-            caller = lambda: self.dispatcher(self.request, self.kls, self.target, section=self.section)
-            Http404 |should| be_thrown_by(caller)
-        
-        @fudge.test
-        it "calls view for provided kls with request, target and other arguments if section and section is reachable":
+        it "calls view for provided kls with request, target and other arguments":
             arg1 = fudge.Fake("arg1")
             arg2 = fudge.Fake("arg2")
             kwa1 = fudge.Fake("kwa1")
             kwa2 = fudge.Fake("kwa2")
-            self.section.expects("reachable").with_args(self.request).returns(True)
             self.view.expects_call().with_args(
-                self.request, self.target, arg1, arg2, kw1=kwa1, kw2=kwa2, section=self.section
+                self.request, self.target, arg1, arg2, kw1=kwa1, kw2=kwa2
             ).returns(self.result)
             
             fake_get_view = fudge.Fake("get_view").expects_call().with_args(self.kls).returns(self.view)
             with fudge.patched_context(self.dispatcher, 'get_view', fake_get_view):
                 self.dispatcher(
-                    self.request, self.kls, self.target, arg1, arg2, kw1=kwa1, kw2=kwa2, section=self.section
+                    self.request, self.kls, self.target, arg1, arg2, kw1=kwa1, kw2=kwa2
                 ) |should| be(self.result)

@@ -4,6 +4,7 @@ from src.sections.errors import ConfigurationError
 from src.sections.section import Section
 
 from contextlib import contextmanager
+from django.http import Http404
 import fudge
 
 describe "Section":
@@ -516,24 +517,86 @@ describe "Section":
         it "yields all children after self":
             self.childs = (t for t in [(1, 2, 3), (4, ), (5, 6, )])
             list(self.section) |should| equal_to([self.section, 1, 2, 3, 4, 5, 6])
+
+    describe "Makinga view for patterns":
+        before_each:
+            self.request = fudge.Fake("request")
+            self.view_result = fudge.Fake("view_result")
+            self.fake_reachable = fudge.Fake("reachable")
+            self.section = type("Section", (Section, ), {'reachable' : self.fake_reachable})()
+
+        def view(self, request, a, b, c, d):
+            a |should| be(1)
+            b |should| be(2)
+            c |should| be(False)
+            d |should| be(True)
+            return self.view_result
+
+        it "will set section on the request object":
+            self.fake_reachable.expects_call().returns(True)
+            self.request |should_not| respond_to('section')
+            self.section.make_view(self.view, self.section)(self.request, 1, 2, d=True, c=False)
+            self.request.section |should| be(self.section)
+
+        describe "Using section.reachable to determine if section can be reached":
+            it "raises Http404 if it can't be reached":
+                self.fake_reachable.expects_call().with_args(self.request).returns(False)
+                with self.assertRaises(Http404):
+                    self.section.make_view(self.view, self.section)(self.request)
+
+            it "calls view if it can be reached and returns view result":
+                self.fake_reachable.expects_call().with_args(self.request).returns(True)
+                ret = self.section.make_view(self.view, self.section)(self.request, 1, 2, d=True, c=False) 
+                ret |should| be(self.view_result)
     
     describe "Patterns":
         before_each:
-            self.section = Section()
+            self.fake_make_view = fudge.Fake("make_view")
+            self.section = type("Section", (Section, ), {'make_view' : self.fake_make_view})()
 
         describe "Getting expanded list":
             @fudge.patch("src.sections.section.patterns", "src.sections.section.PatternList")
-            it "uses a PatternList object with django patterns generator", fake_patterns, fakePatternList:
-                p1 = fudge.Fake("p1")
-                p2 = fudge.Fake("p2")
-                p3 = fudge.Fake("p3")
-                pp1 = fudge.Fake("pp1")
-                pp2 = fudge.Fake("pp2")
-                pp3 = fudge.Fake("pp3")
+            it "uses a PatternList object with django patterns generator and wraps view with function that adds section to request", fake_patterns, fakePatternList:
+                infos = {}
+                patterns = []
+                final_results = []
 
-                fakePatternList.expects_call().with_args(self.section).returns([p1, p2, p3])
-                fake_patterns.expects_call().with_args('', p1, p2, p3).returns([pp1, pp2, pp3])
-                self.section.patterns() |should| equal_to([pp1, pp2, pp3])
+                for i in range(3):
+                    info = infos[i] = {}
+
+                    info['name'] = fudge.Fake("name_%d % i")
+                    info['kwarg'] = fudge.Fake("kwarg_%d" % i)
+                    info['pattern'] = fudge.Fake("pattern_%d" % i)
+                    info['section'] = fudge.Fake("section_%d" % i)
+                    info['view_result'] = fudge.Fake("view_result_%d" % i)
+
+                    # The view is wrapped before going into the tuple
+                    info['view'] = fudge.Fake("view")
+                    info['wrapped_view'] = fudge.Fake("wrapped_view")
+                    if i == 0:
+                        next_call = self.fake_make_view.expects_call()
+                    else:
+                        next_call = self.fake_make_view.next_call()
+                    next_call.with_args(info['view'], info['section']).returns(info['wrapped_view'])
+
+                    # Original tuple to go into section.patterns()
+                    # And modified tuple to go into django patterns()
+                    info['tuple'] = (info['pattern'], info['view'], info['kwarg'], info['name'])
+                    info['modified_tuple'] = (info['pattern'], info['wrapped_view'], info['kwarg'], info['name'])
+
+                    info['result'] = fudge.Fake("result_%d" % i)
+                    info['patterns_result'] = [info['result']] 
+
+                    patterns.append((info['section'], info['tuple']))
+                    final_results.append(info['result'])
+
+                fakePatternList.expects_call().with_args(self.section).returns(patterns)
+                (fake_patterns.expects_call()
+                    .with_args('', infos[0]['modified_tuple']).returns(infos[0]['patterns_result'])
+                    .next_call().with_args('', infos[1]['modified_tuple']).returns(infos[1]['patterns_result'])
+                    .next_call().with_args('', infos[2]['modified_tuple']).returns(infos[2]['patterns_result'])
+                    )
+                self.section.patterns() |should| equal_to(final_results)
 
         describe "Getting as includes":
             before_each:

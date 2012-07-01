@@ -1,4 +1,6 @@
 from django.conf.urls.defaults import include, patterns
+from django.http import Http404
+from functools import wraps
 
 from errors import ConfigurationError
 from pattern_list import PatternList
@@ -233,8 +235,12 @@ class Section(object):
             A django patterns object
                 with (pattern, view, kwarg, name) tuples for the section and it's children
         """
-        pattern_list = list(PatternList(self))
-        return patterns('', *pattern_list)
+        result = []
+        for section, (pattern, view, kwarg, name) in PatternList(self):
+            view = self.make_view(view, section)
+            urls = patterns('', (pattern, view, kwarg, name))
+            result.extend(urls)
+        return result
     
     def include_patterns(self, namespace, app_name, include_as=None, start=False, end=False):
         """
@@ -247,7 +253,22 @@ class Section(object):
         path = PatternList(self).include_path(include_as, start, end)
         includer = include(self.patterns(), namespace, app_name)
         return (path, includer)
-        
+
+    def make_view(self, view, section):
+        """
+            Wrap view for a pattern:
+             * Set section on requeset
+             * Make sure that the section is reachable
+             * If section isn't reachable, raise Http404
+        """
+        @wraps(view)
+        def view_wrap(request, *args, **kwargs):
+            request.section = section
+            if section and not section.reachable(request):
+                raise Http404
+            return view(request, *args, **kwargs)
+        return view_wrap
+    
     ########################
     ###   UTILITY
     ########################

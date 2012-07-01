@@ -131,8 +131,9 @@ describe "PatternList":
             self.fake_determine_url_parts.expects_call().returns(url_parts)
             self.fake_create_pattern.expects_call().with_args(url_parts, start, end).returns(self.pattern)
             self.fake_url_view.expects_call().returns([1, 2])
-            pattern, _, _, _ = self.lst.pattern_tuple()
+            section, (pattern, _, _, _) = self.lst.pattern_tuple()
             pattern |should| be(self.pattern)
+            section |should| be(self.section)
             
         @fudge.test
         it "returns None if url_view returns None":
@@ -146,17 +147,19 @@ describe "PatternList":
             self.fake_determine_url_parts.expects_call()
             self.fake_create_pattern.expects_call()
             self.fake_url_view.expects_call().returns([self.view, self.kwargs])
-            _, view, kwargs, _ = self.lst.pattern_tuple()
+            section, (_, view, kwargs, _) = self.lst.pattern_tuple()
             view |should| be(self.view)
             kwargs |should| be(self.kwargs)
+            section |should| be(self.section)
         
         @fudge.test
         it "gets name from self.section":
             self.fake_determine_url_parts.expects_call()
             self.fake_create_pattern.expects_call()
             self.fake_url_view.expects_call().returns([1, 2])
-            _, _, _, name = self.lst.pattern_tuple()
+            section, (_, _, _, name) = self.lst.pattern_tuple()
             name |should| be(self.name)
+            section |should| be(self.section)
     
     describe "Getting path for pattern include":
         before_each:
