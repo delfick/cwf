@@ -38,6 +38,5 @@ class Dispatcher(object):
         view = self.get_view(kls)
         self.__name__ = "Dispatcher: %s:%s" % (view.__class__.__name__, target)
         return view(request, target, *args, **kwargs)
-        
 
 dispatcher = Dispatcher()
