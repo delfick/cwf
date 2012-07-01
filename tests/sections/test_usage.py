@@ -36,6 +36,9 @@ add_nt12 = add_nt1.add('add_nt12').configure(target=make_view('/base/add_nt1/add
 add_ntf0 = section.add('add_ntf0')
 add_ntf0.first().configure(target=make_view('/base/add_ntf0/'))
 
+# Add with a redirect
+add_r0 = section.add('add_r0').configure(redirect="/add1")
+
 # Get the urlpatterns from the section to test against
 urlpatterns = section.patterns()
 
@@ -61,6 +64,14 @@ describe "Using Sections":
         """
         ret = self.client.get(url)
         ret.status_code |should| equal_to(404)
+
+    def redirects(self, url, destination):
+        """
+            Ensure that going to a url gets back a 301 Permanent Redirect
+        """
+        ret = self.client.get(url)
+        ret.status_code |should| equal_to(301)
+        dict(ret.items())['Location'] |should| equal_to("http://testserver%s" % destination)
     
     it "works for a normal adds":
         self.ensure('/base/add0/')
@@ -75,3 +86,6 @@ describe "Using Sections":
 
     it "gives urls to those without a section, but have a first":
         self.ensure('/base/add_ntf0/')
+
+    it "gives urls to redirect sections":
+        self.redirects('/base/add_r0/', '/add1')

@@ -1,3 +1,4 @@
+from django.views.generic.simple import redirect_to
 from django.http import Http404
 
 from errors import ConfigurationError
@@ -266,7 +267,7 @@ class Options(object):
                 url = '%s%s' % (request.path, url)
                 url = regexes['multiSlash'].sub('/', url)
             
-            return self.redirect_to(request, url)
+            return redirect_to(request, url)
         
         # Return view that redirects, and extra_context
         return redirector, self.extra_context
