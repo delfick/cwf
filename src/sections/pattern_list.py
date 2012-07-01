@@ -87,4 +87,6 @@ class PatternList(object):
         if self.section.parent and not self.section is self.stop_at:
             # Get parent patterns
             parts = PatternList(self.section.parent, stop_at=self.stop_at).determine_url_parts()
+            if self.section.parent.options.promote_children:
+                parts = parts[:-1]
         return parts

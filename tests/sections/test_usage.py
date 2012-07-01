@@ -43,6 +43,11 @@ add_ntf0.first().configure(target=make_view('/add_ntf0/'))
 # Add with a redirect
 add_r0 = section.add('add_r0').configure(redirect="add1")
 
+# Add with promoted children
+add_ignored = section.add("ignored").configure(promote_children=True)
+add_ignored.add("one").configure(target=make_view("/one/"))
+add_ignored.add("two").configure(target=make_view("/two/"))
+
     ########################
     ### Foster section
 
@@ -121,6 +126,12 @@ class SectionTesterBase(TestCase):
             , ('ensure', '/add_nt1/add_nt12/')
             ]
 
+    def promoted(self):
+        return [
+              ('ensure', '/one/')
+            , ('ensure', '/two/')
+            ]
+
     def with_first(self):
         return [('ensure', '/add_ntf0/')]
 
@@ -134,6 +145,7 @@ def describe_maker(name, urls, base="", extra_funcs=None, extra_instructions=Non
         , "doesn't give urls to those without a target" : 'without_target'
         , "gives urls to those without a section, but have a first" : 'with_first'
         , "gives urls to redirect sections" : 'with_redirect'
+        , "allows urls for promoted children to appear as if not grandchildren" : 'promoted'
         }
     if extra_funcs:
         funcs.update(extra_funcs)
