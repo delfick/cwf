@@ -1,11 +1,10 @@
 '''
-    Central dispatch logic for all views
+    Central dispatch logic for all dispatched views
 '''
 class Dispatcher(object):
     '''
         Object used to determine what function to call for a request
         Will find correct class and then use target view as the function to call
-        Will make sure request has permission for the view first
         Will also cache views
     '''
     def __init__(self):
@@ -30,7 +29,7 @@ class Dispatcher(object):
     
     def __call__(self, request, kls, target, *args, **kwargs):
         '''
-            For this location, target, section and condition return the result of invoking the correct view
+            For this kls and target return the result of invoking the correct view
             It is assumed this is created by Section.patterns in which case Http404 is already raised if section is unreachable
         '''
         # Non-threadsafe hack to make amonpy happy
