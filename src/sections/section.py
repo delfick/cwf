@@ -112,7 +112,12 @@ class Section(object):
         return self
     
     def add_child(self, section, first=False, consider_for_menu=True):
-        """Add a child to the section"""
+        """
+            Add a child to the section
+            If first, then overwrite _base, otherwise add to _children.
+
+            Will be appended as a tuple (children, consider_for_menu)
+        """
         if first:
             self._base = (section, consider_for_menu)
         else:
@@ -125,12 +130,14 @@ class Section(object):
     
     @property
     def options(self):
+        """Options is a lazily loaded Options object"""
         if not self._options:
             self._options = Options()
         return self._options
     
     @options.setter
     def options(self, val):
+        """Setter to not lazily load Options object if we already have an object to use"""
         self._options = val
 
     @property
@@ -148,6 +155,10 @@ class Section(object):
     
     @property
     def alias(self):
+        """
+            Either alias on the options
+            or just capitalized url
+        """
         alias = self.options.alias
         if not alias and self.url:
             alias = self.url.capitalize()
@@ -228,7 +239,7 @@ class Section(object):
     def include_patterns(self, namespace, app_name, include_as=None, start=False, end=False):
         """
             Return patterns object for this section using an include
-            Equivelant to:
+            Equivalent to:
                 (path, include(patterns(), namespace, app_name))
             
             Where path is determined by self.include_path(include_as, start, end)
