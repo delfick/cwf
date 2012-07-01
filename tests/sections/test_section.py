@@ -721,7 +721,7 @@ describe "Section":
     describe "Getting root ancestor":
         it "returns itself if no parent":
             section = Section(parent=None)
-            section.rootAncestor() |should| be(section)
+            section.root_ancestor() |should| be(section)
         
         it "looks at chain of parents to find root ancestor":
             p1 = fudge.Fake("p1")
@@ -733,13 +733,13 @@ describe "Section":
             p3.parent = None
             
             section = Section(parent=p1)
-            section.rootAncestor() |should| be(p1)
+            section.root_ancestor() |should| be(p1)
             
             p1.parent = p2
-            section.rootAncestor() |should| be(p2)
+            section.root_ancestor() |should| be(p2)
             
             p2.parent = p3
-            section.rootAncestor() |should| be(p3)
+            section.root_ancestor() |should| be(p3)
         
         it "copes with circular dependencies":
             p1 = fudge.Fake("p1")
@@ -748,7 +748,7 @@ describe "Section":
             p1.parent = p2
             p2.parent = p1
             section = Section(parent=p1)
-            section.rootAncestor() |should| be(p2)
+            section.root_ancestor() |should| be(p2)
     
     describe "Determining if reachable":
         before_each:

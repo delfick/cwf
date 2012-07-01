@@ -285,7 +285,7 @@ class Section(object):
         new.options = self.options.clone(all=True)
         return new
     
-    def rootAncestor(self):
+    def root_ancestor(self):
         """Find ancestor that has no parent"""
         result = self
         parents = []
