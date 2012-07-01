@@ -156,7 +156,7 @@ class Options(object):
             if val is not Empty:
                 setattr(self, name, val)
         
-        if values is not Empty and (not hasattr(values, 'get_info') or not callable(values.get_info)):
+        if values is not Empty and values is not None and (not hasattr(values, 'get_info') or not callable(values.get_info)):
             raise ConfigurationError(
                 "Values must have a get_info method to get information from. %s does not" % self.values
                 )
