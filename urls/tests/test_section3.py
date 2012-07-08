@@ -107,42 +107,37 @@ describe 'Sections':
             self.sect.getAlias() |should| equal_to('Blah')
         
     describe 'info':
-        before_each:
-
-            def gen(request, children, restOfPath, parentUrl, parentSelected):
-                for child in children:
-                    for part in child.getInfo(request, restOfPath, parentUrl, parentSelected, gen=gen):
-                        yield part
-                        
-            def goThrough(gen, *expected):
-                result = []
-                if gen:
-                    if callable(gen):
-                        gen = gen()
-                    result = [t for t in gen]
+        def gen(self, request, children, restOfPath, parentUrl, parentSelected):
+            for child in children:
+                for part in child.getInfo(request, restOfPath, parentUrl, parentSelected, gen=self.gen):
+                    yield part
                     
-                len(expected) |should| equal_to(len(result))
-                gens = []
-                for i in range(len(result)):
-                    next = expected[i]
-                    if len(next) == 6:
-                        sixth = result[i][5]
-                        seventh = next[4]
-                        eigth = next[5]
-                    else:
-                        sixth = next[4]
-                        seventh = next[5]
-                        eigth = next[6]
-                    
-                    result[i] |should| equal_to((
-                        next[0], result[i][1], next[1], next[2], next[3], sixth, seventh, eigth
-                    ))
-                    gens.append(sixth)
+        def goThrough(self, gen, *expected):
+            result = []
+            if gen:
+                if callable(gen):
+                    gen = gen()
+                result = [t for t in gen]
                 
-                return gens
-                        
-            self.gen = gen
-            self.goThrough = goThrough
+            len(expected) |should| equal_to(len(result))
+            gens = []
+            for i in range(len(result)):
+                next = expected[i]
+                if len(next) == 6:
+                    sixth = result[i][5]
+                    seventh = next[4]
+                    eigth = next[5]
+                else:
+                    sixth = next[4]
+                    seventh = next[5]
+                    eigth = next[6]
+                
+                result[i] |should| equal_to((
+                    next[0], result[i][1], next[1], next[2], next[3], sixth, seventh, eigth
+                ))
+                gens.append(sixth)
+            
+            return gens
         
         it 'should not provide a children generator if there are no children':
             c = self.sect.add('there')

@@ -24,58 +24,55 @@ describe 'Menu':
         self.sect3_1_1 = self.sect3_1.add('there')
         
         self.request = fudge.Fake("request")
-        
-        def getGiving(part, give):
-            section, appear, fullUrl, alias, selected, children, options = part
-            if give is None:
-                giving = (section, appear, fullUrl, alias, selected)
+
+    def getGiving(self, part, give):
+        section, appear, fullUrl, alias, selected, children, options = part
+        if give is None:
+            giving = (section, appear, fullUrl, alias, selected)
+            
+        else:
+            giving = []
+            useTuple = True
+            if type(give) is int:
+                useTuple = False
+                give = [give]
                 
+            for p in give:
+                giving.append(part[p])
+            
+            if useTuple:
+                giving = tuple(giving)
             else:
-                giving = []
-                useTuple = True
-                if type(give) is int:
-                    useTuple = False
-                    give = [give]
-                    
-                for p in give:
-                    giving.append(part[p])
-                
-                if useTuple:
-                    giving = tuple(giving)
-                else:
-                    giving = giving[0]
-            
-            return giving, children
-            
-        def layeredRoll(gen, give=None):
-            parts = []
-            if callable(gen):
-                gen = gen()
-            
-            for part in gen:
-                next = []
-                for info in part:
-                    giving, _ = getGiving(info, give)
-                    next.append(giving)
-                    
-                parts.append(next)
-            
-            return parts
+                giving = giving[0]
         
-        def heirarchialRoll(gen, give=None):
-            parts = []
-            if callable(gen):
-                gen = gen()
-              
-            for part in gen:
-                giving, children = getGiving(part, give)
-                childParts = heirarchialRoll(children, give)
-                parts.append([giving] + childParts)
-            
-            return parts
+        return giving, children
+        
+    def layeredRoll(self, gen, give=None):
+        parts = []
+        if callable(gen):
+            gen = gen()
+        
+        for part in gen:
+            next = []
+            for info in part:
+                giving, _ = self.getGiving(info, give)
+                next.append(giving)
+                
+            parts.append(next)
+        
+        return parts
     
-        self.layeredRoll = layeredRoll
-        self.heirarchialRoll = heirarchialRoll
+    def heirarchialRoll(self, gen, give=None):
+        parts = []
+        if callable(gen):
+            gen = gen()
+          
+        for part in gen:
+            giving, children = self.getGiving(part, give)
+            childParts = self.heirarchialRoll(children, give)
+            parts.append([giving] + childParts)
+        
+        return parts
     
     describe 'values':
         before_each:

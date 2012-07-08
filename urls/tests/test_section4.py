@@ -19,24 +19,21 @@ describe 'Site':
         self.site2.add(sect1, inMenu=True)
         self.site2.add(sect2, inMenu=True)
             
-        def lookAtPatterns():
-            l = []
-            for pattern in self.site.includes():
-                l.append(pattern[0])
-            return l
+    def lookAtPatterns(self):
+        l = []
+        for pattern in self.site.includes():
+            l.append(pattern[0])
+        return l
+    
+    def checkLengths(self, site, info=None, base=None, menu=None):
+        if info:
+            len(site.info) |should| be(info)
         
-        def checkLengths(site, info=None, base=None, menu=None):
-            if info:
-                len(site.info) |should| be(info)
-            
-            if base:
-                len(site.base) |should| be(base)
-            
-            if menu:
-                [m for m in site.menu()] |should| have(menu).sections
+        if base:
+            len(site.base) |should| be(base)
         
-        self.checkLengths = checkLengths
-        self.lookAtPatterns = lookAtPatterns
+        if menu:
+            [m for m in site.menu()] |should| have(menu).sections
     
     it 'should be possible to reset a site':
         site = Site('test')

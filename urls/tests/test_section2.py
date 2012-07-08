@@ -94,14 +94,10 @@ describe 'cwf Options':
                 thing |should| have(4).parts
     
         describe '___the pattern':
-            before_each:
-
-                def pattern(*patterns):
-                    for pat in patterns:
-                        for thing in self.opts.urlPattern(pat):
-                            yield thing[0]
-                
-                self.pattern = pattern
+            def pattern(self, *patterns):
+                for pat in patterns:
+                    for thing in self.opts.urlPattern(pat):
+                        yield thing[0]
                 
             it 'should have no double slashes in it':
                             
@@ -131,14 +127,12 @@ describe 'cwf Options':
         describe '___the view':
             before_each:
                 self.opts = self.opts.clone(module='m', kls='k', target='t')
-                
-                def redirect(*redirects):
-                    for redirect in redirects:
-                        o = self.opts.clone(redirect=redirect)
-                        for thing in o.urlPattern(''):
-                            yield thing[1]
-                
-                self.redirect = redirect
+
+            def redirect(self, *redirects):
+                for redirect in redirects:
+                    o = self.opts.clone(redirect=redirect)
+                    for thing in o.urlPattern(''):
+                        yield thing[1]
                 
             it 'should ignore target only if redirect is a string or callable returning a string':
                 for redirect in self.redirect('/some_place/nice', lambda : '/some_place/nice'):

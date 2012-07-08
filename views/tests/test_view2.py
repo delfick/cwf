@@ -44,12 +44,10 @@ describe TestCase, 'Getting result from a view':
     before_each:
         self.view = View1()
         
-        def getResult(view, target):
-            request = RequestFactory().get('/')
-            return view(request, target, None, None)
-        
-        self.getResult = getResult
-    
+    def getResult(self, view, target):
+        request = RequestFactory().get('/')
+        return view(request, target, None, None)
+
     @raises(Http404)
     it 'should raise a 404 if view returns None':
         self.getResult(self.view, 'nothing')

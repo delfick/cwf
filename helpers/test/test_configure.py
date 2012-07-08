@@ -23,28 +23,23 @@ configure(settings, 'example2'
 
 describe 'helpers', TestCase:
     urls = 'example2.urls'
-    
-    before_each:
 
-        def checkLengths(site, info=None, base=None, menu=None):
-            if info:
-                len(site.info) |should| be(info)
-            
-            if base:
-                len(site.base) |should| be(base)
-            
-            if menu:
-                [m for m in site.menu()] |should| have(menu).sections
+    def checkLengths(self, site, info=None, base=None, menu=None):
+        if info:
+            len(site.info) |should| be(info)
         
-        def checkExists(*paths, **kwargs):
-            desired = kwargs.get('desired', 200)
-            for path in paths:
-                res = self.client.get(path)
-                st = res.status_code
-                st |should| equal_to(desired)
-            
-        self.checkExists = checkExists
-        self.checkLengths = checkLengths
+        if base:
+            len(site.base) |should| be(base)
+        
+        if menu:
+            [m for m in site.menu()] |should| have(menu).sections
+    
+    def checkExists(self, *paths, **kwargs):
+        desired = kwargs.get('desired', 200)
+        for path in paths:
+            res = self.client.get(path)
+            st = res.status_code
+            st |should| equal_to(desired)
         
     it 'should be able to get all models':
         from example2.models import Part1Model, Part2Model

@@ -84,14 +84,10 @@ describe TestCase, 'View':
         self.view.getAdminChangeList |should| be_kind_of(MethodType)
     
     describe 'getGETString':
-        before_each:
-            
-            def use(num, *args, **kwargs):
-                func = getattr(self.view, 'getGETString')
-                req = getattr(self, 'request%d' % num)
-                return func(req, *args, **kwargs)
-            
-            self.use = use
+        def use(self, num, *args, **kwargs):
+            func = getattr(self.view, 'getGETString')
+            req = getattr(self, 'request%d' % num)
+            return func(req, *args, **kwargs)
             
         it 'should be possible to get GET arguements from a request object':
             self.use(1) |should| equal_to('this=3;that=5;thisthat=6')
@@ -106,14 +102,10 @@ describe TestCase, 'View':
             self.use(2, ignoreGET=['this']) |should| equal_to('')
     
     describe 'redirect':
-        before_each:
-            
-            def use(num, *args, **kwargs):
-                func = getattr(self.view, '_redirect')
-                request = getattr(self, 'request%d' % num)
-                return func(request, *args, **kwargs)
-            
-            self.use = use
+        def use(self, num, *args, **kwargs):
+            func = getattr(self.view, '_redirect')
+            request = getattr(self, 'request%d' % num)
+            return func(request, *args, **kwargs)
             
         it 'should prepend baseUrl if an absolute path':
             self.use(1, '/somewhere/nice', relative=False) |should| equal_to('/cwf/somewhere/nice')
