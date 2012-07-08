@@ -105,7 +105,7 @@ describe 'Menu templates':
         </ul>
         """
         
-        (menu, 'base', 'getGlobal') | should | render_as(desired)
+        (menu, 'base', 'getGlobal') |should| render_as(desired)
     
     it 'should make a global menu with section other than base selected':
         menu = Menu(self.request, self.site, ['one'], self.base)
@@ -117,7 +117,7 @@ describe 'Menu templates':
         </ul>
         """
         
-        (menu, 'base', 'getGlobal') | should | render_as(desired)
+        (menu, 'base', 'getGlobal') |should| render_as(desired)
     
     it 'should make global menu and be case insensitive':
         menu = Menu(self.request, self.site, ['oNe'], self.base)
@@ -129,7 +129,7 @@ describe 'Menu templates':
         </ul>
         """
         
-        (menu, 'base', 'getGlobal') | should | render_as(desired)
+        (menu, 'base', 'getGlobal') |should| render_as(desired)
     
     it 'should make global menu when the url is longer than selected section':
         menu = Menu(self.request, self.site, ['one', 'some'], self.base)
@@ -141,7 +141,7 @@ describe 'Menu templates':
         </ul>
         """
         
-        (menu, 'base', 'getGlobal') | should | render_as(desired)
+        (menu, 'base', 'getGlobal') |should| render_as(desired)
         
     describe 'heirarchial menu':
         it 'should make a heirarchial menu':
@@ -155,7 +155,7 @@ describe 'Menu templates':
             </ul>
             """
             
-            (menu, 'heirarchial') | should | render_as(desired)
+            (menu, 'heirarchial') |should| render_as(desired)
             
         it 'should make a heirarchial menu when ending in a number':
             site = Site('main')
@@ -189,7 +189,7 @@ describe 'Menu templates':
             </ul>
             """
             
-            (menu, 'heirarchial') | should | render_as(desired)
+            (menu, 'heirarchial') |should| render_as(desired)
                 
         it 'should support sections with multiple values':
             menu = Menu(self.request, self.site, ['one', '1_'], self.sect1)
@@ -202,7 +202,7 @@ describe 'Menu templates':
             </ul>
             """
             
-            (menu, 'heirarchial') | should | render_as(desired)
+            (menu, 'heirarchial') |should| render_as(desired)
                 
         it 'should make a heirarchial menu and not include children when parent isnt selected':
             menu = Menu(self.request, self.site, ['2'], self.sect2)
@@ -213,7 +213,7 @@ describe 'Menu templates':
             </ul>
             """
             
-            (menu, 'heirarchial') | should | render_as(desired)
+            (menu, 'heirarchial') |should| render_as(desired)
                 
         it 'should make a heirarchial menu and do include children when parent is selected':
             menu = Menu(self.request, self.site, ['2', '1', '3', '4'], self.sect2)
@@ -234,13 +234,13 @@ describe 'Menu templates':
             </ul>
             """
             
-            (menu, 'heirarchial') | should | render_as(desired)
+            (menu, 'heirarchial') |should| render_as(desired)
                 
         it 'should not show sections that have display set to False':
             menu = Menu(self.request, self.site, ['3'], self.sect3)
             desired = ""
             
-            (menu, 'heirarchial') | should | render_as(desired)
+            (menu, 'heirarchial') |should| render_as(desired)
     
     describe 'layered menu':
         it 'should be able to handle no selected section':
@@ -254,7 +254,7 @@ describe 'Menu templates':
             </ul>
             """
             
-            (menu, 'layered') | should | render_as(desired)
+            (menu, 'layered') |should| render_as(desired)
         
         it 'should only create layers from children with selected parents':
             menu = Menu(self.request, self.site, ['2'], self.sect2)
@@ -265,7 +265,7 @@ describe 'Menu templates':
             </ul>
             """
             
-            (menu, 'layered') | should | render_as(desired)
+            (menu, 'layered') |should| render_as(desired)
                 
         it 'should be able to make a layered menu':
             menu = Menu(self.request, self.site, ['4', 'needs', 'path', '2'], self.sect4)
@@ -292,13 +292,13 @@ describe 'Menu templates':
             </ul>
             """
             
-            (menu, 'layered') | should | render_as(desired)
+            (menu, 'layered') |should| render_as(desired)
             
         it 'should not show sections that have display set to False':
             menu = Menu(self.request, self.site, ['3'], self.sect3)
             desired = ""
             
-            (menu, 'layered') | should | render_as(desired)
+            (menu, 'layered') |should| render_as(desired)
             
             
             

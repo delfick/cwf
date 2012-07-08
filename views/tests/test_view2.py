@@ -56,16 +56,16 @@ describe TestCase, 'Getting result from a view':
         
     it 'should be possible to get a HttpResponse created from a File_extra tuple':
         result = self.getResult(self.view, 'base')
-        result.content | should.equal_to | "<b>view1</b>\n"
+        result.content |should| equal_to("<b>view1</b>\n")
     
     it 'should be possible to have class_wide override method':
         result = self.getResult(View2(), 'base')
-        result.content | should.equal_to | "<b>override</b>\n"
+        result.content |should| equal_to("<b>override</b>\n")
     
     it 'should be possible to return a HttpResponse object from a view':
         result = self.getResult(self.view, 'other')
-        result.status_code | should.equal_to | 302
+        result.status_code |should| equal_to(302)
     
     it 'should be possible to return a callable from a view':
         result = self.getResult(self.view, 'thing')
-        result.content | should.equal_to | "<c>stuff</c>\n"
+        result.content |should| equal_to("<c>stuff</c>\n")

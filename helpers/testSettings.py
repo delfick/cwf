@@ -41,19 +41,19 @@ class MenuTester(TestCase):
     def checkRender(self, render, selected=None, normal=None, withSubMenu=None, ul=None):
         if selected:
             found = regexes['selectedLi'].findall(render)
-            found | should | have(selected).selected_li
+            found |should| have(selected).selected_li
             
         if normal:
             found = regexes['normalLi'].findall(render)
-            found | should | have(normal).normal_li
+            found |should| have(normal).normal_li
             
         if withSubMenu:
             found = regexes['liWithSubMenu'].findall(render)
-            found | should | have(withSubMenu).li_with_submenu
+            found |should| have(withSubMenu).li_with_submenu
             
         if ul:
             found = regexes['ul'].findall(render)
-            found | should | have(ul).ul
+            found |should| have(ul).ul
     
     @nottest
     def find(self, render, selected=True, url='/', alias='Home', shouldHave=None):
@@ -68,7 +68,7 @@ class MenuTester(TestCase):
         
         found = re.findall(regex % options, render)
         if shouldHave:
-            found | should | have(shouldHave).specific_items
+            found |should| have(shouldHave).specific_items
         
         return found
 
