@@ -164,3 +164,6 @@ class Info(object):
         self.appear = appear
         self.selected = selected
         self.url_parts = url_parts
+
+    def setup_children(self, children):
+        self.children = children
