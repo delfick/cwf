@@ -92,7 +92,7 @@ class SectionMaster(object):
     def selected_value(self, section, path):
         """Return True and rest of path if selected else False and no path."""
         url = section.url
-        parentSelected = not section.parent or self.memoized.selected(section.parent)
+        parentSelected = not section.parent or self.memoized.selected(section.parent, path=path)
         if not parentSelected or not path:
             return False, []
         

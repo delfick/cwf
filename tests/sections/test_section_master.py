@@ -269,13 +269,13 @@ describe "SectionMaster":
             @fudge.test
             it "returns (False, []) if both parent isn't selected and path isn't provided":
                 self.section.parent = self.parent
-                self.fake_memoized.expects("selected").with_args(self.parent).returns(False)
+                self.fake_memoized.expects("selected").with_args(self.parent, path=None).returns(False)
                 self.master.selected_value(self.section, None) |should| equal_to((False, []))
             
             @fudge.test
             it "returns (False, []) if parent isn't selected":
                 self.section.parent = self.parent
-                self.fake_memoized.expects("selected").with_args(self.parent).returns(False)
+                self.fake_memoized.expects("selected").with_args(self.parent, path=self.path).returns(False)
                 self.master.selected_value(self.section, self.path) |should| equal_to((False, []))
             
             @fudge.test
