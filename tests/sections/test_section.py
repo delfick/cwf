@@ -452,25 +452,57 @@ describe "Section":
             self.cfm2 = fudge.Fake("cfm2")
             
             self.base = fudge.Fake("base")
+            self.pf_base = fudge.Fake("pf_base")
+            self.base.promoted_menu_children = [self.pf_base]
+
             self.child1 = fudge.Fake("child1")
+            self.pf_child1 = fudge.Fake("pf_child1")
+            self.child1.promoted_menu_children = [self.pf_child1]
+
             self.child2 = fudge.Fake("child2")
+            self.pf_child2 = fudge.Fake("pf_child2")
+            self.child2.promoted_menu_children = [self.pf_child2]
             
             self.section = Section()
             self.section._base = (self.base, self.cfmb)
             self.section._children = [(self.child1, self.cfm1), (self.child2, self.cfm2)]
             
         it "yields self._base first":
-            list(self.section.menu_sections)[0] |should| be(self.base)
+            list(self.section.menu_sections)[0] |should| be(self.pf_base)
         
         it "yields children after self._base":
-            list(self.section.menu_sections) |should| equal_to([self.base, self.child1, self.child2])
+            list(self.section.menu_sections) |should| equal_to([self.pf_base, self.pf_child1, self.pf_child2])
         
         it "doesn't yield self._base or children if consider_for_menu is Falsey":
             self.section._base = (self.base, False)
-            list(self.section.menu_sections) |should| equal_to([self.child1, self.child2])
+            list(self.section.menu_sections) |should| equal_to([self.pf_child1, self.pf_child2])
             
             self.section._children = [(self.child1, False), (self.child2, False)]
             list(self.section.menu_sections) |should| be_empty
+
+    describe "Promoted menu sections":
+        before_each:
+            self.section = Section()
+
+            self.child1 = self.section.add("child1").configure(promote_children=True)
+
+            self.child11 = self.child1.add("child11").configure(promote_children=True)
+            self.child111 = self.child1.add("child111")
+            self.child112 = self.child1.add("child111")
+
+            self.child12 = self.child1.add("child12")
+
+            self.child2 = self.section.add("child2")
+            self.child3 = self.section.add("child3")
+
+        it "yields self if options doesn't say to promote children":
+            list(self.section.promoted_menu_children) |should| equal_to([self.section])
+
+        it "yields promoted children of it's children if options says to promote children":
+            self.section.configure(promote_children=True)
+            list(self.section.promoted_menu_children) |should| equal_to(
+                [self.child111, self.child112, self.child12, self.child2, self.child3]
+                )
 
     describe "Determining if section has children":
         @contextmanager

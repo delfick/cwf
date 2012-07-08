@@ -198,11 +198,27 @@ class Section(object):
             Yield only those whose consider_for_menu is truthy
         """
         if self._base and self._base[1]:
-            yield self._base[0]
+            for promoted in self._base[0].promoted_menu_children:
+                yield promoted
         
         for child, consider_for_menu in self._children:
             if consider_for_menu:
-                yield child
+                for promoted in child.promoted_menu_children:
+                    yield promoted
+
+    @property
+    def promoted_menu_children(self):
+        """
+            Used to get any promoted children when calculating menu_sections
+            And recurse into promoted children of those promoted children
+            If no promoted children, just yield self
+        """
+        if not self.options.promote_children:
+            yield self
+        else:
+            for child in self.menu_sections:
+                for promoted in child.promoted_menu_children:
+                    yield promoted
     
     @property
     def has_children(self):
