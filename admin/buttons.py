@@ -97,13 +97,18 @@ class Button(ButtonMixin):
         return mark_safe(link)
 
     def link_saving(self):
-        return u'<input type="submit" name="tool_%s" value="%s"/>' % (self.url, self.desc)
+        url = self.url
+        if not url.endswith("/"):
+            url = "%s/" % url
+        return u'<input type="submit" name="tool_%s" value="%s"/>' % (url, self.desc)
     
     def link_noSaving(self):
+        url = self.url
         if self.saveOnClick or not self.url.startswith('/'):
             url = "tool_%s" % self.url
-        else:
-            url = self.url
+
+        if not url.endswith("/"):
+            url = "%s/" % url
         
         options = []
         if self.kls:

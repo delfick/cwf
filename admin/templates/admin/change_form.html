@@ -10,19 +10,20 @@
 {% endblock %}
 
 {% block after_related_objects %}
-    <ul class="submit-row">
+<fieldset>
+    <ul class="grp-submit-row">
     {% for button in buttons %}
         {% if button.show and not button.forAll and button.saveOnClick %}
         {% if button.group %}
-        <fieldset class="module collapse closed">
-            <h2 class="collapse-handler">{{ button.name }}</h2>
+        <fieldset class="grp-module grp-collapse grp-closed">
+            <h2 class="grp-collapse-handler">{{ button.name }}</h2>
             {% for button in button.buttons %}
-            <div class="row cells-1 numReg ">
-                <div>
-                    <div class="column span-4">
+            <div class="grp-row grp-cells-1 numReg ">
+                <div class="l-2c-fluid l-d-4">
+                    <div class="c-1">
                         <li class="submit-button-container">{{button}}</li>
                     </div>
-                    <div class="column span-flexible">
+                    <div class="c-2">
                         <span>{{ button.description }}</span>
                     </div>
                 </div>
@@ -30,9 +31,10 @@
             {% endfor %}
         </fieldset>
         {% else %}
-        <li class="submit-button-container">{{button}}</li>
+        <li>{{button}}</li>
         {% endif %}
         {% endif %}
     {% endfor %}
     </div>
+</fieldset>
 {% endblock %}
