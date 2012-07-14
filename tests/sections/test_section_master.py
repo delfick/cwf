@@ -284,7 +284,7 @@ describe "SectionMaster":
                 self.section.parent = None
                 self.section.options = self.options
                 path = ['blah']
-                self.options.expects("conditional").with_args("promote_children", self.request).returns(True)
+                self.options.has_attr(promote_children=True)
                 self.master.selected_value(self.section, path) |should| equal_to((True, path))
             
             describe "Looking at path and url":
@@ -292,7 +292,7 @@ describe "SectionMaster":
                     self.section.url = None
                     self.section.parent = None
                     self.section.options = self.options
-                    self.options.expects("conditional").with_args("promote_children", self.request).returns(False)
+                    self.options.has_attr(promote_children=False)
                 
                 @fudge.test
                 it "returns (True, path[1:]) if path[0] is '' and url is '/'":

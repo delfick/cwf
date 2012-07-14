@@ -102,7 +102,7 @@ class SectionMaster(object):
         if (path[0] == '' and str(url) == '/') or (path[0].lower() == str(url).lower()):
             return True, path[1:]
         else:
-            if section.options.conditional('promote_children', self.request):
+            if section.options.promote_children:
                 return True, path
             else:
                 return False, []

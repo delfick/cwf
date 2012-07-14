@@ -179,3 +179,115 @@ describe "Rendering the menu":
                     </li>
                 </ul>
                 """)
+
+            
+    #         (menu, 'heirarchial') |should| render_as(desired)
+                
+    #     it 'should support sections with multiple values':
+    #         menu = Menu(self.request, self.site, ['one', '1_'], self.sect1)
+    #         desired = """
+    #         <ul>
+    #             <li><a href="/one/some">blah</a></li>
+    #             <li class="selected"><a href="/one/1_">_1</a></li>
+    #             <li><a href="/one/2_">_2</a></li>
+    #             <li><a href="/one/3_">_3</a></li>
+    #         </ul>
+    #         """
+            
+    #         (menu, 'heirarchial') |should| render_as(desired)
+                
+    #     it 'should make a heirarchial menu and not include children when parent isnt selected':
+    #         menu = Menu(self.request, self.site, ['2'], self.sect2)
+    #         desired = """
+    #         <ul>
+    #             <li class="selected"><a href="/2">meh</a></li>
+    #             <li><a href="/2/1">1</a></li>
+    #         </ul>
+    #         """
+            
+    #         (menu, 'heirarchial') |should| render_as(desired)
+                
+    #     it 'should make a heirarchial menu and do include children when parent is selected':
+    #         menu = Menu(self.request, self.site, ['2', '1', '3', '4'], self.sect2)
+    #         desired = """
+    #         <ul>
+    #             <li><a href="/2">meh</a></li>
+    #             <li class="selected">
+    #                 <a href="/2/1">1</a>
+    #                 <ul>
+    #                     <li class="selected">
+    #                         <a href="/2/1/3">3</a>
+    #                         <ul>
+    #                             <li class="selected"><a href="/2/1/3/4">4</a></li>
+    #                         </ul>
+    #                     </li>
+    #                 </ul>
+    #             </li>
+    #         </ul>
+    #         """
+            
+    #         (menu, 'heirarchial') |should| render_as(desired)
+                
+    #     it 'should not show sections that have display set to False':
+    #         menu = Menu(self.request, self.site, ['3'], self.sect3)
+    #         desired = ""
+            
+    #         (menu, 'heirarchial') |should| render_as(desired)
+    
+    # describe 'layered menu':
+    #     it 'should be able to handle no selected section':
+    #         menu = Menu(self.request, self.site, ['one'], self.sect1)
+    #         desired = """
+    #         <ul>
+    #             <li><a href="/one/some">blah</a></li>
+    #             <li><a href="/one/1_">_1</a></li>
+    #             <li><a href="/one/2_">_2</a></li>
+    #             <li><a href="/one/3_">_3</a></li>
+    #         </ul>
+    #         """
+            
+    #         (menu, 'layered') |should| render_as(desired)
+        
+    #     it 'should only create layers from children with selected parents':
+    #         menu = Menu(self.request, self.site, ['2'], self.sect2)
+    #         desired = """
+    #         <ul>
+    #             <li class="selected"><a href="/2">meh</a></li>
+    #             <li><a href="/2/1">1</a></li>
+    #         </ul>
+    #         """
+            
+    #         (menu, 'layered') |should| render_as(desired)
+                
+    #     it 'should be able to make a layered menu':
+    #         menu = Menu(self.request, self.site, ['4', 'needs', 'path', '2'], self.sect4)
+    #         desired = """
+    #         <ul>
+    #             <li><a href="/4/this">This</a></li>
+    #             <li class="selected"><a href="/4/needs">Needs</a></li>
+    #             <li><a href="/4/more">More</a></li>
+    #             <li><a href="/4/creativity">Creativity</a></li>
+    #         </ul>
+    #         <ul>
+    #             <li><a href="/4/needs/a">A</a></li>
+    #             <li class="selected"><a href="/4/needs/path">Path</a></li>
+    #             <li><a href="/4/needs/going">Going</a></li>
+    #             <li><a href="/4/needs/somewhere">Somewhere</a></li>
+    #         </ul>
+    #         <ul>
+    #             <li><a href="/4/needs/path/1">1</a></li>
+    #             <li class="selected"><a href="/4/needs/path/2">2</a></li>
+    #             <li><a href="/4/needs/path/3">3</a></li>
+    #         </ul>
+    #         <ul>
+    #             <li><a href="/4/needs/path/2/meh">Meh</a></li>
+    #         </ul>
+    #         """
+            
+    #         (menu, 'layered') |should| render_as(desired)
+            
+    #     it 'should not show sections that have display set to False':
+    #         menu = Menu(self.request, self.site, ['3'], self.sect3)
+    #         desired = ""
+            
+    #         (menu, 'layered') |should| render_as(desired)

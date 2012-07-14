@@ -98,16 +98,13 @@ class Options(object):
             leftover = ', '.join("'%s'" % name for name in sorted(leftover))
             raise ConfigurationError("Arguments provided into set_everything that wasn't consumed (%s)" % leftover)
     
-    def set_conditionals(self, admin=Empty, active=Empty, exists=Empty, display=Empty, promote_children=Empty):
+    def set_conditionals(self, admin=Empty, active=Empty, exists=Empty, display=Empty):
         '''
             Set conditionals
             These are either booleans or callable objects that take in one argument
             ConfigurationError will be raised if this is not the case
         '''
-        vals = (
-              ('admin', admin), ('active', active), ('exists', exists)
-            , ('display', display), ('promote_children', promote_children)
-            )
+        vals = (('admin', admin), ('active', active), ('exists', exists), ('display', display))
 
         for name, val in vals:
             if val is not Empty:
@@ -151,11 +148,14 @@ class Options(object):
                     )
                 setattr(self, name, val)
     
-    def set_menu(self, alias=Empty, match=Empty, values=Empty, needs_auth=Empty, propogate_display=Empty):
+    def set_menu(self
+        , alias=Empty, match=Empty, values=Empty, needs_auth=Empty
+        , propogate_display=Empty, promote_children=Empty
+        ):
         '''Set options for what appears in the menu'''
         vals = (
-              ('alias', alias), ('match', match), ('values', values)
-            , ('needs_auth', needs_auth), ('propogate_display', propogate_display)
+              ('alias', alias), ('match', match), ('values', values), ('needs_auth', needs_auth)
+            , ('propogate_display', propogate_display), ('promote_children', promote_children)
             )
 
         for name, val in vals:

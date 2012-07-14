@@ -52,8 +52,8 @@ describe "Configuring Options":
         before_each:
             self.specification = {
                   Options.set_view.im_func : ('kls', 'module', 'target', 'redirect', 'extra_context')
-                , Options.set_menu.im_func : ('alias', 'match', 'values', 'needs_auth', 'propogate_display')
-                , Options.set_conditionals.im_func : ('admin', 'active', 'exists', 'display', 'promote_children')
+                , Options.set_menu.im_func : ('alias', 'match', 'values', 'needs_auth', 'propogate_display', 'promote_children')
+                , Options.set_conditionals.im_func : ('admin', 'active', 'exists', 'display')
                 }
         
         it "has a method that returns each setting function along with the arguments they require":      
@@ -248,7 +248,7 @@ describe "Configuring Options":
                         self.check_expectation(self.setter, val)
                 
                 it "works with multiple arguments":
-                    kwargs = {'active' : False, 'admin' : True, 'promote_children': lambda request: 1}
+                    kwargs = {'active' : False, 'admin' : True}
                     not_set = {'display': fudge.Fake('display'), 'exists' : fudge.Fake('exists')}
                     self.check_multiple_arguments(self.setter, kwargs=kwargs, not_set=not_set)
             
