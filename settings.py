@@ -50,7 +50,8 @@ NOSE_ARGS = [
 ########################
 
 INSTALLED_APPS = (
-      'tests'
+      'src'
+    , 'tests'
     , 'django_nose'
     , PROJECTNAME
     )
