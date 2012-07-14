@@ -1,6 +1,7 @@
 # coding: spec
 
 from src.sections.section import Section
+from src.sections.values import Values
 from src.views.menu import Menu
 
 from django.http import HttpResponse
@@ -38,6 +39,17 @@ five = root.add("five").configure(target=make_view("five"), promote_children=Tru
 six = five.add("six").configure(target=make_view("five/six"))
 seven = five.add("seven").configure(target=make_view("five/seven"))
 
+seven_v1 = seven.add('\d{4}').configure(''
+    , match='year'
+    , values=Values([2010, 2009], as_set=False)
+    , target=make_view("five/seven/<year>")
+    )
+seven_v11 = seven_v1.add('\d+').configure(''
+    , match='asdf'
+    , values=Values([1])
+    , target=make_view("five/seven/<year>/<asdf>")
+    )
+
 ########################
 ###   TESTS
 ########################
@@ -55,7 +67,9 @@ describe "Menu":
         menu = Menu(request, section)
         return request, section, menu
 
-    def extract(self, infos, *args):
+    def extract(self, infos, *args, **kwargs):
+        look_at_selected = kwargs.get("look_at_selected", False)
+
         result = []
         for info in infos:
             item = []
@@ -64,6 +78,9 @@ describe "Menu":
                 if callable(val):
                     val = val()
                 item.append(val)
+
+            if look_at_selected and info.selected()[0]:
+                item = [item, self.extract(info.children(), *args, **dict(look_at_selected=look_at_selected))]
             result.append(item)
         return result
 
@@ -114,5 +131,21 @@ describe "Menu":
             extracted |should| equal_to(
                 [ ['Other',        ['', 'three', 'other'],        (True, [])]
                 , ['Three_child2', ['', 'three', 'three_child2'], (False, [])]
+                ]
+            )
+
+        it "can get urls for items in Value constructs":
+            request, section, menu = self.get_info("/five/seven/2010/1/")
+            infos = list(menu.side_nav())
+
+            extracted = self.extract(infos, 'alias', 'url_parts', 'selected', look_at_selected=True)
+            extracted |should| equal_to(
+                [ [ [2010, ['', 'seven', 2010], (True, ['1'])]
+                  , [ [ [1,  ['', 'seven', 2010, 1], (True, [])]
+                      , []
+                      ]
+                    ]
+                  ]
+                , [ 2009, ['', 'seven', 2009], (False, [])]
                 ]
             )

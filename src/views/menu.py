@@ -1,3 +1,4 @@
+from django.template import loader, Context, Template
 from src.sections.section_master import SectionMaster
 
 class Menu(object):
@@ -15,7 +16,7 @@ class Menu(object):
         self.master = SectionMaster(self.request)
 
     def global_nav(self):
-        return self.navs_for(self.top_nav)
+        return self.navs_for(self.top_nav, setup_children=False)
 
     def side_nav(self):
         selected = self.selected_top_nav
@@ -59,15 +60,27 @@ class Menu(object):
             self._path = path.split('/')
         return self._path
 
-    def children_function_for(self, section):
+    def children_function_for(self, section, parent):
         """Return lambda to get menu for children of some section"""
-        return lambda : self.navs_for(section.menu_sections)
+        return lambda : self.navs_for(section.menu_sections, parent=parent)
 
-    def navs_for(self, children):
+    def navs_for(self, section, setup_children=True, parent=None):
         """
             Return list of infos representing each top nav item
         """
-        for child in children:
-            for info in self.master.get_info(child, self.path):
-                info.setup_children(self.children_function_for(child))
+        for child in section:
+            for info in self.master.get_info(child, self.path, parent=parent):
+                if setup_children:
+                    info.setup_children(self.children_function_for(child, info))
                 yield info
+
+    def render(self, menu, template):
+        """
+            Turn a list of info objects into html using a particular template
+            Menu is result of self.global_nav or self.side_nav
+            Template is path to the template to use
+        """
+        extra = dict(menu=menu, children_template=template)
+        t = loader.get_template(template)
+        c = Context(extra)
+        return t.render(c)

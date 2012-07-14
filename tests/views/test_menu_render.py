@@ -1,7 +1,5 @@
 # coding: spec
 
-from tests import extra_matchers
-
 from src.sections.section import Section
 from src.sections.values import Values
 from src.views.menu import Menu
@@ -32,8 +30,8 @@ sect1_blah = sect1.add('\w+').configure(
       match = 'blah'
     , target=make_view("/one/<blah>/")
     , values = Values(
-        lambda (r, pu, p) : ['2', '1', '3']
-      , lambda (r, pu, p), value : ('_%s' % value, '%s_' % value)
+        lambda info : ['2', '1', '3']
+      , lambda info, value : ('%s_url' % value, 'alias_%s' % value)
       , sorter = True
       )
     )
@@ -89,24 +87,95 @@ describe "Rendering the menu":
         self.request = fudge.Fake("request")
         self.request.user = fudge.Fake("user")
 
-    def lookat_global(self, section, path, desired):
-        menu = type("Menu", (Menu, ), {'path' : path.split('/')})(self.request, section)
-        menu.global_nav() |should| render_as(desired)
-            
-    it 'should make a global menu with base selected':
-        self.lookat_global(self.section, "/", """
-            <ul>
-                <li class="selected"><a href="/">Home</a></li>
-                <li><a href="/one">One</a></li>
-                <li><a href="/2">two</a></li>
-            </ul>
-        """)
-    
-    it 'should make a global menu with section other than base selected':
-        self.lookat_global(self.section, "/one/", """
-            <ul>
-                <li><a href="/">Home</a></li>
-                <li class="selected"><a href="/one">One</a></li>
-                <li><a href="/2">two</a></li>
-            </ul>
+    describe "Rendering Global":
+
+        def lookat_global(self, section, path, desired):
+            menu = type("Menu", (Menu, ), {'path' : path.split('/')})(self.request, section)
+            rendered = menu.render(menu.global_nav(), 'menu/base.html')
+            self.assertHTMLEqual(desired, rendered)
+                
+        it 'makes a global menu with base selected':
+            self.lookat_global(self.section, "/", """
+                <ul>
+                    <li class="selected"><a href="/">Home</a></li>
+                    <li><a href="/one">One</a></li>
+                    <li><a href="/2">two</a></li>
+                </ul>
             """)
+        
+        it 'makes a global menu with section other than base selected':
+            self.lookat_global(self.section, "/one/", """
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li class="selected"><a href="/one">One</a></li>
+                    <li><a href="/2">two</a></li>
+                </ul>
+                """)
+        
+        it 'is case insensitive':
+            self.lookat_global(self.section, "/oNe/", """
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li class="selected"><a href="/one">One</a></li>
+                    <li><a href="/2">two</a></li>
+                </ul>
+                """)
+        
+        it 'smakes global menu when the url is longer than selected section':
+            self.lookat_global(self.section, "/one/some/", """
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li class="selected"><a href="/one">One</a></li>
+                    <li><a href="/2">two</a></li>
+                </ul>
+                """)
+
+    describe "Rendering side":
+
+        def lookat_side(self, section, path, desired):
+            menu = type("Menu", (Menu, ), {'path' : path.split('/')})(self.request, section)
+            rendered = menu.render(menu.side_nav(), 'menu/base.html')
+            print desired
+            print '---'
+            print rendered
+            self.assertHTMLEqual(desired, rendered)
+
+        it "knows which section to render from":
+            self.lookat_side(self.section, "/one/", """
+                <ul>
+                    <li><a href="/one/some">blah</a></li>
+                    <li><a href="/one/1_url">alias_1</a></li>
+                    <li><a href="/one/2_url">alias_2</a></li>
+                    <li><a href="/one/3_url">alias_3</a></li>
+                </ul>
+                """)
+            
+        it 'makes a heirarchial menu with values':
+            site = Section(name='site')
+
+            blah = site.add('blah')
+            meh = blah.first().configure(alias='latest')
+            
+            b = blah.add('meh')
+            b2 = b.add('\d{4}').configure(match='year', values=Values([2010, 2009], as_set=False))
+            h = b2.add('\d+').configure(match='asdf', values=Values([1]))
+            
+            self.lookat_side(site, '/blah/meh/2010/1/', """
+                <ul>
+                    <li><a href="/blah/">latest</a></li>
+                    <li class="selected">
+                        <a href="/blah/meh">Meh</a>
+                        <ul>
+                            <li class="selected">
+                                <a href="/blah/meh/2010">2010</a>
+                                <ul>
+                                    <li class="selected">
+                                        <a href="/blah/meh/2010/1">1</a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li><a href="/blah/meh/2009">2009</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                """)

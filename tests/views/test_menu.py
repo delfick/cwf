@@ -22,7 +22,7 @@ describe "Menu":
         @fudge.test
         it "returns the navigation items for the top nav":
             navs = fudge.Fake("nav")
-            self.fake_navs_for.expects_call().with_args(self.top_nav).returns(navs)
+            self.fake_navs_for.expects_call().with_args(self.top_nav, setup_children=False).returns(navs)
             self.menu.global_nav() |should| be(navs)
 
     describe "Getting side nav":
@@ -122,6 +122,7 @@ describe "Menu":
 
     describe "Generating function to act as children":
         before_each:
+            self.parent = fudge.Fake("parent")
             self.fake_navs_for = fudge.Fake("navs_for")
             self.menu_sections = fudge.Fake("menu_sections")
 
@@ -134,8 +135,8 @@ describe "Menu":
         it "calls navs_for for the menu_sections on specified section":
             navs = fudge.Fake("navs")
             self.section.menu_sections = self.menu_sections
-            self.fake_navs_for.expects_call().with_args(self.menu_sections).returns(navs)
-            self.menu.children_function_for(self.section)() |should| be(navs)
+            self.fake_navs_for.expects_call().with_args(self.menu_sections, parent=self.parent).returns(navs)
+            self.menu.children_function_for(self.section, self.parent)() |should| be(navs)
 
     describe "Getting navs for a list of sections":
         before_each:
@@ -158,8 +159,8 @@ describe "Menu":
         @fudge.patch("src.views.menu.SectionMaster")
         it "gets info using section master for each child using path and sets up children", fakeSectionMaster:
             master = (fudge.Fake("master").expects("get_info")
-                .with_args(self.child1, self.path).returns([self.info1])
-                .next_call().with_args(self.child2, self.path).returns([self.info2, self.info3])
+                .with_args(self.child1, self.path, parent=None).returns([self.info1])
+                .next_call().with_args(self.child2, self.path, parent=None).returns([self.info2, self.info3])
                 )
 
             # Master is an instance of SectionMaster
@@ -175,9 +176,9 @@ describe "Menu":
             # The children function allows us to inject into the infos logic from the menu
             # Child2 has two infos so it gets called twice
             (self.fake_children_function_for.expects_call()
-                .with_args(self.child1).returns(self.child_function1)
-                .next_call().with_args(self.child2).returns(self.child_function2)
-                .next_call().with_args(self.child2).returns(self.child_function3)
+                .with_args(self.child1, self.info1).returns(self.child_function1)
+                .next_call().with_args(self.child2, self.info2).returns(self.child_function2)
+                .next_call().with_args(self.child2, self.info3).returns(self.child_function3)
                 )
 
             # setup_children is how we inject menu logic
@@ -186,3 +187,22 @@ describe "Menu":
             self.info3.expects("setup_children").with_args(self.child_function3)
 
             list(menu.navs_for(self.children)) |should| equal_to([self.info1, self.info2, self.info3])
+
+        @fudge.patch("src.views.menu.SectionMaster")
+        it "doesn't setup children if setup_children is False", fakeSectionMaster:
+            master = (fudge.Fake("master").expects("get_info")
+                .with_args(self.child1, self.path, parent=None).returns([self.info1])
+                .next_call().with_args(self.child2, self.path, parent=None).returns([self.info2, self.info3])
+                )
+
+            # Master is an instance of SectionMaster
+            fakeSectionMaster.expects_call().with_args(self.request).returns(master)
+
+            menu = type("Menu", (Menu, ),
+                { 'path' : self.path
+                , 'children_function_for' : self.fake_children_function_for
+                }
+            )(self.request, self.section)
+            menu.master |should| be(master)
+
+            list(menu.navs_for(self.children, setup_children=False)) |should| equal_to([self.info1, self.info2, self.info3])

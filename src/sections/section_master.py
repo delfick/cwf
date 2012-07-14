@@ -60,7 +60,7 @@ class SectionMaster(object):
             urls.extend(self.memoized.url_parts(section.parent))
         
         url = section.url
-        if url.startswith("/"):
+        if type(url) in (str, unicode) and url.startswith("/"):
             url = url[1:]
         
         if not section.options.promote_children:
@@ -85,7 +85,7 @@ class SectionMaster(object):
     
     def exists_value(self, section):
         '''Determine if section and parent exists'''
-        if section.parent and not self.memoized.exists(section.parent):
+        if hasattr(section, 'parent') and section.parent and not self.memoized.exists(section.parent):
             return False
         return section.options.conditional('exists', self.request)
     
@@ -98,14 +98,14 @@ class SectionMaster(object):
 
         if not parent_selected or not path:
             return False, []
-        
-        if section.options.conditional('promote_children', self.request):
-            return True, path
-        
-        if (path[0] == '' and url == '/') or (path[0].lower() == str(url).lower()):
+
+        if (path[0] == '' and str(url) == '/') or (path[0].lower() == str(url).lower()):
             return True, path[1:]
         else:
-            return False, []
+            if section.options.conditional('promote_children', self.request):
+                return True, path
+            else:
+                return False, []
         
     ########################
     ###   INFO
@@ -131,25 +131,29 @@ class SectionMaster(object):
             # This item only has one item to show in the menu
             yield section.url, section.alias
     
-    def get_info(self, section, path):
+    def get_info(self, section, path, parent=None):
         '''
             Yield Info objects for this section
             Used by templates to render the menus
         '''
         for url, alias in self.iter_section(section, path):
-            info = Info(url, alias, section)
-            path_copy = list(path)
-            
-            # Use SectionMaster logic to keep track of parent_url and parent_selected
-            # By giving it the info instead of section
-            appear = lambda : self.memoized.exists(info) and self.memoized.active(info) and self.memoized.display(info)
-            selected = lambda : self.memoized.selected(info, path=path_copy)
+            for info in self._get_info(url, alias, section, path, parent):
+                yield info
 
-            url_parts = lambda: self.memoized.url_parts(info)
-            
-            # Give lazily loaded stuff to info and yield it
-            info.setup(appear, selected, url_parts)
-            yield info
+    def _get_info(self, url, alias, section, path, parent):
+        """Closure to yield info for a url, alias pair"""
+        info = Info(url, alias, section, parent)
+        path_copy = list(path)
+        
+        # Use SectionMaster logic to keep track of parent_url and parent_selected
+        # By giving it the info instead of section
+        appear = lambda : self.memoized.exists(info) and self.memoized.active(info) and self.memoized.display(info)
+        selected = lambda : self.memoized.selected(info, path=path_copy)
+        url_parts = lambda: self.memoized.url_parts(info)
+        
+        # Give lazily loaded stuff to info and yield it
+        info.setup(appear, selected, url_parts)
+        yield info
 
 ########################
 ###   INFO OBJECT
@@ -157,10 +161,10 @@ class SectionMaster(object):
 
 class Info(object):
     '''Object to hold information used by templates'''
-    def __init__(self, url, alias, section):
+    def __init__(self, url, alias, section, parent):
         self.url = url
         self.alias = alias
-        self.parent = section.parent
+        self.parent = parent or section.parent
         self.section = section
         self.options = section.options
     
@@ -173,5 +177,12 @@ class Info(object):
         self.children = children
 
     @property
+    def menu_sections(self):
+        return self.section.menu_sections
+
+    @property
     def full_url(self):
-        return '/'.join(self.url_parts()) or '/'
+        return '/'.join(str(p) for p in self.url_parts()) or '/'
+
+    def __repr__(self):
+        return '<Info %s:%s>' % (self.url, self.alias)

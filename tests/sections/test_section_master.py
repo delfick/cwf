@@ -279,11 +279,13 @@ describe "SectionMaster":
                 self.master.selected_value(self.section, self.path) |should| equal_to((False, []))
             
             @fudge.test
-            it "returns (True, path) if promote_children conditional for section is True":
+            it "returns (True, path) if promote_children conditional for section is True when url doesn't match start of path":
+                self.section.url = 'meh'
                 self.section.parent = None
                 self.section.options = self.options
+                path = ['blah']
                 self.options.expects("conditional").with_args("promote_children", self.request).returns(True)
-                self.master.selected_value(self.section, self.path) |should| equal_to((True, self.path))
+                self.master.selected_value(self.section, path) |should| equal_to((True, path))
             
             describe "Looking at path and url":
                 before_each:
