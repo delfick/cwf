@@ -56,7 +56,9 @@ sect3.add('test1').configure(target=make_view("/3/test1"))
     ########################
     ###   SECTION4
 
-sect4 = section.add('4').configure(target=make_view("/4/"), display=False, propogate_display=False)
+sect4 = section.add('4').configure(target=make_view("/4/"))
+sect4.first().configure(display=False, propogate_display=False)
+
 sect4_1 = sect4.add('this').configure(target=make_view("/4/this/"))
 sect4_2 = sect4.add('needs').configure(target=make_view("/4/needs/"))
 sect4_4 = sect4.add('more').configure(target=make_view("/4/more/"))
@@ -68,7 +70,7 @@ sect4_2_3 = sect4_2.add('going').configure(target=make_view("/4/needs/going/"))
 sect4_2_4 = sect4_2.add('somewhere').configure(target=make_view("/4/needs/somewhere/"))
 
 sect4_2_2_1 = sect4_2_2.add('\w+').configure(
-      values = Values(['1', '2', '3'], as_set=False)
+      values = Values(['things', 'asdf', 'poiu'], as_set=False)
     , target = make_view("/4/needs/path/\w+/")
     )
 
@@ -180,114 +182,71 @@ describe "Rendering the menu":
                 </ul>
                 """)
 
-            
-    #         (menu, 'heirarchial') |should| render_as(desired)
+        it 'supports sections with multiple values':
+            self.lookat_side(self.section, '/one/1_url/', """
+                <ul>
+                    <li><a href="/one/some">blah</a></li>
+                    <li class="selected"><a href="/one/1_url">alias_1</a></li>
+                    <li><a href="/one/2_url">alias_2</a></li>
+                    <li><a href="/one/3_url">alias_3</a></li>
+                </ul>
+                """)
                 
-    #     it 'should support sections with multiple values':
-    #         menu = Menu(self.request, self.site, ['one', '1_'], self.sect1)
-    #         desired = """
-    #         <ul>
-    #             <li><a href="/one/some">blah</a></li>
-    #             <li class="selected"><a href="/one/1_">_1</a></li>
-    #             <li><a href="/one/2_">_2</a></li>
-    #             <li><a href="/one/3_">_3</a></li>
-    #         </ul>
-    #         """
-            
-    #         (menu, 'heirarchial') |should| render_as(desired)
+        it "doesn't include children when parent isn't selected":
+            self.lookat_side(self.section, '/2/', """
+                <ul>
+                    <li class="selected"><a href="/2/">meh</a></li>
+                    <li><a href="/2/1">1</a></li>
+                </ul>
+                """)
                 
-    #     it 'should make a heirarchial menu and not include children when parent isnt selected':
-    #         menu = Menu(self.request, self.site, ['2'], self.sect2)
-    #         desired = """
-    #         <ul>
-    #             <li class="selected"><a href="/2">meh</a></li>
-    #             <li><a href="/2/1">1</a></li>
-    #         </ul>
-    #         """
-            
-    #         (menu, 'heirarchial') |should| render_as(desired)
-                
-    #     it 'should make a heirarchial menu and do include children when parent is selected':
-    #         menu = Menu(self.request, self.site, ['2', '1', '3', '4'], self.sect2)
-    #         desired = """
-    #         <ul>
-    #             <li><a href="/2">meh</a></li>
-    #             <li class="selected">
-    #                 <a href="/2/1">1</a>
-    #                 <ul>
-    #                     <li class="selected">
-    #                         <a href="/2/1/3">3</a>
-    #                         <ul>
-    #                             <li class="selected"><a href="/2/1/3/4">4</a></li>
-    #                         </ul>
-    #                     </li>
-    #                 </ul>
-    #             </li>
-    #         </ul>
-    #         """
-            
-    #         (menu, 'heirarchial') |should| render_as(desired)
-                
-    #     it 'should not show sections that have display set to False':
-    #         menu = Menu(self.request, self.site, ['3'], self.sect3)
-    #         desired = ""
-            
-    #         (menu, 'heirarchial') |should| render_as(desired)
-    
-    # describe 'layered menu':
-    #     it 'should be able to handle no selected section':
-    #         menu = Menu(self.request, self.site, ['one'], self.sect1)
-    #         desired = """
-    #         <ul>
-    #             <li><a href="/one/some">blah</a></li>
-    #             <li><a href="/one/1_">_1</a></li>
-    #             <li><a href="/one/2_">_2</a></li>
-    #             <li><a href="/one/3_">_3</a></li>
-    #         </ul>
-    #         """
-            
-    #         (menu, 'layered') |should| render_as(desired)
+        it 'does include children when parent is selected':
+            self.lookat_side(self.section, '/2/1/3/4/', """
+                <ul>
+                    <li><a href="/2/">meh</a></li>
+                    <li class="selected">
+                        <a href="/2/1">1</a>
+                        <ul>
+                            <li class="selected">
+                                <a href="/2/1/3">3</a>
+                                <ul>
+                                    <li class="selected"><a href="/2/1/3/4">4</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                """)
         
-    #     it 'should only create layers from children with selected parents':
-    #         menu = Menu(self.request, self.site, ['2'], self.sect2)
-    #         desired = """
-    #         <ul>
-    #             <li class="selected"><a href="/2">meh</a></li>
-    #             <li><a href="/2/1">1</a></li>
-    #         </ul>
-    #         """
-            
-    #         (menu, 'layered') |should| render_as(desired)
-                
-    #     it 'should be able to make a layered menu':
-    #         menu = Menu(self.request, self.site, ['4', 'needs', 'path', '2'], self.sect4)
-    #         desired = """
-    #         <ul>
-    #             <li><a href="/4/this">This</a></li>
-    #             <li class="selected"><a href="/4/needs">Needs</a></li>
-    #             <li><a href="/4/more">More</a></li>
-    #             <li><a href="/4/creativity">Creativity</a></li>
-    #         </ul>
-    #         <ul>
-    #             <li><a href="/4/needs/a">A</a></li>
-    #             <li class="selected"><a href="/4/needs/path">Path</a></li>
-    #             <li><a href="/4/needs/going">Going</a></li>
-    #             <li><a href="/4/needs/somewhere">Somewhere</a></li>
-    #         </ul>
-    #         <ul>
-    #             <li><a href="/4/needs/path/1">1</a></li>
-    #             <li class="selected"><a href="/4/needs/path/2">2</a></li>
-    #             <li><a href="/4/needs/path/3">3</a></li>
-    #         </ul>
-    #         <ul>
-    #             <li><a href="/4/needs/path/2/meh">Meh</a></li>
-    #         </ul>
-    #         """
-            
-    #         (menu, 'layered') |should| render_as(desired)
-            
-    #     it 'should not show sections that have display set to False':
-    #         menu = Menu(self.request, self.site, ['3'], self.sect3)
-    #         desired = ""
-            
-    #         (menu, 'layered') |should| render_as(desired)
+        it "doesn't show sections that have display set to False":
+            self.lookat_side(self.section, '/3/', "")
+
+        it "works with many levels of heirarchy":
+            self.lookat_side(self.section, '/4/needs/path/asdf/meh/', """
+                <ul>
+                    <li><a href="/4/this">This</a></li>
+                    <li class="selected">
+                        <a href="/4/needs">Needs</a>
+                        <ul>
+                            <li><a href="/4/needs/a">A</a></li>
+                            <li class="selected">
+                                <a href="/4/needs/path">Path</a>
+                                <ul>
+                                    <li><a href="/4/needs/path/things">things</a></li>
+                                    <li class="selected">
+                                        <a href="/4/needs/path/asdf">asdf</a>
+                                        <ul>
+                                            <li class="selected"><a href="/4/needs/path/asdf/meh">Meh</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/4/needs/path/poiu">poiu</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="/4/needs/going">Going</a></li>
+                            <li><a href="/4/needs/somewhere">Somewhere</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="/4/more">More</a></li>
+                    <li><a href="/4/creativity">Creativity</a></li>
+                </ul>
+                """)

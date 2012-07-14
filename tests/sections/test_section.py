@@ -812,3 +812,25 @@ describe "Section":
             fake_reachable = fudge.Fake("reachable").expects_call().returns(result)
             with fudge.patched_context(self.section.options, 'reachable', fake_reachable):
                 self.section.reachable(self.request) |should| be(result)
+
+    describe "Determining if can display":
+        before_each:
+            self.request = fudge.Fake("request")
+            self.display = fudge.Fake("display")
+            self.propogate_display = fudge.Fake("propogate_display")
+            self.section = Section().configure(''
+                , display = lambda r: self.display
+                , propogate_display =self.propogate_display
+                )
+
+        it "returns display and propogate from section if no base is defined":
+            self.section.can_display(self.request) |should| equal_to((self.display, self.propogate_display))
+
+        it "returns display and propogate display from base if base is defined":
+            display = fudge.Fake("display")
+            propogate_display = fudge.Fake("propogate_display")
+            self.section.first().configure(''
+                , display = lambda r: display
+                , propogate_display = propogate_display
+                )
+            self.section.can_display(self.request) |should| equal_to((display, propogate_display))

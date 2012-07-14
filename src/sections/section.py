@@ -315,3 +315,14 @@ class Section(object):
         if self.parent and not self.parent.reachable(request):
             return False
         return self.options.reachable(request)
+
+    def can_display(self, request):
+        """
+            Determine if we can display this section.
+            If we have _base, look at that to determine
+        """
+        options = self.options
+        if self._base:
+            options = self._base[0].options
+        print options, options.propogate_display, self
+        return options.conditional('display', request), options.propogate_display

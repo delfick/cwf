@@ -73,21 +73,25 @@ class SectionMaster(object):
     
     def active_value(self, section):
         '''Determine if section and parent are active'''
-        if section.parent and not self.memoized.active(section.parent):
-            return False
+        if hasattr(section, 'parent') and section.parent:
+            if not self.memoized.active(section.parent):
+                return False
         return section.options.conditional('active', self.request)
-    
-    def display_value(self, section):
-        '''Determine if section and parent can be displayed'''
-        if section.parent and not self.memoized.display(section.parent):
-            return False
-        return section.options.conditional('display', self.request)
     
     def exists_value(self, section):
         '''Determine if section and parent exists'''
-        if hasattr(section, 'parent') and section.parent and not self.memoized.exists(section.parent):
-            return False
+        if hasattr(section, 'parent') and section.parent:
+            if not self.memoized.exists(section.parent):
+                return False
         return section.options.conditional('exists', self.request)
+    
+    def display_value(self, section):
+        '''Determine if section and parent can be displayed'''
+        if hasattr(section, 'parent') and section.parent:
+            display, propogate = self.memoized.display(section.parent)
+            if not display and propogate:
+                return False, True
+        return section.can_display(self.request)
     
     def selected_value(self, section, path):
         """Return True and rest of path if selected else False and no path."""
@@ -147,12 +151,13 @@ class SectionMaster(object):
         
         # Use SectionMaster logic to keep track of parent_url and parent_selected
         # By giving it the info instead of section
-        appear = lambda : self.memoized.exists(info) and self.memoized.active(info) and self.memoized.display(info)
+        appear = lambda : self.memoized.exists(info) and self.memoized.active(info)
+        display = lambda : self.memoized.display(info)[0]
         selected = lambda : self.memoized.selected(info, path=path_copy)
         url_parts = lambda: self.memoized.url_parts(info)
         
         # Give lazily loaded stuff to info and yield it
-        info.setup(appear, selected, url_parts)
+        info.setup(appear, display, selected, url_parts)
         yield info
 
 ########################
@@ -168,13 +173,17 @@ class Info(object):
         self.section = section
         self.options = section.options
     
-    def setup(self, appear, selected, url_parts):
+    def setup(self, appear, display, selected, url_parts):
         self.appear = appear
+        self.display = display
         self.selected = selected
         self.url_parts = url_parts
 
     def setup_children(self, children):
         self.children = children
+
+    def can_display(self, request):
+        return self.section.can_display(request)
 
     @property
     def menu_sections(self):

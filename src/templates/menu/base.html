@@ -1,12 +1,22 @@
 {% load wrapped %}
+{% load varset %}
 {% wrapped ul %}
 {% for info in menu %}{% if info.appear %}
-    {% spaceless %}<li{% if info.selected|first %}{% block selected_item_attrs %} class="selected"{% endblock %}{% else %}{% block unselected_item_attrs %}{% endblock %}{% endif %}>
-        {% block item_link %}<a href="{{info.full_url}}">{{info.alias}}</a>{% endblock %}
+    {% spaceless %}
+    {% varset attributes %}
+        {% if info.selected|first %}
+            {% block selected_item_attrs %} class="selected"{% endblock %}
+        {% else %}
+            {% block unselected_item_attrs %}{% endblock %}
+        {% endif %}
+    {% endvarset %}
+
+    {% wrapped li attributes %}
+        {% if info.display %}{% block item_link %}<a href="{{info.full_url}}">{{info.alias}}</a>{% endblock %}{% endif %}
         {% block item_children %}
             {% if not ignore_children %}{% if info.selected|first %}
                 {% include children_template with menu=info.children %}
             {% endif %}{% endif %}
         {% endblock %}
-    </li>
+    {% endwrapped %}
 {% endspaceless %}{% endif %}{% endfor %}{% endwrapped %}

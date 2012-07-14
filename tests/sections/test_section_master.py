@@ -147,9 +147,9 @@ describe "SectionMaster":
         after_each:
             self.patched.restore()
         
-        describe "getting active, display and exists":
+        describe "getting active and exists":
             before_each:
-                self.namespaces = ('active', 'display', 'exists')
+                self.namespaces = ('active', 'exists')
             
             @fudge.test
             it "returns False if has parent and parent says no":
@@ -189,6 +189,39 @@ describe "SectionMaster":
                 for namespace in self.namespaces:
                     getattr(self.master, "%s_value" % namespace)(self.section) |should| be(result[namespace])
         
+        describe "Getting display":
+            @fudge.test
+            it "Returns False, True if parent has False, True":
+                self.section.parent = self.parent
+                self.fake_memoized.expects('display').with_args(self.parent).returns((False, True))
+                self.master.display_value(self.section) |should| equal_to((False, True))
+
+            @fudge.test
+            it "returns section.can_display if no parent":
+                result = fudge.Fake("result")
+                self.section.expects("can_display").with_args(self.request).returns(result)
+                self.master.display_value(self.section) |should| be(result)
+
+            @fudge.test
+            it "returns section.can_display if parent can be displayed":
+                result = fudge.Fake("result")
+                self.section.parent = self.parent
+
+                self.fake_memoized.expects('display').with_args(self.parent).returns((True, True))
+                self.section.expects("can_display").with_args(self.request).returns(result)
+
+                self.master.display_value(self.section) |should| be(result)
+
+            @fudge.test
+            it "returns section.can_display if parent can't be displayed but it says to not propogate display":
+                result = fudge.Fake("result")
+                self.section.parent = self.parent
+
+                self.fake_memoized.expects('display').with_args(self.parent).returns((False, False))
+                self.section.expects("can_display").with_args(self.request).returns(result)
+
+                self.master.display_value(self.section) |should| be(result)
+
         describe "Getting url parts":
             before_each:
                 self.section.options = fudge.Fake("options")
@@ -448,27 +481,17 @@ describe "SectionMaster":
                 
                 describe "info.appear":
                     @fudge.test
-                    it "method that says whether info exists, is active; and can be displayed":
+                    it "method that says whether info exists and is active":
                         info = self.get_info()
                         (self.fake_memoized.remember_order()
                             .expects("exists").with_args(info).returns(True)
                             .expects("active").with_args(info).returns(True)
-                            .expects("display").with_args(info).returns(True)
                             )
                         
                         info.appear() |should| be(True)
                     
                     @fudge.test
-                    it "doesn't call active or display if doesn't exist":
+                    it "doesn't call active if doesn't exist":
                         info = self.get_info()
                         self.fake_memoized.expects("exists").with_args(info).returns(False)
-                        info.appear() |should| be(False)
-                    
-                    @fudge.test
-                    it "doesn't call display if not active":
-                        info = self.get_info()
-                        (self.fake_memoized
-                            .expects("exists").with_args(info).returns(True)
-                            .expects("active").with_args(info).returns(False)
-                            )
                         info.appear() |should| be(False)
