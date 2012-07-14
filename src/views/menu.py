@@ -1,5 +1,5 @@
-from django.template import loader, Context, Template
 from src.sections.section_master import SectionMaster
+from rendering import renderer
 
 class Menu(object):
     """
@@ -81,6 +81,4 @@ class Menu(object):
             Template is path to the template to use
         """
         extra = dict(menu=menu, children_template=template)
-        t = loader.get_template(template)
-        c = Context(extra)
-        return t.render(c)
+        return renderer.simple_render(template, extra)
