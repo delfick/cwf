@@ -1,3 +1,4 @@
+from django.contrib.admin.views.decorators import staff_member_required
 from base import View
 
 class StaffView(View):
