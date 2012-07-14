@@ -112,7 +112,7 @@ describe "Menu":
 
             extracted = self.extract(infos, 'alias', 'url_parts', 'selected')
             extracted |should| equal_to(
-                [ ['Other',        ['', 'three', 'other'],        (False, [])]
+                [ ['Other',        ['', 'three', 'other'],        (True, [])]
                 , ['Three_child2', ['', 'three', 'three_child2'], (False, [])]
                 ]
             )
