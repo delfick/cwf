@@ -1,0 +1,40 @@
+{% extends "grappelli/templates/admin/change_form.html" %}
+{% block object-tools-items %}
+    {% for button in buttons %}
+        {% if button.show and not button.forAll and not button.saveOnClick %}
+        <li>{{button.html}}</li>
+        {% endif %}
+    {% endfor %}
+    
+    {{ block.super }}
+{% endblock %}
+
+{% block after_related_objects %}
+<fieldset>
+    <ul class="grp-submit-row">
+    {% for button in buttons %}
+        {% if button.show and not button.forAll and button.saveOnClick %}
+        {% if button.group %}
+        <fieldset class="grp-module grp-collapse grp-closed">
+            <h2 class="grp-collapse-handler">{{ button.name }}</h2>
+            {% for button in button.buttons %}
+            <div class="grp-row grp-cells-1 numReg ">
+                <div class="l-2c-fluid l-d-4">
+                    <div class="c-1">
+                        <li class="submit-button-container">{{button.html}}</li>
+                    </div>
+                    <div class="c-2">
+                        <span>{{ button.description }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </fieldset>
+        {% else %}
+        <li>{{button.html}}</li>
+        {% endif %}
+        {% endif %}
+    {% endfor %}
+    </div>
+</fieldset>
+{% endblock %}
