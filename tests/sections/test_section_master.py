@@ -99,14 +99,14 @@ describe "SectionMaster":
             self.master.request |should| be(self.request)
         
         @fudge.test
-        it "creates a memoized class that memoizes url_parts, show, exists, display, selected with master as calculator":
+        it "creates a memoized class that memoizes url_parts, active, exists, display, selected with master as calculator":
             kwa1 = fudge.Fake("kwa1")
             kwa2 = fudge.Fake("kwa2")
             obj1 = fudge.Fake("obj1")
             obj2 = fudge.Fake("obj2")
             fakes = {}
             values = {}
-            namespaces = ("url_parts", "show", "exists", "display", "selected")
+            namespaces = ("url_parts", "active", "exists", "display", "selected")
             
             for namespace in namespaces:
                 faked_namespace = fudge.Fake(namespace)
@@ -147,9 +147,9 @@ describe "SectionMaster":
         after_each:
             self.patched.restore()
         
-        describe "getting show, display and exists":
+        describe "getting active, display and exists":
             before_each:
-                self.namespaces = ('show', 'display', 'exists')
+                self.namespaces = ('active', 'display', 'exists')
             
             @fudge.test
             it "returns False if has parent and parent says no":
@@ -169,7 +169,7 @@ describe "SectionMaster":
                 for namespace in self.namespaces:
                     result[namespace] = fudge.Fake("%s_value" % namespace)
                     self.fake_memoized.expects(namespace).with_args(self.parent).returns(True)
-                    self.options.expects(namespace).with_args(self.request).returns(result[namespace])
+                    self.options.expects('conditional').with_args(namespace, self.request).returns(result[namespace])
                 
                 self.section.parent = self.parent
                 self.section.options = self.options
@@ -182,7 +182,7 @@ describe "SectionMaster":
                 result = {}
                 for namespace in self.namespaces:
                     result[namespace] = fudge.Fake("%s_value" % namespace)
-                    self.options.expects(namespace).with_args(self.request).returns(result[namespace])
+                    self.options.expects('conditional').with_args(namespace, self.request).returns(result[namespace])
                 
                 self.section.parent = None
                 self.section.options = self.options
@@ -269,13 +269,13 @@ describe "SectionMaster":
             @fudge.test
             it "returns (False, []) if both parent isn't selected and path isn't provided":
                 self.section.parent = self.parent
-                self.fake_memoized.expects("selected").with_args(self.parent, path=None).returns(False)
+                self.fake_memoized.expects("selected").with_args(self.parent, path=None).returns([False, []])
                 self.master.selected_value(self.section, None) |should| equal_to((False, []))
             
             @fudge.test
             it "returns (False, []) if parent isn't selected":
                 self.section.parent = self.parent
-                self.fake_memoized.expects("selected").with_args(self.parent, path=self.path).returns(False)
+                self.fake_memoized.expects("selected").with_args(self.parent, path=self.path).returns([False, []])
                 self.master.selected_value(self.section, self.path) |should| equal_to((False, []))
             
             @fudge.test
@@ -446,27 +446,27 @@ describe "SectionMaster":
                 
                 describe "info.appear":
                     @fudge.test
-                    it "method that says whether info exists, can be displayed, and can be shown":
+                    it "method that says whether info exists, is active; and can be displayed":
                         info = self.get_info()
                         (self.fake_memoized.remember_order()
                             .expects("exists").with_args(info).returns(True)
+                            .expects("active").with_args(info).returns(True)
                             .expects("display").with_args(info).returns(True)
-                            .expects("show").with_args(info).returns(True)
                             )
                         
                         info.appear() |should| be(True)
                     
                     @fudge.test
-                    it "doesn't call display or show if exists is False":
+                    it "doesn't call active or display if doesn't exist":
                         info = self.get_info()
                         self.fake_memoized.expects("exists").with_args(info).returns(False)
                         info.appear() |should| be(False)
                     
                     @fudge.test
-                    it "doesn't call show if display is False":
+                    it "doesn't call display if not active":
                         info = self.get_info()
                         (self.fake_memoized
                             .expects("exists").with_args(info).returns(True)
-                            .expects("display").with_args(info).returns(False)
+                            .expects("active").with_args(info).returns(False)
                             )
                         info.appear() |should| be(False)

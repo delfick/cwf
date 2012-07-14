@@ -44,7 +44,7 @@ class SectionMaster(object):
     '''Determine information for sections for a given request'''
     def __init__(self, request):
         self.request = request
-        self.memoized = make_memoizer(self, 'url_parts', 'show', 'exists', 'display', 'selected')()
+        self.memoized = make_memoizer(self, 'url_parts', 'active', 'exists', 'display', 'selected')()
         
     ########################
     ###   MEMOIZED VALUES
@@ -71,29 +71,32 @@ class SectionMaster(object):
         
         return urls
     
-    def show_value(self, section):
-        '''Determine if section and parent can be shown'''
-        if section.parent and not self.memoized.show(section.parent):
+    def active_value(self, section):
+        '''Determine if section and parent are active'''
+        if section.parent and not self.memoized.active(section.parent):
             return False
-        return section.options.show(self.request)
+        return section.options.conditional('active', self.request)
     
     def display_value(self, section):
         '''Determine if section and parent can be displayed'''
         if section.parent and not self.memoized.display(section.parent):
             return False
-        return section.options.display(self.request)
+        return section.options.conditional('display', self.request)
     
     def exists_value(self, section):
         '''Determine if section and parent exists'''
         if section.parent and not self.memoized.exists(section.parent):
             return False
-        return section.options.exists(self.request)
+        return section.options.conditional('exists', self.request)
     
     def selected_value(self, section, path):
         """Return True and rest of path if selected else False and no path."""
         url = section.url
-        parentSelected = not section.parent or self.memoized.selected(section.parent, path=path)
-        if not parentSelected or not path:
+        parent_selected = True
+        if section.parent:
+            parent_selected, path = self.memoized.selected(section.parent, path=path)
+
+        if not parent_selected or not path:
             return False, []
         
         if section.options.conditional('promote_children', self.request):
@@ -139,8 +142,9 @@ class SectionMaster(object):
             
             # Use SectionMaster logic to keep track of parent_url and parent_selected
             # By giving it the info instead of section
-            appear = lambda : self.memoized.exists(info) and self.memoized.display(info) and self.memoized.show(info)
-            selected = lambda: self.memoized.selected(info, path=path_copy)
+            appear = lambda : self.memoized.exists(info) and self.memoized.active(info) and self.memoized.display(info)
+            selected = lambda : self.memoized.selected(info, path=path_copy)
+
             url_parts = lambda: self.memoized.url_parts(info)
             
             # Give lazily loaded stuff to info and yield it
@@ -167,3 +171,7 @@ class Info(object):
 
     def setup_children(self, children):
         self.children = children
+
+    @property
+    def full_url(self):
+        return '/'.join(self.url_parts()) or '/'

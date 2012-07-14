@@ -1,0 +1,12 @@
+{% load wrapped %}
+{% wrapped ul %}
+{% for info in menu %}{% if info.appear %}
+    {% spaceless %}<li{% if info.selected|first %}{% block selected_item_attrs %} class="selected"{% endblock %}{% else %}{% block unselected_item_attrs %}{% endblock %}{% endif %}>
+        {% block item_link %}<a href="{{info.full_url}}">{{info.alias}}</a>{% endblock %}
+        {% block item_children %}
+            {% if not ignore_children %}{% if info.selected or not selected_only %}
+                {% include children_template with menu=info.children %}
+            {% endif %}{% endif %}
+        {% endblock %}
+    </li>
+{% endspaceless %}{% endif %}{% endfor %}{% endwrapped %}
