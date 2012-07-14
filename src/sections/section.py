@@ -44,7 +44,7 @@ class Section(object):
         self.add_child(section, first=True)
         return section
         
-    def configure(self, **kwargs):
+    def configure(self, *_, **kwargs):
         """
             Extends self.options with the given keywords.
             It also accepts positional arguments but doesn't use them.
