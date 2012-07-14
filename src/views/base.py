@@ -2,11 +2,11 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.contrib.contenttypes.models import ContentType
 from django.template import loader, Context, Template
 from django.shortcuts import render_to_response
+from django.utils.http import urlencode
 from django.core import urlresolvers
 
 from menu import Menu
 
-import urllib
 import json
 import re
 
@@ -200,7 +200,7 @@ class View(object):
 
         if carry_get:
             get_params = self.get_params_from(request, ignore_get)
-            address = "%s?%s" % (address, urllib.urlencode(get_params))
+            address = "%s?%s" % (address, urlencode(get_params))
 
         return address
 
