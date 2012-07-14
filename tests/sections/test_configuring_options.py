@@ -27,6 +27,7 @@ describe "Configuring Options":
             , ('values',  None)
             , ('needs_auth',  False)
             , ('promote_children',  False)
+            , ('propogate_display', True)
             )
     
     it "has default values":
@@ -51,7 +52,7 @@ describe "Configuring Options":
         before_each:
             self.specification = {
                   Options.set_view.im_func : ('kls', 'module', 'target', 'redirect', 'extra_context')
-                , Options.set_menu.im_func : ('alias', 'match', 'values', 'needs_auth')
+                , Options.set_menu.im_func : ('alias', 'match', 'values', 'needs_auth', 'propogate_display')
                 , Options.set_conditionals.im_func : ('admin', 'active', 'exists', 'display', 'promote_children')
                 }
         

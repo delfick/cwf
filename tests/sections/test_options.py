@@ -173,14 +173,14 @@ describe "Options":
                 self.options.clone(all=True) |should| be(cloned)
         
         @fudge.test
-        it "passes on everything set by the setters except for alias, match, values, target and promote_children if all is False":
+        it "passes on everything set by the setters except for alias, match, values, target, propogate_display and promote_children if all is False":
             keys = []
             for _, requirements in self.options.setters():
                 keys.extend(requirements)
             
             kwargs = {}
             for requirement in keys:
-                if requirement not in ('alias', 'match', 'values', 'promote_children', 'target'):
+                if requirement not in ('alias', 'match', 'values', 'promote_children', 'target', 'propogate_display'):
                     next = fudge.Fake(requirement)
                     setattr(self.options, requirement, next)
                     kwargs[requirement] = next
@@ -235,6 +235,18 @@ describe "Options":
             caller |should| throw(ConfigurationError
                 , message="Conditionals as callables must only accept one argument, not 3 (['one', 'two', 'three'])"
                 )
+
+        it "doesn't pass on display if propogate_display is False":
+            for display in (False, lambda r:1):
+                options = Options()
+                options.set_everything(display=display, propogate_display=False)
+                selective_clone = options.clone()
+                selective_clone.display |should_not| be(display)
+                selective_clone.propogate_display |should| be(True)
+
+                total_clone = options.clone(all=True)
+                total_clone.display |should_not| be(display)
+                total_clone.propogate_display |should| be(False)
     
     describe "Creating patterns":
         before_each:

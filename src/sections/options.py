@@ -62,6 +62,7 @@ class Options(object):
         self.values = None
         self.needs_auth = False
         self.promote_children = False
+        self.propogate_display = True
 
     ########################
     ###   SETTERS
@@ -107,6 +108,7 @@ class Options(object):
               ('admin', admin), ('active', active), ('exists', exists)
             , ('display', display), ('promote_children', promote_children)
             )
+
         for name, val in vals:
             if val is not Empty:
                 if type(val) is not bool and not callable(val):
@@ -149,9 +151,13 @@ class Options(object):
                     )
                 setattr(self, name, val)
     
-    def set_menu(self, alias=Empty, match=Empty, values=Empty, needs_auth=Empty):
+    def set_menu(self, alias=Empty, match=Empty, values=Empty, needs_auth=Empty, propogate_display=Empty):
         '''Set options for what appears in the menu'''
-        vals = (('alias', alias), ('match', match), ('values', values), ('needs_auth', needs_auth))
+        vals = (
+              ('alias', alias), ('match', match), ('values', values)
+            , ('needs_auth', needs_auth), ('propogate_display', propogate_display)
+            )
+
         for name, val in vals:
             if val is not Empty:
                 setattr(self, name, val)
@@ -324,7 +330,12 @@ class Options(object):
         if all:
             no_propogate = ()
         else:
-            no_propogate = ('alias', 'match', 'values', 'promote_children', 'target')
+            no_propogate = ('alias', 'match', 'values', 'promote_children', 'target', 'propogate_display')
+
+        # Make sure display doesn't propogate if propogate_display is False
+        if not self.propogate_display:
+            no_propogate += ('display', )
+
         values = dict((arg, getattr(self, arg)) for arg in passon if arg not in no_propogate)
         values.update(kwargs)
         
