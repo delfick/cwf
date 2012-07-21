@@ -70,7 +70,7 @@ class FileFaker(object):
         """Return self if trying to import one of the names we are masquerading"""
         if fullname in self.names:
             return self
- 
+
     def load_module(self, fullname):
         """Create and return a module"""
         path, filename = self.path_from_fullname(fullname)
@@ -81,7 +81,11 @@ class FileFaker(object):
         module.__loader__ = self
 
         # Populate the module namespace with the injected attributes
-        module.__dict__.update(self.value)
+        vals = self.value
+        if type(vals) is dict:
+            module.__dict__.update(vals)
+        else:
+            module.__dict__['value'] = vals
             
         return module
     
@@ -115,7 +119,7 @@ class FileFaker(object):
                 keys = filter(key_filter, value.__dict__.keys())
 
             # Make a dictionary from the keys we care about
-            value = {key:value.__dict__[key] for key in keys}
+            value = {key:getattr(value, key) for key in keys}
 
         return value
 
@@ -124,9 +128,11 @@ class FileFaker(object):
         if '.' not in fullname:
             return '', fullname
 
-        # Was a dot, we have path info to get    
+        # Was a dot, we have path info to get
+        path = ''
         package, filename = fullname.rsplit('.', 1)
-        path = sys.modules[package].__path__[0]
+        if package in sys.modules and hasattr(sys.modules[package], '__path__'):
+            path = sys.modules[package].__path__[0]
         return path, filename
 
 ########################
