@@ -22,19 +22,19 @@ def steal(*filenames, **kwargs):
 
         Variables are stolen using execfile
     """
-    glbs = kwargs.get('globals', None)
     lcls = kwargs.get('locals', None)
+    glbls = kwargs.get('globals', None)
     folder = kwargs.get('folder', None)
 
     # Complain about missing variables
-    for name, val in [('folder', folder), ('globals', glbls), ('lcls', lcls)]:
-        if not val:
+    for name, val in [('folder', folder), ('globals', glbls), ('locals', lcls)]:
+        if val is None:
             raise Exception("Please supply %s in kwargs" % name)
     
     # Exec the specified files into the globals and locals provided
     for filename in filenames:
         location = os.path.join(folder, "%s.py" % filename)
-        execfile(location, glbs, lcls)
+        execfile(location, glbls, lcls)
 
 ########################
 ###   INJECTING VARIABLES
