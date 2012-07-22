@@ -99,12 +99,12 @@ class Parts(object):
 class Part(object):
     """Object representing each part of a multi-part app"""
     def __init__(self, name, active=True, **kwargs):
-        self.pkg = None
         self.name = name
         self.active = active
         self.kwargs = kwargs
         
-        if kwargs.get('include_as', None) is None:
+        # Add include_as if there is none already
+        if type(name) in (str, unicode) and kwargs.get('include_as', None) is None:
             kwargs['include_as'] = self.name
     
     def do_import(self, package):
@@ -119,7 +119,7 @@ class Part(object):
             # We want an error from this to propagate
             pkg = __import__(package, globals(), locals(), [self.name], -1)
             self.pkg = getattr(pkg, self.name)
-        
+    
     def load(self, name):
         """Get a module from this package"""
         if not hasattr(self.pkg, name):
