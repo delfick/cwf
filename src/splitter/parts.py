@@ -28,11 +28,13 @@ class Parts(object):
             Get the models from each part and into one dictionary
             Doesn't care about duplicate model names
         """
-        models = {}
+        result = {}
         for part in self.each_part(active_only):
-            for model in part.load("models", attr='__all__', default=[])
-                models[model.__name__] = model
-        return models
+            models = part.load("models")
+            if hasattr(models, '__all__'):
+                for name in models.__all__:
+                    result[name] = getattr(models, name)
+        return result
 
     def urls(self, active_only=False, include_defaults=False):
         """
@@ -40,7 +42,7 @@ class Parts(object):
             Along with urlpatterns from this site
             and optionally everything in django.conf.urls.defaults
         """
-        site = self.site(self.package)
+        site = self.site(self.package, active_only)
         urls = {'site' : site, 'urlpatterns' : site.patterns()}
         if include_defaults:
             self.add_url_defaults(urls)
@@ -49,20 +51,27 @@ class Parts(object):
     ########################
     ###   UTILITY
     ########################
+
+    @property
+    def imported_parts(self):
+        if not hasattr(self, '_imported_parts'):
+            self._imported_parts = True
+            self.import_parts()
+        return self.parts
     
     def each_part(self, active_only=False):
         """
             An iter that determines whether to go through all sections
             or just those that are "active"
         """
-        for part in self.parts:
+        for part in self.imported_parts:
             if not active_only or part.active:
                 yield part
 
     def import_parts(self):
         """Import all the parts"""
-        for part in self.each_part(active_only=False):
-            part.do_import(package)
+        for part in self.parts:
+            part.do_import(self.package)
     
     def site(self, name, active_only=True):
         """
@@ -71,9 +80,9 @@ class Parts(object):
         """
         site = Section(name, promote_children=True)
         for part in self.each_part(active_only):
-            section = part.load('urls', attr='section', default=None)
-            if section:
-                site.add(section, **part.kwargs)
+            urls = part.load("urls")
+            if urls and hasattr(urls, 'section'):
+                site.add(urls.section, **part.kwargs)
         return site
 
     def add_url_defaults(self, urls):
@@ -111,13 +120,8 @@ class Part(object):
             pkg = __import__(package, globals(), locals(), [self.name], -1)
             self.pkg = getattr(pkg, self.name)
         
-    def load(self, name, attr=None, default=None):
-        """
-            Get a module from this package
-            Then optionally a particular attribute from that module
-            Or if there is no such attr, a default value
-        """
-        ret = default
+    def load(self, name):
+        """Get a module from this package"""
         if not hasattr(self.pkg, name):
             # If it doesn't know about it, perhaps we need to import it
             try:
@@ -127,8 +131,4 @@ class Part(object):
                 pass
         
         if hasattr(self.pkg, name):
-            ret = getattr(self.pkg, name)
-            if attr:
-                ret = getattr(ret, attr)
-        
-        return ret
+            return getattr(self.pkg, name)
