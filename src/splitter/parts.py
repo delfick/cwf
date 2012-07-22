@@ -14,9 +14,14 @@ class Parts(object):
         self.parts = parts
         self.package = package
 
-        # Import our parts
-        for part in self.parts:
-            part._import(package)
+    ########################
+    ###   USAGE
+    ########################
+    
+    def load_admin(self, active_only=False):
+        """Load all the admin.py files in each part so that they can register with the admin"""
+        for part in self.each_part(active_only):
+            part.load("admin")
     
     def models(self, active_only=False):
         """
@@ -24,8 +29,8 @@ class Parts(object):
             Doesn't care about duplicate model names
         """
         models = {}
-        for part in self._iter(active_only):
-            for model in part.retrieve("models", attr='__all__', default=[])
+        for part in self.each_part(active_only):
+            for model in part.load("models", attr='__all__', default=[])
                 models[model.__name__] = model
         return models
 
@@ -38,16 +43,26 @@ class Parts(object):
         site = self.site(self.package)
         urls = {'site' : site, 'urlpatterns' : site.patterns()}
         if include_defaults:
-            from django.conf.urls import defaults
-            for d in dir(defaults):
-                if not d.startswith("_"):
-                    urls[d] = getattr(defaults, d)
+            self.add_url_defaults(urls)
         return urls
+
+    ########################
+    ###   UTILITY
+    ########################
     
-    def load_admin(self, active_only=False):
-        """Load all the admin.py files in each part so that they can register with the admin"""
-        for part in self._iter(active_only):
-            part.retrieve("admin")
+    def each_part(self, active_only=False):
+        """
+            An iter that determines whether to go through all sections
+            or just those that are "active"
+        """
+        for part in self.parts:
+            if not active_only or part.active:
+                yield part
+
+    def import_parts(self):
+        """Import all the parts"""
+        for part in self.each_part(active_only=False):
+            part.do_import(package)
     
     def site(self, name, active_only=True):
         """
@@ -55,25 +70,18 @@ class Parts(object):
             Options for the add function is kept as self.kwargs in each part
         """
         site = Section(name, promote_children=True)
-        for part in self._iter(active_only):
-            section = part.retrieve('urls', attr='section', default=None)
+        for part in self.each_part(active_only):
+            section = part.load('urls', attr='section', default=None)
             if section:
                 site.add(section, **part.kwargs)
         return site
-    
-    def __iter__(self):
-        """Iterate through all sections"""
-        for part in self.parts:
-            yield part
-    
-    def _iter(self, active_only=False):
-        """
-            An iter that determines whether to go through all sections
-            or just those that are "active"
-        """
-        for part in self:
-            if not active_only or part.active:
-                yield part
+
+    def add_url_defaults(self, urls):
+        """Add django.conf.urls.defaults things to a dictionary"""
+        from django.conf.urls import defaults
+        for d in dir(defaults):
+            if not d.startswith("_"):
+                urls[d] = getattr(defaults, d)
 
 ########################
 ###   PART
@@ -90,7 +98,7 @@ class Part(object):
         if kwargs.get('include_as', None) is None:
             kwargs['include_as'] = self.name
     
-    def _import(self, package):
+    def do_import(self, package):
         """Get the package we are representing"""
         if type(self.name) not in (str, unicode):
             self.pkg = self.name
@@ -103,7 +111,7 @@ class Part(object):
             pkg = __import__(package, globals(), locals(), [self.name], -1)
             self.pkg = getattr(pkg, self.name)
         
-    def retrieve(self, name, attr=None, default=None):
+    def load(self, name, attr=None, default=None):
         """
             Get a module from this package
             Then optionally a particular attribute from that module
