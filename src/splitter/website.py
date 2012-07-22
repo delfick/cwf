@@ -1,3 +1,4 @@
+from imports import inject
 from parts import Parts
 
 class Website(object):
@@ -10,7 +11,7 @@ class Website(object):
         website.configure()
     """
     def __init__(self, settings, package, *parts, **kwargs):
-        self._parts = parts
+        self.parts = parts
         self.package = package
         self.settings = settings
 
@@ -63,6 +64,6 @@ class Website(object):
             And if prefix was specified, <prefix>.<package>.<name>
         """
         names = ["%s.%s" % (self.package, name)]
-        if prefix:
+        if self.prefix:
             names.append("%s.%s" % (self.prefix, names[0]))
         return names
