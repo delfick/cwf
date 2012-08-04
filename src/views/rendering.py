@@ -1,6 +1,5 @@
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.template import loader, RequestContext, Context
-from django.utils.http import urlencode
 
 from redirect_address import RedirectAddress
 
