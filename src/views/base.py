@@ -1,6 +1,3 @@
-from django.contrib.contenttypes.models import ContentType
-from django.core import urlresolvers
-
 from rendering import renderer
 from menu import Menu
 
@@ -131,22 +128,6 @@ class View(object):
             , target = target
             , base_url = base_url
             )
-
-    ########################
-    ###   ADMIN
-    ########################
-    
-    def getAdminChangeView(self, obj):
-        content_type = ContentType.objects.get_for_model(obj.__class__)
-        return urlresolvers.reverse("admin:%s_%s_change" % (content_type.app_label, content_type.model), args=(obj.id,))
-        
-    def getAdminAddView(self, obj):
-        content_type = ContentType.objects.get_for_model(obj)
-        return urlresolvers.reverse("admin:%s_%s_add" % (content_type.app_label, content_type.model))
-    
-    def getAdminChangeList(self, obj):
-        content_type = ContentType.objects.get_for_model(obj)
-        return urlresolvers.reverse("admin:%s_%s_changelist" % (content_type.app_label, content_type.model))
 
     ########################
     ###   UTILITY
