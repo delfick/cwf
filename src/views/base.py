@@ -118,7 +118,7 @@ class View(object):
         """Get a state object for this request"""
         path = self.path_from_request(request)
         base_url = self.base_url_from_request(request)
-        if base_url != '':
+        if base_url != '' and path.starts_with("/"):
             path.pop(0)
 
         menu = Menu(request, path)
@@ -135,11 +135,7 @@ class View(object):
 
     def base_url_from_request(self, request):
         """Get base url for this request"""
-        if hasattr(request, 'state'):
-            base_url = request.state.base_url
-        else:
-            base_url = request.META.get('SCRIPT_NAME', '')
-        return base_url
+        return request.META.get('SCRIPT_NAME', '')
 
     def path_from_request(self, request):
         """Determine the path for this request"""
