@@ -30,18 +30,30 @@ class View(object):
         # Get state to put onto the request
         request.state = self.get_state(request, target)
 
-        # Clean the args and kwargs
-        self.clean_view_args(args, kwargs)
+        # Clean the kwargs
+        cleaned_kwargs = self.clean_view_kwargs(kwargs)
 
         # Get the result to render
-        target_result = self.get_result(request, target, args, kwargs)
-        
-        # Get either (template, extra) tuple from result
-        # Or if result isn't a two item tupke, just return it as is
-        if type(target_result) in (tuple, list) and len(target_result) == 2:
-            template, extra = target_result
+        result = self.get_result(request, target, args, cleaned_kwargs)
+
+        # 404 if we couldn't get a result
+        if result is None:
+            self.renderer.raise404()
+
+        # We have a result, render it
+        return self.rendered_from_result(result)
+
+    def rendered_from_result(self, result):
+        """
+            Get either (template, extra) tuple from result and render that
+                If template is None, then just return extra
+
+            Or if result isn't a two item tuple, just return it as is
+        """
+        if type(result) in (tuple, list) and len(result) == 2:
+            template, extra = result
         else:
-            return target_result
+            return result
         
         # Return extra as is if template is None
         if template is None:
@@ -69,31 +81,37 @@ class View(object):
         """
         # If class has override method, use that instead
         if hasattr(self, 'override'):
-            result = self.override(request, *args, **kwargs)
+            return self.override(request, target, args, kwargs)
+
+        # Complain if there is no target
+        if not hasattr(self, target):
+            raise Exception, "View object doesn't have a target : %s" % target
+
+        # We have the target, get result from it
+        result = self.execute(target, request, args, kwargs)
+            
+        # If the result is callable, call it with request and return
+        if callable(result):
+            return result(request)
         else:
-            if not hasattr(self, target):
-                raise Exception, "View object doesn't have a target : %s" % target
-            else:
-                # Get the result from target
-                result = self.execute(target, request, args, kwargs)
-                
-                # If the result is callable, call it with request and return
-                if callable(result):
-                    return result(request)
-        
-        if result is None:
-            # Something was found but it says no
-            self.renderer.raise404()
+            return result
 
-        return result
-
-    def clean_view_args(self, args, kwargs):
-        """Clean args that are to be sent to the target view"""
-        # Ensure there are no trailing slashes on parts taken from url
+    def clean_view_kwargs(self, kwargs):
+        """Clean kwargs that are to be sent to the target view"""
         for key, item in kwargs.items():
-            if type(item) in (str, unicode):
-                while item.endswith("/"):
-                    kwargs[key] = item[:-1]
+            kwargs[key] = self.clean_view_arg(key, item)
+        return kwargs
+
+    def clean_view_kwarg(self, key, item):
+        """
+            Clean a single view kwarg
+            If it's a string, make sure it has no trailing slashes
+            Otherwise just return
+        """
+        if type(item) in (str, unicode):
+            while item.endswith("/"):
+                item = item[:-1]
+        return item
     
     ########################
     ###   STATE
