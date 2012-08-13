@@ -33,20 +33,22 @@ class View(object):
         # Get the result to render
         result = self.get_result(request, target, args, cleaned_kwargs)
 
-        # 404 if we couldn't get a result
-        if result is None:
-            self.renderer.raise404()
+        # Render the result
+        return self.rendered_from_result(request, result)
 
-        # We have a result, render it
-        return self.rendered_from_result(result)
-
-    def rendered_from_result(self, result):
+    def rendered_from_result(self, request, result):
         """
+            If result is None, then raise 404
+
             Get either (template, extra) tuple from result and render that
                 If template is None, then just return extra
 
             Or if result isn't a two item tuple, just return it as is
         """
+        # No result to render, raise 404
+        if result is None:
+            self.renderer.raise404()
+
         if type(result) in (tuple, list) and len(result) == 2:
             template, extra = result
         else:
@@ -60,12 +62,8 @@ class View(object):
         return self.renderer.render(request, template, extra)
     
     ########################
-    ###   EXECUTE A TARGET
+    ###   GETTING A RESULT
     ########################
-
-    def execute(self, target, request, args, kwargs):
-        """Execute target with the request, args and kwargs"""
-        return getattr(self, target)(request, *args, **kwargs)
 
     def get_result(self, request, target, args, kwargs):
         """
@@ -92,6 +90,10 @@ class View(object):
             return result(request)
         else:
             return result
+
+    def execute(self, target, request, args, kwargs):
+        """Execute target with the request, args and kwargs"""
+        return getattr(self, target)(request, *args, **kwargs)
 
     def clean_view_kwargs(self, kwargs):
         """Clean kwargs that are to be sent to the target view"""
