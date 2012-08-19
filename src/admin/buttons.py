@@ -43,7 +43,11 @@ class ButtonWrap(object):
         user = self._request.user
 
         # Super user needs not ask for permissions
-        if self.needSuperUser and not user.is_superuser:
+        if user.is_superuser:
+            return True
+
+        if self.needs_super_user:
+            # Only get here if not super user
             return False
         
         # Don't care about authorisation if we don't need to
@@ -51,17 +55,27 @@ class ButtonWrap(object):
         if not needs_auth:
             return True
         
-        if type(needsAuth) is bool:
+        return self.has_auth(user, needs_auth)
+
+    def has_auth(self, user, auth):
+        """
+            Determine if user has specified authentication
+            If auth is boolean, return whether.is_authenticated()
+
+            Otherwise determine if use.has_perm(auth)
+            Where if auth is a list or tuple, all items in that are checked
+        """
+        if type(auth) is bool:
             return user.is_authenticated()
 
         # Find all the permissions to look for and check against
         def iter_auth():
             """Helper to determine the auths to look for"""
-            if type(needsAuth) in (list, tuple):
-                for auth in needsAuth:
-                    yield auth
+            if type(auth) in (list, tuple):
+                for perm in auth:
+                    yield perm
             else:
-                yield needsAuth
+                yield auth
         return all(user.has_perm(auth) for auth in iter_auth())
 
 ########################
