@@ -10,7 +10,7 @@ describe "View":
         self.view = View()
 
     it "sets renderer to an instance of the Renderer":
-        self.assertIs(type(self.view.renderer), Renderer)
+        type(self.view.renderer) |should| be(Renderer)
 
     describe "Calling the view":
         before_each:
@@ -45,7 +45,7 @@ describe "View":
             self.fake_get_result.expects_call().with_args(request, target, (a, b), cleaned_kwargs).returns(result)
             self.fake_rendered_from_result.expects_call().with_args(request, result).returns(rendered)
 
-            self.assertIs(self.view(request, target, a, b, c=c, d=d), rendered)
+            self.view(request, target, a, b, c=c, d=d) |should| be(rendered)
 
     describe "rendering a result":
         before_each:
@@ -64,13 +64,13 @@ describe "View":
         @fudge.test
         it "returns result as is if not a two item tuple or list":
             for result in (0, 1, True, False, [], [1], [1, 2, 3], (), (1), (1, 2, 3), lambda:true, fudge.Fake("obj")):
-                self.assertIs(self.view.rendered_from_result(self.request, result), result)
+                self.view.rendered_from_result(self.request, result) |should| be(result)
 
         @fudge.test
         it "Returns extra if template is None from template, extra = result":
             extra = fudge.Fake("extra")
             result = (None, extra)
-            self.assertIs(self.view.rendered_from_result(self.request, result), extra)
+            self.view.rendered_from_result(self.request, result) |should| be(extra)
 
         @fudge.test
         it "renders template and extra when template,extra = result":
@@ -79,7 +79,7 @@ describe "View":
             template = fudge.Fake("template")
 
             self.renderer.expects("render").with_args(self.request, template, extra).returns(result)
-            self.assertIs(self.view.rendered_from_result(self.request, (template, extra)), result)
+            self.view.rendered_from_result(self.request, (template, extra)) |should| be(result)
 
     describe "Executing a target":
         before_each:
@@ -106,7 +106,7 @@ describe "View":
 
             self.fake_get_target.expects_call().with_args(self.target).returns(target)
             ret = self.view.execute(self.target, self.request, [a, b], dict(c=c, d=d))
-            self.assertIs(ret, result)
+            ret |should| be(result)
 
     describe "Getting a result":
         before_each:
@@ -132,7 +132,7 @@ describe "View":
 
             view = type("view", (View, ), {'override' : fake_override})()
             ret = view.get_result(self.request, self.target, self.args, self.kwargs)
-            self.assertIs(ret, result)
+            ret |should| be(result)
 
         @fudge.test
         it "complains if view doesn't have target":
@@ -152,7 +152,7 @@ describe "View":
             self.fake_has_target.expects_call().with_args(self.target).returns(True)
 
             ret = self.view.get_result(self.request, self.target, self.args, self.kwargs)
-            self.assertIs(ret, final)
+            ret |should| be(final)
 
         @fudge.test
         it "gets result from execute and returns it if not callable":
@@ -165,7 +165,7 @@ describe "View":
             self.fake_has_target.expects_call().with_args(self.target).returns(True)
 
             ret = self.view.get_result(self.request, self.target, self.args, self.kwargs)
-            self.assertIs(ret, result)
+            ret |should| be(result)
 
     describe "Determining if view has a target":
         before_each:
@@ -173,13 +173,13 @@ describe "View":
 
         it "says False if target isn't an attribute on the class":
             assert not hasattr(self.view, self.target_name)
-            self.assertIs(self.view.has_target(self.target_name), False)
+            self.view.has_target(self.target_name) |should| be(False)
 
         it "says True if target is an attribute on the class":
             view = type("view", (View, ), {self.target_name: fudge.Fake("target")})()
 
             assert hasattr(view, self.target_name)
-            self.assertIs(view.has_target(self.target_name), True)
+            view.has_target(self.target_name) |should| be(True)
 
     describe "Getting target from a view":
         before_each:
@@ -188,7 +188,7 @@ describe "View":
         it "gets target as attribute on the class":
             target = fudge.Fake("target")
             view = type("view", (View, ), {self.target_name : target})()
-            self.assertIs(view.get_target(self.target_name), target)
+            view.get_target(self.target_name) |should| be(target)
 
     describe "Cleaning view kwargs":
         before_each:
@@ -209,7 +209,7 @@ describe "View":
 
             kwargs = dict(a=a, b=b, c=c)
             def cleaner(key, original):
-                self.assertIs(kwargs[key], original)
+                kwargs[key] |should| be(original)
                 return {
                       'a' : cleaned_a
                     , 'b' : cleaned_b
@@ -217,8 +217,8 @@ describe "View":
                 }[key]
 
             self.fake_clean_view_kwarg.expects_call().calls(cleaner)
-            self.assertIs(self.view.clean_view_kwargs(kwargs), kwargs)
-            self.assertDictEqual(kwargs, dict(a=cleaned_a, b=cleaned_b, c=cleaned_c))
+            self.view.clean_view_kwargs(kwargs) |should| be(kwargs)
+            kwargs |should| equal_to(dict(a=cleaned_a, b=cleaned_b, c=cleaned_c))
 
     describe 'cleaning a single kwarg':
         it "item is a string, it is stripped of leading slashes":
@@ -238,15 +238,14 @@ describe "View":
 
             key = fudge.Fake("key")
             for original, cleaned in spec:
-                self.assertEqual(self.view.clean_view_kwarg(key, original), cleaned)
+                self.view.clean_view_kwarg(key, original) |should| equal_to(cleaned)
 
         it "item is not a string, it is left alone":
             key = fudge.Fake("key")
             spec = [0, 1, None, True, False, (), (1, ), [], [1], {}, {1:2}, fudge.Fake("obj"), lambda : func]
             for original in spec:
-                self.assertIs(self.view.clean_view_kwarg(key, original), original)
+                self.view.clean_view_kwarg(key, original) |should| be(original)
     
-
     describe "getting state":
         before_each:
             self.menu = fudge.Fake("menu")
@@ -276,7 +275,7 @@ describe "View":
                 .with_args(menu=self.menu, target=self.target, path=path, base_url='').returns(result)
                 )
 
-            self.assertIs(self.view.get_state(self.request, self.target), result)
+            self.view.get_state(self.request, self.target) |should| be(result)
 
         @fudge.patch("src.views.base.Menu", "src.views.base.DictObj")
         it "pops start of path if base url isn't an empty string and path starts with ''", fakeMenu, fakeDictObj:
@@ -294,7 +293,7 @@ describe "View":
                     ).returns(result)
                 )
 
-            self.assertIs(self.view.get_state(self.request, self.target), result)
+            self.view.get_state(self.request, self.target) |should| be(result)
         
         @fudge.patch("src.views.base.Menu", "src.views.base.DictObj")
         it "doesn't pop start of path if base url isn't an empty string but path doesn't start with ''", fakeMenu, fakeDictObj:
@@ -312,7 +311,7 @@ describe "View":
                     ).returns(result)
                 )
 
-            self.assertIs(self.view.get_state(self.request, self.target), result)
+            self.view.get_state(self.request, self.target) |should| be(result)
 
     describe "getting base url from a request":
         before_each:
@@ -323,14 +322,14 @@ describe "View":
             assert 'SCRIPT_NAME' not in self.meta
 
             self.request.has_attr(META=self.meta)
-            self.assertEqual(self.view.base_url_from_request(self.request), '')
+            self.view.base_url_from_request(self.request) |should| equal_to('')
 
         it "returns request.META['SCRIPT_NAME']":
             script_name = fudge.Fake("script_name")
             self.meta['SCRIPT_NAME'] = script_name
 
             self.request.has_attr(META=self.meta)
-            self.assertEqual(self.view.base_url_from_request(self.request), script_name)
+            self.view.base_url_from_request(self.request) |should| equal_to(script_name)
 
     describe "Getting path from request":
         before_each:
@@ -355,4 +354,4 @@ describe "View":
 
             for original, expected in specs:
                 self.request.has_attr(path=original)
-                self.assertListEqual(self.view.path_from_request(self.request), expected)
+                self.view.path_from_request(self.request) |should| equal_to(expected)
