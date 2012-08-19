@@ -90,7 +90,7 @@ class ButtonGroup(object):
 
     def copy_for_request(self, request, original=None):
         """Return a button group with all it's buttons wrapped in a button wrap"""
-        buttons = [ButtonWrap(b, request, original) for b in self.buttons]
+        buttons = [b.copy_for_request(request, original) for b in self.buttons]
         return ButtonGroup(self.name, buttons)
 
 ########################
