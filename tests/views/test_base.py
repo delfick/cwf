@@ -245,3 +245,71 @@ describe "View":
             spec = [0, 1, None, True, False, (), (1, ), [], [1], {}, {1:2}, fudge.Fake("obj"), lambda : func]
             for original in spec:
                 self.assertIs(self.view.clean_view_kwarg(key, original), original)
+    
+
+    describe "getting state":
+        before_each:
+            self.menu = fudge.Fake("menu")
+            self.target = fudge.Fake("target")
+            self.request = fudge.Fake("request")
+            self.base_url = fudge.Fake("base_url")
+
+            self.fake_path_from_request = fudge.Fake("path_from_request")
+            self.fake_base_url_from_request = fudge.Fake("request_from_url")
+
+            self.view = type("view", (View, )
+                , { 'path_from_request' : self.fake_path_from_request
+                  , 'base_url_from_request' : self.fake_base_url_from_request
+                  }
+                )()
+
+        @fudge.patch("src.views.base.Menu", "src.views.base.DictObj")
+        it "returns a dictobj with menu, path, target and base_url", fakeMenu, fakeDictObj:
+            path = fudge.Fake("path")
+            result = fudge.Fake("result")
+            fakeMenu.expects_call().with_args(self.request, path).returns(self.menu)
+
+            self.fake_path_from_request.expects_call().with_args(self.request).returns(path)
+            self.fake_base_url_from_request.expects_call().with_args(self.request).returns('')
+
+            (fakeDictObj.expects_call()
+                .with_args(menu=self.menu, target=self.target, path=path, base_url='').returns(result)
+                )
+
+            self.assertIs(self.view.get_state(self.request, self.target), result)
+
+        @fudge.patch("src.views.base.Menu", "src.views.base.DictObj")
+        it "pops start of path if base url isn't an empty string and path starts with ''", fakeMenu, fakeDictObj:
+            path = ['', 'asdf', 'weouri']
+            result = fudge.Fake("result")
+            fakeMenu.expects_call().with_args(self.request, path).returns(self.menu)
+
+            self.fake_path_from_request.expects_call().with_args(self.request).returns(path)
+            self.fake_base_url_from_request.expects_call().with_args(self.request).returns(self.base_url)
+
+            (fakeDictObj.expects_call()
+                .with_args(
+                      menu=self.menu, target=self.target
+                    , path=['asdf', 'weouri'], base_url=self.base_url
+                    ).returns(result)
+                )
+
+            self.assertIs(self.view.get_state(self.request, self.target), result)
+        
+        @fudge.patch("src.views.base.Menu", "src.views.base.DictObj")
+        it "doesn't pop start of path if base url isn't an empty string but path doesn't start with ''", fakeMenu, fakeDictObj:
+            path = ['asdf', 'weouri']
+            result = fudge.Fake("result")
+            fakeMenu.expects_call().with_args(self.request, path).returns(self.menu)
+
+            self.fake_path_from_request.expects_call().with_args(self.request).returns(path)
+            self.fake_base_url_from_request.expects_call().with_args(self.request).returns(self.base_url)
+
+            (fakeDictObj.expects_call()
+                .with_args(
+                      menu=self.menu, target=self.target
+                    , path=['asdf', 'weouri'], base_url=self.base_url
+                    ).returns(result)
+                )
+
+            self.assertIs(self.view.get_state(self.request, self.target), result)

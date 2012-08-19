@@ -128,7 +128,7 @@ class View(object):
         """Get a state object for this request"""
         path = self.path_from_request(request)
         base_url = self.base_url_from_request(request)
-        if base_url != '' and path.starts_with("/"):
+        if base_url != '' and path[0] == '':
             path.pop(0)
 
         menu = Menu(request, path)
