@@ -80,3 +80,168 @@ describe "View":
 
             self.renderer.expects("render").with_args(self.request, template, extra).returns(result)
             self.assertIs(self.view.rendered_from_result(self.request, (template, extra)), result)
+
+    describe "Executing a target":
+        before_each:
+            self.target = fudge.Fake("target")
+            self.request = fudge.Fake("request")
+
+            self.fake_get_target = fudge.Fake("get_target")
+            self.view = type("View", (View, )
+                , {'get_target' : self.fake_get_target
+                  }
+                )()
+
+        @fudge.test
+        it "just gets target from the view and executes it":
+            a = fudge.Fake("a")
+            b = fudge.Fake("b")
+            c = fudge.Fake("c")
+            d = fudge.Fake("d")
+            result = fudge.Fake("result")
+
+            target = (fudge.Fake("target").expects_call()
+                .with_args(self.request, a, b, c=c, d=d).returns(result)
+                )
+
+            self.fake_get_target.expects_call().with_args(self.target).returns(target)
+            ret = self.view.execute(self.target, self.request, [a, b], dict(c=c, d=d))
+            self.assertIs(ret, result)
+
+    describe "Getting a result":
+        before_each:
+            self.args = fudge.Fake("args")
+            self.kwargs = fudge.Fake("kwargs")
+            self.target = fudge.Fake("target")
+            self.request = fudge.Fake("request")
+
+            self.fake_execute = fudge.Fake("execute")
+            self.fake_has_target = fudge.Fake("has_target")
+            self.view = type("View", (View, )
+                , { 'execute' : self.fake_execute
+                  , 'has_target' : self.fake_has_target
+                  }
+                )()
+
+        @fudge.test
+        it "uses override if it's defined":
+            result = fudge.Fake("result")
+            fake_override = (fudge.Fake("override").expects_call()
+                .with_args(self.request, self.target, self.args, self.kwargs).returns(result)
+                )
+
+            view = type("view", (View, ), {'override' : fake_override})()
+            ret = view.get_result(self.request, self.target, self.args, self.kwargs)
+            self.assertIs(ret, result)
+
+        @fudge.test
+        it "complains if view doesn't have target":
+            self.fake_has_target.expects_call().with_args(self.target).returns(False)
+            with self.assertRaisesRegexp(Exception, "View object doesn't have a target : %s" % self.target):
+                self.view.get_result(self.request, self.target, self.args, self.kwargs)
+
+        @fudge.test
+        it "gets result from execute and calls it with request if callable":
+            final = fudge.Fake("final")
+            result = fudge.Fake("result").expects_call().with_args(self.request).returns(final)
+            (self.fake_execute.expects_call()
+                .with_args(self.target, self.request, self.args, self.kwargs).returns(result)
+                )
+
+            # Has the target
+            self.fake_has_target.expects_call().with_args(self.target).returns(True)
+
+            ret = self.view.get_result(self.request, self.target, self.args, self.kwargs)
+            self.assertIs(ret, final)
+
+        @fudge.test
+        it "gets result from execute and returns it if not callable":
+            result = type("result", (object, ), {})()
+            (self.fake_execute.expects_call()
+                .with_args(self.target, self.request, self.args, self.kwargs).returns(result)
+                )
+
+            # Has the target
+            self.fake_has_target.expects_call().with_args(self.target).returns(True)
+
+            ret = self.view.get_result(self.request, self.target, self.args, self.kwargs)
+            self.assertIs(ret, result)
+
+    describe "Determining if view has a target":
+        before_each:
+            self.target_name = 'the_target_for_great_good'
+
+        it "says False if target isn't an attribute on the class":
+            assert not hasattr(self.view, self.target_name)
+            self.assertIs(self.view.has_target(self.target_name), False)
+
+        it "says True if target is an attribute on the class":
+            view = type("view", (View, ), {self.target_name: fudge.Fake("target")})()
+
+            assert hasattr(view, self.target_name)
+            self.assertIs(view.has_target(self.target_name), True)
+
+    describe "Getting target from a view":
+        before_each:
+            self.target_name = 'the_target_for_great_good'
+
+        it "gets target as attribute on the class":
+            target = fudge.Fake("target")
+            view = type("view", (View, ), {self.target_name : target})()
+            self.assertIs(view.get_target(self.target_name), target)
+
+    describe "Cleaning view kwargs":
+        before_each:
+            self.fake_clean_view_kwarg = fudge.Fake("clean_view_kwarg")
+            self.view = type("view", (View, )
+                , { 'clean_view_kwarg' : self.fake_clean_view_kwarg
+                  }
+                )()
+
+        @fudge.test
+        it "replaces each kwarg with a cleaned version":
+            a = fudge.Fake("a")
+            b = fudge.Fake("b")
+            c = fudge.Fake("c")
+            cleaned_a = fudge.Fake("cleaned_a")
+            cleaned_b = fudge.Fake("cleaned_b")
+            cleaned_c = fudge.Fake("cleaned_c")
+
+            kwargs = dict(a=a, b=b, c=c)
+            def cleaner(key, original):
+                self.assertIs(kwargs[key], original)
+                return {
+                      'a' : cleaned_a
+                    , 'b' : cleaned_b
+                    , 'c' : cleaned_c
+                }[key]
+
+            self.fake_clean_view_kwarg.expects_call().calls(cleaner)
+            self.assertIs(self.view.clean_view_kwargs(kwargs), kwargs)
+            self.assertDictEqual(kwargs, dict(a=cleaned_a, b=cleaned_b, c=cleaned_c))
+
+    describe 'cleaning a single kwarg':
+        it "item is a string, it is stripped of leading slashes":
+            spec = [
+                  ('asdf', 'asdf')
+                , ('/asdf', '/asdf')
+                , ('//asdf', '//asdf')
+
+                , ('asdf/', 'asdf')
+                , ('/asdf/', '/asdf')
+                , ('//asdf/', '//asdf')
+
+                , ('asdf//', 'asdf')
+                , ('/asdf//', '/asdf')
+                , ('//asdf//', '//asdf')
+            ]
+
+            key = fudge.Fake("key")
+            for original, cleaned in spec:
+                self.assertEqual(self.view.clean_view_kwarg(key, original), cleaned)
+
+        it "item is not a string, it is left alone":
+            key = fudge.Fake("key")
+            spec = [0, 1, None, True, False, (), (1, ), [], [1], {}, {1:2}, fudge.Fake("obj"), lambda : func]
+            for original in spec:
+                self.assertIs(self.view.clean_view_kwarg(key, original), original)

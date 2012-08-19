@@ -79,7 +79,7 @@ class View(object):
             return self.override(request, target, args, kwargs)
 
         # Complain if there is no target
-        if not hasattr(self, target):
+        if not self.has_target(target):
             raise Exception, "View object doesn't have a target : %s" % target
 
         # We have the target, get result from it
@@ -93,12 +93,20 @@ class View(object):
 
     def execute(self, target, request, args, kwargs):
         """Execute target with the request, args and kwargs"""
-        return getattr(self, target)(request, *args, **kwargs)
+        return self.get_target(target)(request, *args, **kwargs)
+
+    def has_target(self, target):
+        """Says whether view has specified target"""
+        return hasattr(self, target)
+
+    def get_target(self, target):
+        """Gets specified target from the view"""
+        return getattr(self, target)
 
     def clean_view_kwargs(self, kwargs):
         """Clean kwargs that are to be sent to the target view"""
         for key, item in kwargs.items():
-            kwargs[key] = self.clean_view_arg(key, item)
+            kwargs[key] = self.clean_view_kwarg(key, item)
         return kwargs
 
     def clean_view_kwarg(self, key, item):
