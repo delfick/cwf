@@ -313,3 +313,46 @@ describe "View":
                 )
 
             self.assertIs(self.view.get_state(self.request, self.target), result)
+
+    describe "getting base url from a request":
+        before_each:
+            self.meta = {}
+            self.request = fudge.Fake("request")
+
+        it "returns empty string if request.META has not SCRIPT_NAME":
+            assert 'SCRIPT_NAME' not in self.meta
+
+            self.request.has_attr(META=self.meta)
+            self.assertEqual(self.view.base_url_from_request(self.request), '')
+
+        it "returns request.META['SCRIPT_NAME']":
+            script_name = fudge.Fake("script_name")
+            self.meta['SCRIPT_NAME'] = script_name
+
+            self.request.has_attr(META=self.meta)
+            self.assertEqual(self.view.base_url_from_request(self.request), script_name)
+
+    describe "Getting path from request":
+        before_each:
+            self.request = fudge.Fake("request")
+
+        it "ensures request.path has leading and trailing slash and splits by slash":
+            specs = [
+                  ('a', ['', 'a', ''])
+                , ('/a/', ['', 'a', ''])
+                , ('/a/b', ['', 'a', 'b', ''])
+                , ('/a/b/', ['', 'a', 'b', ''])
+                , ('/a/b/c', ['', 'a', 'b', 'c', ''])
+                , ('/a/b/c/', ['', 'a', 'b', 'c', ''])
+
+                , ('a', ['', 'a', ''])
+                , ('/////a///', ['', 'a', ''])
+                , ('/a////b', ['', 'a', 'b', ''])
+                , ('////a////b/', ['', 'a', 'b', ''])
+                , ('///a/b/////c', ['', 'a', 'b', 'c', ''])
+                , ('/a/////b/c////', ['', 'a', 'b', 'c', ''])
+                ]
+
+            for original, expected in specs:
+                self.request.has_attr(path=original)
+                self.assertListEqual(self.view.path_from_request(self.request), expected)

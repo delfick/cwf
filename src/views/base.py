@@ -159,6 +159,6 @@ class View(object):
             path.append('')
 
         if path and path[0] != '':
-            path.insert(1, '')
+            path.insert(0, '')
 
         return path
