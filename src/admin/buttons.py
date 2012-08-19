@@ -97,27 +97,12 @@ class ButtonGroup(object):
 ###   SINGLE
 ########################
 
-class Button(object):
-    group = False
-    def __init__(self, url, desc, **kwargs):
-        self.url = url
-        self.desc = desc
+class ButtonProperties(object):
+    def __init__(self, kwargs):
+        if kwargs.get("for_all", False):
+            kwargs['save_on_click'] = False
 
-        # Set properties and cache html for this button
-        self.setProperties(**kwargs)
-        self.html = self.determine_html()
-
-    def copy_for_request(self, request, original=None):
-        """Set request and original on the button"""
-        return ButtonWrap(self, request, original)
-
-    def set_properties(self, **kwargs):
-        """
-            Set properties on the button
-            Ensure sensible defaults
-            And complain about unknown properties
-        """
-        known = dict(
+        defaults = dict(
             [ ('kls', None)
             , ('display', True)
             , ('for_all', False)
@@ -131,18 +116,83 @@ class Button(object):
             ]
         )
 
-        # Make sure we don't have unexpected values
-        leftover = set(kwargs.keys()) - set(known.keys())
-        if leftover:
-            raise Exception("Button doesn't know about some provided attributes: %s" % leftover)
+        # Avoid custom setattr in __init__
+        object.__setattr__(self, '_kwargs', kwargs)
+        object.__setattr__(self, '_defaults', defaults)
 
-        # Set attributes on the class
-        for key, dflt in known.items():
-            setattr(self, key, kwargs.get(key, dflt))
+    def __getattr__(self, key):
+        """
+            Get attribute from defaults
+            Unless attribute is in kwargs
+        """
+        if key.startswith("_"):
+            return object.__getattribute__(self, key)
 
-        # Set save_on_click to false if for_all
-        if self.for_all:
-            self.save_on_click = False
+        if key in self._kwargs:
+            return self._kwargs[key]
+        else:
+            if key not in self._defaults:
+                raise AttributeError(key)
+
+            return self._defaults[key]
+
+    def __setattr__(self, key, val):
+        """Set attribute in kwargs"""
+        if key.startswith("_"):
+            object.__setattr__(self, key, val)
+        else:
+            self._kwargs[key] = val
+
+class Button(object):
+    group = False
+    def __init__(self, url, desc, **kwargs):
+        # Avoid custom setattr in __init__
+        object.__setattr__(self, 'url', url)
+        object.__setattr__(self, 'desc', desc)
+        object.__setattr__(self, 'kwargs', kwargs)
+
+    def __getattr__(self, key):
+        """Proxy to self.properties if key not on self"""
+        if key.startswith('_'):
+            return object.__getattribute__(self, key)
+
+        if key in self.__dict__:
+            return object.__getattribute__(self, key)
+        else:
+            properties = object.__getattribute__(self, 'properties')
+            return getattr(properties, key)
+
+    def __setattr__(self, key, val):
+        """
+            Set attribute on self
+            unless attribute exists on properties, in which case set it there.
+        """
+        try:
+            current = object.__getattribute__(self, key)
+            object.__setattr__(self, key, val)
+        except AttributeError:
+            properties = object.__getattribute__(self, 'properties')
+            if hasattr(properties, key):
+                object.__setattr__(properties, key, val)
+            else:
+                object.__setattr__(self, key, val)
+
+    @property
+    def html(self):
+        if not hasattr(self, "_html"):
+            self._html = self.determine_html()
+        return self._html
+
+    @property
+    def properties(self):
+        if not hasattr(self, "_properties"):
+            # Need properties for normal setattr to work
+            object.__setattr__(self, '_properties', ButtonProperties(self.kwargs))
+        return self._properties
+
+    def copy_for_request(self, request, original=None):
+        """Set request and original on the button"""
+        return ButtonWrap(self, request, original)
     
     def determine_html(self):
         """Determine if we want an <input> or just an <a>"""
@@ -153,24 +203,18 @@ class Button(object):
         return mark_safe(link)
 
     def link_as_input(self):
-        url = self.url
-        if not url.endswith("/"):
-            url = "%s/" % url
-        return u'<input type="submit" name="tool_%s" value="%s"/>' % (url, self.desc)
+        return u'<input type="submit" name="tool_%s" value="%s"/>' % (self.url, self.desc)
     
     def link_as_anchor(self):
         url = self.url
         if self.save_on_click or not self.url.startswith('/'):
             url = "tool_%s" % self.url
-
-        if not url.endswith("/"):
-            url = "%s/" % url
         
         options = []
         if self.kls:
             options.append(u'class="%s"' % self.kls)
         
-        if self.newWindow:
+        if self.new_window:
             options.append(u'target="_blank"')
         
         return u'<a href="%s" %s>%s</a>' % (url, ' '.join(options), self.desc)
