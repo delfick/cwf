@@ -114,9 +114,9 @@ class ButtonAdminMixin(object):
             Get result for button by finding a function for it and executing it
             Looks for tool_<button.url> on self
             If it can't find that and button.execute_and_redirect is True then one is made
-        """
-        name = "tool_%s" % button.url        
+        """     
         if not button.execute_and_redirect:
+            name = "tool_%s" % button.url   
             if not hasattr(self, name):
                 raise Exception("Admin (%s) doesn't have a function for %s" % (self, name))
             func = getattr(self, name)
@@ -124,14 +124,13 @@ class ButtonAdminMixin(object):
             def func(request, obj, button):
                 # Execute
                 action = button.execute_and_redirect
-                if not hasattr(self, action):
-                    raise Exception("Admin (%s) doesn't have a function for %s" % (self, action))
+                if not hasattr(obj, action):
+                    raise Exception("Object (%s) doesn't have a function for %s" % (obj, action))
                 getattr(obj, action)()
 
                 # And redirect
                 url = AdminView.change_view(obj)
                 return renderer.redirect(url, no_processing=True)
-            func.__name__ = name
         
         return func(request, obj, button)
     
