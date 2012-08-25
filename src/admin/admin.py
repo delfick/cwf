@@ -22,7 +22,7 @@ class ButtonPatterns(object):
     def __init__(self, buttons, model, admin_view, button_view):
         self.model = model
         self.buttons = buttons
-        self.admin_site = admin_site
+        self.admin_view = admin_view
         self.button_view = button_view
 
     @property
