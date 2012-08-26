@@ -29,9 +29,6 @@ def manager(location, get_paths=None):
     execute_from_command_line(sys.argv)
 
 def main():
-    if 'WEBLIBS' in os.environ:
-        sys.path.insert(0, os.environ['WEBLIBS'])
-
     get_path = None
     try:
         from wsgibase import get_path
