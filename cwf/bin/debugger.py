@@ -41,6 +41,7 @@ class Debugger(object):
         app = WSGIHandler()
         app = PrintDebugMiddleware(app)
         app = DebuggedApplication(app, True)
+        return app
 
     def setup_500(self):
         """Set 500 response"""
@@ -66,13 +67,16 @@ class Debugger(object):
 
             If neither, use a function that just returns an empty list
         """
-        if not self._get_path:
-            get_path = None
+        get_path = self._get_path
+        if not get_path:
             try:
                 from wsgibase import get_path
             except ImportError:
                 pass
 
-            if not get_path or not callable(get_path):
+            if get_path and callable(get_path):
+                self._get_path = get_path
+            else:
                 self._get_path = lambda project: []
+
         return self._get_path
