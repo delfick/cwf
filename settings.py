@@ -50,7 +50,7 @@ NOSE_ARGS = [
 ########################
 
 INSTALLED_APPS = (
-      'src'
+      'cwf'
     , 'tests'
     , 'django_nose'
     , PROJECTNAME
@@ -58,5 +58,5 @@ INSTALLED_APPS = (
 
 TEMPLATE_DIRS = (
 	  '%s/tests/templates' % PROJECTDIR
-	, '%s/src/templates' % PROJECTDIR
+	, '%s/cwf/templates' % PROJECTDIR
     )

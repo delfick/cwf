@@ -1,8 +1,8 @@
 # coding: spec
 
-from src.sections.section import Section
-from src.sections.values import Values
-from src.views.menu import Menu
+from cwf.sections.section import Section
+from cwf.sections.values import Values
+from cwf.views.menu import Menu
 
 from django.http import HttpResponse
 import fudge

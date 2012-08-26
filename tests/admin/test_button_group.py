@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.admin.buttons import ButtonGroup
+from cwf.admin.buttons import ButtonGroup
 
 import fudge
 
@@ -24,7 +24,7 @@ describe "Button Group":
         self.group.buttons |should| be(self.buttons)
 
     describe "Copying for request":
-        @fudge.patch("src.admin.buttons.ButtonGroup")
+        @fudge.patch("cwf.admin.buttons.ButtonGroup")
         it "returns a group with same name and copied buttons", fakeButtonGroup:
             copied1 = fudge.Fake("copied1")
             copied2 = fudge.Fake("copied2")

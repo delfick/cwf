@@ -4,7 +4,7 @@ from noseOfYeti.tokeniser.containers import acceptable
 from django.conf.urls import patterns
 from django.http import HttpResponse
 
-from src.sections.section import Section
+from cwf.sections.section import Section
 
 # Function to make a view that returns response
 def make_view(response):

@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.admin.buttons import ButtonWrap
+from cwf.admin.buttons import ButtonWrap
 
 from contextlib import contextmanager
 import fudge

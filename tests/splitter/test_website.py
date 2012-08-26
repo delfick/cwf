@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.splitter.website import Website
+from cwf.splitter.website import Website
 
 import fudge
 
@@ -45,7 +45,7 @@ describe "Website":
                   }
                 )(self.settings, self.package)
 
-        @fudge.patch('src.splitter.website.inject')
+        @fudge.patch('cwf.splitter.website.inject')
         it "injects urls and models and loads admin", fake_inject:
             called = []
             def call_with(num):
@@ -79,7 +79,7 @@ describe "Website":
             website = Website(self.settings, self.package)
             website.config |should| be(config)
 
-        @fudge.patch("src.splitter.website.Parts")
+        @fudge.patch("cwf.splitter.website.Parts")
         it "adds to existing PARTCONFIG if package not in it", fakeParts:
             config = fudge.Fake("config")
             other_config = fudge.Fake("other_config")
@@ -90,7 +90,7 @@ describe "Website":
             website.config |should| equal_to(config)
             self.settings.PARTCONFIG |should| equal_to({'otherpackage' : other_config, self.package : config})
 
-        @fudge.patch("src.splitter.website.Parts")
+        @fudge.patch("cwf.splitter.website.Parts")
         it "creates PARTCONFIG if settings doesn't have it", fakeParts:
             config = fudge.Fake("config")
             other_config = fudge.Fake("other_config")

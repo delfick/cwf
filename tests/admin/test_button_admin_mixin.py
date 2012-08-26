@@ -1,7 +1,7 @@
 # coding: spec
 
-from src.admin.admin import ButtonAdminMixin
-from src.admin.buttons import Button
+from cwf.admin.admin import ButtonAdminMixin
+from cwf.admin.buttons import Button
 
 import fudge
 
@@ -11,7 +11,7 @@ describe "ButtonAdminMixin":
         self.mixin = ButtonAdminMixin()
 
     describe "Getting button urls":
-        @fudge.patch("src.admin.admin.ButtonPatterns")
+        @fudge.patch("cwf.admin.admin.ButtonPatterns")
         it "Makes ButtonPatterns object and returns it's patterns", fakeButtonPatterns:
             model = fudge.Fake("model")
             buttons = fudge.Fake("buttons")
@@ -53,7 +53,7 @@ describe "ButtonAdminMixin":
                 )()
 
         describe "When we have an object to pass on":
-            @fudge.patch("src.admin.admin.get_object_or_404", "src.admin.admin.renderer")
+            @fudge.patch("cwf.admin.admin.get_object_or_404", "cwf.admin.admin.renderer")
             it "returns result as is from button_result if not a two item tuple", fake_get_object_or_404, fake_renderer:
                 obj = fudge.Fake("object")
                 fake_get_object_or_404.expects_call().with_args(self.model, pk=self.object_id).returns(obj)
@@ -61,7 +61,7 @@ describe "ButtonAdminMixin":
                 self.fake_button_result.expects_call().with_args(self.request, obj, self.button).returns(self.result)
                 self.mixin.button_view(self.request, self.object_id, self.button) |should| be(self.result)
 
-            @fudge.patch("src.admin.admin.get_object_or_404", "src.admin.admin.renderer")
+            @fudge.patch("cwf.admin.admin.get_object_or_404", "cwf.admin.admin.renderer")
             it "renders template, extra from result if two item tuple", fake_get_object_or_404, fake_renderer:
                 obj = fudge.Fake("object")
                 ctxt = fudge.Fake("ctxt")
@@ -116,7 +116,7 @@ describe "ButtonAdminMixin":
                 with self.assertRaisesRegexp(Exception, "doesn't have a function for func_to_execute"):
                     self.mixin.button_result(self.request, self.obj, self.button)
 
-            @fudge.patch("src.admin.admin.AdminView", "src.admin.admin.renderer")
+            @fudge.patch("cwf.admin.admin.AdminView", "cwf.admin.admin.renderer")
             it "finds delegate from button.execute_and_redirect and redirects to change_view after executing it", fakeAdminView, fake_renderer:
                 func_to_execute = fudge.Fake("func_to_execute").expects_call()
                 self.button.has_attr(execute_and_redirect='func_to_execute')

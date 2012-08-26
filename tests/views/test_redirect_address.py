@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.views.redirect_address import RedirectAddress
+from cwf.views.redirect_address import RedirectAddress
 
 import fudge
 
@@ -136,12 +136,12 @@ describe "RedirectAddress":
                   }
                 )(self.request, self.address)
 
-        @fudge.patch("src.views.redirect_address.urlencode")
+        @fudge.patch("cwf.views.redirect_address.urlencode")
         it "returns address as is if carry_get is False", fake_urlencode:
             self.helper.carry_get = False
             self.helper.add_get_params(self.address) |should| be(self.address)
 
-        @fudge.patch("src.views.redirect_address.urlencode")
+        @fudge.patch("cwf.views.redirect_address.urlencode")
         it "returns combination of address and urlencoded params if carry_get is True", fake_urlencode:
             encoded = fudge.Fake("encoded")
             fake_urlencode.expects_call().with_args(self.params).returns(encoded)

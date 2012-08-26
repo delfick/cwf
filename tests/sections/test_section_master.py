@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.sections.section_master import (
+from cwf.sections.section_master import (
       memoized, memoizer, make_memoizer
     , SectionMaster, Info
     )

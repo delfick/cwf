@@ -1,7 +1,7 @@
 # coding: spec
 
-from src.admin.buttons import Button, ButtonGroup
-from src.admin.admin import ButtonPatterns
+from cwf.admin.buttons import Button, ButtonGroup
+from cwf.admin.admin import ButtonPatterns
 
 from fudge.inspector import arg as fudge_arg
 import fudge
@@ -32,7 +32,7 @@ describe "Button Patterns":
                   }
                 )(self.buttons, self.model, self.admin_view, self.button_view)
 
-        @fudge.patch("src.admin.admin.patterns")
+        @fudge.patch("cwf.admin.admin.patterns")
         it "Returns django patterns object from creating a button for each button", fake_patterns:
             b1 = fudge.Fake("b1")
             b2 = fudge.Fake("b2")
@@ -109,7 +109,7 @@ describe "Button Patterns":
             self.patterns.button_name(button) |should| equal_to(expected)
     
     describe "Getting function for button view":
-        @fudge.patch("src.admin.admin.update_wrapper")
+        @fudge.patch("cwf.admin.admin.update_wrapper")
         it "wraps up button_view in admin_view", fake_update_wrapper:
             a = fudge.Fake("a")
             b = fudge.Fake("b")
@@ -148,7 +148,7 @@ describe "Button Patterns":
                   }
                 )(self.buttons, self.model, self.admin_view, self.button_view)
 
-        @fudge.patch("src.admin.admin.url")
+        @fudge.patch("cwf.admin.admin.url")
         it "returns url object with location, view, name and kwargs", fake_url:
             loc = fudge.Fake("loc")
             name = fudge.Fake("name")

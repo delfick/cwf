@@ -1,4 +1,4 @@
-from src.sections.section import Section
+from cwf.sections.section import Section
 from imports import inject
 
 ########################

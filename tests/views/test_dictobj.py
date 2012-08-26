@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.views.base import DictObj
+from cwf.views.base import DictObj
 
 describe "DictObj":
     it "starts as an empty dictionary":

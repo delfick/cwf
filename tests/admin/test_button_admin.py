@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.admin.admin import ButtonAdmin
+from cwf.admin.admin import ButtonAdmin
 
 import fudge
 
@@ -76,17 +76,17 @@ describe "ButtonAdmin":
                 getattr(admin, method)(request, a, b, c=c, d=d) |should| be(response)
 
         it "adds buttons to the changelist_view":
-            self.ensure_context_added("changelist_view", "src.admin.admin.admin.ModelAdmin")
+            self.ensure_context_added("changelist_view", "cwf.admin.admin.admin.ModelAdmin")
 
         it "adds buttons to the change_form":
-            self.ensure_context_added("render_change_form", "src.admin.admin.admin.ModelAdmin")
+            self.ensure_context_added("render_change_form", "cwf.admin.admin.admin.ModelAdmin")
 
     describe "Altering response to change":
         before_each:
             self.obj = fudge.Fake("obj")
             self.request = fudge.Fake("request")
 
-        @fudge.patch("src.admin.admin.renderer")
+        @fudge.patch("cwf.admin.admin.renderer")
         it "redirects to the key in POST that begins with tool_ if one is there", fake_renderer:
             redirect = fudge.Fake("redirect")
             self.request.POST = {'a':1, "tool_bob" : True}
@@ -94,7 +94,7 @@ describe "ButtonAdmin":
 
             self.admin.response_change(self.request, self.obj) |should| be(redirect)
 
-        @fudge.patch("src.admin.admin.renderer")
+        @fudge.patch("cwf.admin.admin.renderer")
         it "returns as normal if no tool_ key is in POST", fake_renderer:
             # Renderer shouldn't be touched in this test
             result = fudge.Fake("result")

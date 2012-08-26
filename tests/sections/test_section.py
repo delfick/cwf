@@ -1,7 +1,7 @@
 # coding: spec
 
-from src.sections.errors import ConfigurationError
-from src.sections.section import Section
+from cwf.sections.errors import ConfigurationError
+from cwf.sections.section import Section
 
 from contextlib import contextmanager
 from django.http import Http404
@@ -135,7 +135,7 @@ describe "Section":
                 self.options = fudge.Fake('options')
                 self.section = Section()
             
-            @fudge.patch("src.sections.section.Section")
+            @fudge.patch("cwf.sections.section.Section")
             it "creates a section with provided url and name, and parent as current section", fakeSection:
                 new_section = fudge.Fake("new_section")
                 self.section.options = self.options
@@ -148,7 +148,7 @@ describe "Section":
                 self.options.provides("clone")
                 self.section.make_section(self.url, self.match, self.name) |should| be(new_section)
             
-            @fudge.patch("src.sections.section.Section")
+            @fudge.patch("cwf.sections.section.Section")
             it "gives section a clone of current options with match overriden", fakeSection:
                 new_section = fudge.Fake("new_section")
                 new_options = fudge.Fake("new_options")
@@ -343,7 +343,7 @@ describe "Section":
                 self.section.add_child(self.new_section, first=False) |should| be(self.new_section)
         
     describe "Options":
-        @fudge.patch("src.sections.section.Options")
+        @fudge.patch("cwf.sections.section.Options")
         it "is lazily loaded", fakeOptions:
             section = Section()
             options = fudge.Fake("options")
@@ -352,7 +352,7 @@ describe "Section":
             section.options |should| be(options)
             section.options |should| be(options)
         
-        @fudge.patch("src.sections.section.Options")
+        @fudge.patch("cwf.sections.section.Options")
         it "can be set to something else", fakeOptions:
             # Don't put expectations on fakeOptions
             new_options = fudge.Fake("new_options")
@@ -587,7 +587,7 @@ describe "Section":
             self.section = type("Section", (Section, ), {'make_view' : self.fake_make_view})()
 
         describe "Getting expanded list":
-            @fudge.patch("src.sections.section.patterns", "src.sections.section.PatternList")
+            @fudge.patch("cwf.sections.section.patterns", "cwf.sections.section.PatternList")
             it "uses a PatternList object with django patterns generator and wraps view with function that adds section to request", fake_patterns, fakePatternList:
                 infos = {}
                 patterns = []
@@ -637,7 +637,7 @@ describe "Section":
                 self.fake_patterns = fudge.Fake("patterns")
                 self.section = type("Section", (Section, ), {'patterns' : self.fake_patterns})()
 
-            @fudge.patch("src.sections.section.include", "src.sections.section.PatternList")
+            @fudge.patch("cwf.sections.section.include", "cwf.sections.section.PatternList")
             it "returns include_path from PatternList as first item in tuple", fake_include, fakePatternList:
                 end = fudge.Fake("end")
                 path = fudge.Fake("path")
@@ -661,7 +661,7 @@ describe "Section":
                 # Make sure we got the path returned from PatternList
                 p |should| be(path)
 
-            @fudge.patch("src.sections.section.include", "src.sections.section.PatternList")
+            @fudge.patch("cwf.sections.section.include", "cwf.sections.section.PatternList")
             it "returns includer function using django include generator as second item in tuple", fake_include, fakePatternList:
                 patterns = fudge.Fake("patterns")
                 includer = fudge.Fake("includer")
@@ -697,7 +697,7 @@ describe "Section":
             fake_options = fudge.Fake("options").expects("clone")
             section.options = fake_options
             
-            with fudge.patched_context("src.sections.section", "Section", fakeSection):
+            with fudge.patched_context("cwf.sections.section", "Section", fakeSection):
                 section.clone() |should| be(new)
             
         @fudge.test
@@ -719,7 +719,7 @@ describe "Section":
             fake_options = fudge.Fake("options").expects("clone")
             section.options = fake_options
             
-            with fudge.patched_context("src.sections.section", "Section", fakeSection):
+            with fudge.patched_context("cwf.sections.section", "Section", fakeSection):
                 section.clone(url=new_url, name=new_name, parent=new_parent) |should| be(new)
             
         @fudge.test
@@ -747,7 +747,7 @@ describe "Section":
             fake_options = fudge.Fake("options").expects("clone")
             section.options = fake_options
             
-            with fudge.patched_context("src.sections.section", "Section", fakeSection):
+            with fudge.patched_context("cwf.sections.section", "Section", fakeSection):
                 section.clone(url=new_url, a=a, b=b) |should| be(new)
     
     describe "Getting root ancestor":

@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.views.menu import Menu
+from cwf.views.menu import Menu
 
 import fudge
 
@@ -156,7 +156,7 @@ describe "Menu":
 
             self.fake_children_function_for = fudge.Fake("children_function_for")
 
-        @fudge.patch("src.views.menu.SectionMaster")
+        @fudge.patch("cwf.views.menu.SectionMaster")
         it "gets info using section master for each child using path and sets up children", fakeSectionMaster:
             master = (fudge.Fake("master").expects("get_info")
                 .with_args(self.child1, self.path, parent=None).returns([self.info1])
@@ -188,7 +188,7 @@ describe "Menu":
 
             list(menu.navs_for(self.children)) |should| equal_to([self.info1, self.info2, self.info3])
 
-        @fudge.patch("src.views.menu.SectionMaster")
+        @fudge.patch("cwf.views.menu.SectionMaster")
         it "doesn't setup children if setup_children is False", fakeSectionMaster:
             master = (fudge.Fake("master").expects("get_info")
                 .with_args(self.child1, self.path, parent=None).returns([self.info1])

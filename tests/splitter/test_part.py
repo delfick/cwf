@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.splitter.parts import Part
+from cwf.splitter.parts import Part
 
 import fudge
 

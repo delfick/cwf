@@ -1,7 +1,7 @@
 # coding: spec
 
-from src.views.rendering import Renderer
-from src.views.base import View
+from cwf.views.rendering import Renderer
+from cwf.views.base import View
 
 import fudge
 
@@ -262,7 +262,7 @@ describe "View":
                   }
                 )()
 
-        @fudge.patch("src.views.base.Menu", "src.views.base.DictObj")
+        @fudge.patch("cwf.views.base.Menu", "cwf.views.base.DictObj")
         it "returns a dictobj with menu, path, target and base_url", fakeMenu, fakeDictObj:
             path = fudge.Fake("path")
             result = fudge.Fake("result")
@@ -277,7 +277,7 @@ describe "View":
 
             self.view.get_state(self.request, self.target) |should| be(result)
 
-        @fudge.patch("src.views.base.Menu", "src.views.base.DictObj")
+        @fudge.patch("cwf.views.base.Menu", "cwf.views.base.DictObj")
         it "pops start of path if base url isn't an empty string and path starts with ''", fakeMenu, fakeDictObj:
             path = ['', 'asdf', 'weouri']
             result = fudge.Fake("result")
@@ -295,7 +295,7 @@ describe "View":
 
             self.view.get_state(self.request, self.target) |should| be(result)
         
-        @fudge.patch("src.views.base.Menu", "src.views.base.DictObj")
+        @fudge.patch("cwf.views.base.Menu", "cwf.views.base.DictObj")
         it "doesn't pop start of path if base url isn't an empty string but path doesn't start with ''", fakeMenu, fakeDictObj:
             path = ['asdf', 'weouri']
             result = fudge.Fake("result")

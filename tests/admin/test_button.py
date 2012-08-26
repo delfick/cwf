@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.admin.buttons import Button, ButtonProperties
+from cwf.admin.buttons import Button, ButtonProperties
 
 import fudge
 
@@ -169,13 +169,13 @@ describe "Button":
             self.kwargs = fudge.Fake("kwargs")
             self.properties = fudge.Fake("properties")
 
-        @fudge.patch("src.admin.buttons.ButtonProperties")
+        @fudge.patch("cwf.admin.buttons.ButtonProperties")
         it "creates a ButtonProperties object with self.kwargs", fakeButtonProperties:
             object.__setattr__(self.button, 'kwargs', self.kwargs)
             fakeButtonProperties.expects_call().times_called(1).with_args(self.kwargs).returns(self.properties)
             self.button.properties |should| be(self.properties)
 
-        @fudge.patch("src.admin.buttons.ButtonProperties")
+        @fudge.patch("cwf.admin.buttons.ButtonProperties")
         it "caches result as self._properties", fakeButtonProperties:
             object.__setattr__(self.button, 'kwargs', self.kwargs)
             fakeButtonProperties.expects_call().times_called(1).with_args(self.kwargs).returns(self.properties)
@@ -190,7 +190,7 @@ describe "Button":
             self.button._properties |should| be(self.properties)
 
     describe "Creating a copy for a request":
-        @fudge.patch("src.admin.buttons.ButtonWrap")
+        @fudge.patch("cwf.admin.buttons.ButtonWrap")
         it "returns a ButtonWrap wrapping itself", fakeButtonWrap:
             wrap = fudge.Fake("wrap")
             request = fudge.Fake("request")
@@ -212,7 +212,7 @@ describe "Button":
                   }
                 )(self.url, self.desc)
 
-        @fudge.patch("src.admin.buttons.mark_safe")
+        @fudge.patch("cwf.admin.buttons.mark_safe")
         it "returns safe marked link as an anchor if not save_on_click or for_all", fake_mark_safe:
             spec = [
                   (False, True)
@@ -231,7 +231,7 @@ describe "Button":
                 button = self.make_button(save_on_click=save_on_click, for_all=for_all)
                 button.determine_html() |should| be(safe_html)
 
-        @fudge.patch("src.admin.buttons.mark_safe")
+        @fudge.patch("cwf.admin.buttons.mark_safe")
         it "returns safe marked link as input if not for all and saves on click", fake_mark_safe:
             html = fudge.Fake("html")
             safe_html = fudge.Fake("safe_html")

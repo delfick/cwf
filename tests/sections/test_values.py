@@ -1,7 +1,7 @@
 # coding: spec
 
-from src.sections.errors import ConfigurationError
-from src.sections.values import Values
+from cwf.sections.errors import ConfigurationError
+from cwf.sections.values import Values
 
 import fudge
 

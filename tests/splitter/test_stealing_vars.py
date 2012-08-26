@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.splitter.imports import steal
+from cwf.splitter.imports import steal
 import stolen_vars
 
 import itertools

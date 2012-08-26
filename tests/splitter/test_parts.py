@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.splitter.parts import Parts
+from cwf.splitter.parts import Parts
 
 import fudge
 
@@ -190,7 +190,7 @@ describe "Parts Collection":
             self.fake_each_part = fudge.Fake("each_part")
             self.parts = type("parts", (Parts, ), {'each_part' : self.fake_each_part})(self.package)
 
-        @fudge.patch("src.splitter.parts.Section")
+        @fudge.patch("cwf.splitter.parts.Section")
         it "creates a Section and adds all urls.section to it", fakeSection:
             site = fudge.Fake("site")
             self.fake_each_part.expects_call().with_args(self.active_only).returns([self.p1, self.p2, self.p3])
@@ -212,7 +212,7 @@ describe "Parts Collection":
             fakeSection.expects_call().with_args(self.name, promote_children=True).returns(site)
             self.parts.site(self.name, self.active_only) |should| be(site)
 
-        @fudge.patch("src.splitter.parts.Section")
+        @fudge.patch("cwf.splitter.parts.Section")
         it "ignores parts that don't have urls or a section", fakeSection:
             site = fudge.Fake("site")
             self.fake_each_part.expects_call().with_args(self.active_only).returns([self.p1, self.p2, self.p3])

@@ -2,7 +2,7 @@
 
 from django.http import Http404
 
-from src.views.rendering import Renderer, renderer
+from cwf.views.rendering import Renderer, renderer
 
 import fudge
 
@@ -30,7 +30,7 @@ describe "Rendering helper":
                   }
                 )()
 
-        @fudge.patch("src.views.rendering.HttpResponse", "src.views.rendering.loader")
+        @fudge.patch("cwf.views.rendering.HttpResponse", "cwf.views.rendering.loader")
         it "renders template with request context", fakeHttpResponse, fake_loader:
             ctxt = fudge.Fake("ctxt")
             self.fake_request_context.expects_call().with_args(self.request, self.extra).returns(ctxt)
@@ -48,7 +48,7 @@ describe "Rendering helper":
 
             self.helper.render(self.request, self.template, extra=self.extra, mime=self.mime) |should| be(result)
 
-        @fudge.patch("src.views.rendering.HttpResponse", "src.views.rendering.loader")
+        @fudge.patch("cwf.views.rendering.HttpResponse", "cwf.views.rendering.loader")
         it "modifies render before giving to HttpResponse if modify is callable", fakeHttpResponse, fake_loader:
             ctxt = fudge.Fake("ctxt")
             self.fake_request_context.expects_call().with_args(self.request, self.extra).returns(ctxt)
@@ -80,7 +80,7 @@ describe "Rendering helper":
             self.state = fudge.Fake("state")
             self.request = fudge.Fake("request")
 
-        @fudge.patch("src.views.rendering.RequestContext")
+        @fudge.patch("cwf.views.rendering.RequestContext")
         it "gets context from request.state", fakeRequestContext:
             self.request.state = self.state
             self.state.expects("update").with_args(self.extra)
@@ -90,7 +90,7 @@ describe "Rendering helper":
 
             self.helper.request_context(self.request, self.extra) |should| be(result)
 
-        @fudge.patch("src.views.rendering.RequestContext")
+        @fudge.patch("cwf.views.rendering.RequestContext")
         it "uses empty dictionary if request has no state", fakeRequestContext:
             a = fudge.Fake("a")
             b = fudge.Fake("b")
@@ -106,7 +106,7 @@ describe "Rendering helper":
                 self.helper.raise404()
 
     describe "Shortcut to a HttpResponse":
-        @fudge.patch("src.views.rendering.HttpResponse")
+        @fudge.patch("cwf.views.rendering.HttpResponse")
         it "Passes in args and kwargs into a httpresponse", fakeHttpResponse:
             a = fudge.Fake('a')
             b = fudge.Fake('b')
@@ -117,7 +117,7 @@ describe "Rendering helper":
             self.helper.http(a, b, c=c, d=d) |should| be(result)
 
     describe "Shortcut to render xml":
-        @fudge.patch("src.views.rendering.HttpResponse")
+        @fudge.patch("cwf.views.rendering.HttpResponse")
         it "returns HttpResponse with application/xml mimetype", fakeHttpResponse:
             data = fudge.Fake("data")
             result = fudge.Fake("result")
@@ -125,7 +125,7 @@ describe "Rendering helper":
             self.helper.xml(data) |should| be(result)
 
     describe "shortcut to render json":
-        @fudge.patch("src.views.rendering.HttpResponse", "json.dumps")
+        @fudge.patch("cwf.views.rendering.HttpResponse", "json.dumps")
         it "returns HttpResponse with application/javascript mimetype after converting data to json string", fakeHttpResponse, fake_dumps:
             data = fudge.Fake("data")
             json = fudge.Fake("json")
@@ -135,7 +135,7 @@ describe "Rendering helper":
             fakeHttpResponse.expects_call().with_args(json, mimetype="application/javascript").returns(result)
             self.helper.json(data) |should| be(result)
 
-        @fudge.patch("src.views.rendering.HttpResponse", "json.dumps")
+        @fudge.patch("cwf.views.rendering.HttpResponse", "json.dumps")
         it "assumes data is already json if passed in as a string", fakeHttpResponse, fake_dumps:
             json = '{"a":"b"}'
             result = fudge.Fake("result")
@@ -147,13 +147,13 @@ describe "Rendering helper":
             self.address = fudge.Fake("address")
             self.request = fudge.Fake("request")
 
-        @fudge.patch("src.views.rendering.HttpResponseRedirect")
+        @fudge.patch("cwf.views.rendering.HttpResponseRedirect")
         it "Returns if HttpResponseRedirect with no change to address if no_processing=True", fakeHttpResponseRedirect:
             result = fudge.Fake("result")
             fakeHttpResponseRedirect.expects_call().with_args(self.address).returns(result)
             self.helper.redirect(self.request, self.address, no_processing=True) |should| be(result)
 
-        @fudge.patch("src.views.rendering.HttpResponseRedirect", "src.views.rendering.RedirectAddress")
+        @fudge.patch("cwf.views.rendering.HttpResponseRedirect", "cwf.views.rendering.RedirectAddress")
         it "modifies address before passing into HttpResponseRedirect if no_processing=False or not specified", fakeHttpResponseRedirect, fakeRedirectAddress:
             a = fudge.Fake('a')
             b = fudge.Fake('b')

@@ -1,4 +1,4 @@
-from src.splitter.imports import steal
+from cwf.splitter.imports import steal
 import os
 
 this_dir = os.path.dirname(__file__)

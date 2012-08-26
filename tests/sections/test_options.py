@@ -1,7 +1,7 @@
 # coding: spec
 
-from src.sections.errors import ConfigurationError
-from src.sections.options import Options
+from cwf.sections.errors import ConfigurationError
+from cwf.sections.options import Options
 
 from django.http import Http404
 import fudge
@@ -169,7 +169,7 @@ describe "Options":
             
             cloned = fudge.Fake("cloned").expects("set_everything").with_args(**kwargs)
             fakeOptions = fudge.Fake("Options").expects_call().returns(cloned)
-            with fudge.patched_context("src.sections.options", "Options", fakeOptions):
+            with fudge.patched_context("cwf.sections.options", "Options", fakeOptions):
                 self.options.clone(all=True) |should| be(cloned)
         
         @fudge.test
@@ -187,7 +187,7 @@ describe "Options":
             
             cloned = fudge.Fake("cloned").expects("set_everything").with_args(**kwargs)
             fakeOptions = fudge.Fake("Options").expects_call().returns(cloned)
-            with fudge.patched_context("src.sections.options", "Options", fakeOptions):
+            with fudge.patched_context("cwf.sections.options", "Options", fakeOptions):
                 self.options.clone(all=False) |should| be(cloned)
             
         it "original doesn't get affected if clone is modified":
@@ -376,7 +376,7 @@ describe "Options":
             self.options.extra_context = {}
             self.options.url_view(self.section) |should| be(None)
         
-        @fudge.patch("src.sections.options.dispatcher")
+        @fudge.patch("cwf.sections.options.dispatcher")
         it "returns (dispatcher, {self.get_view_kls(), target, section}) otherwise", fake_dispatcher:
             self.options.target = "thing"
             self.options.extra_context = {}
@@ -385,7 +385,7 @@ describe "Options":
                 (fake_dispatcher, {'kls':self.kls, 'target':"thing", 'section':self.section})
             )
         
-        @fudge.patch("src.sections.options.dispatcher")
+        @fudge.patch("cwf.sections.options.dispatcher")
         it "returns self.extra_context with dispatcher", fake_dispatcher:
             self.options.target = "thing"
             self.options.extra_context = {'one' : 1, 'two' : 2, 'kls' : 3}
@@ -423,7 +423,7 @@ describe "Options":
                 caller = lambda : redirector(self.request)
                 Http404 |should| be_thrown_by(caller)
             
-            @fudge.patch("src.sections.options.redirect_to")
+            @fudge.patch("cwf.sections.options.redirect_to")
             it "uses self.redirect_to with url if it starts with /", fake_redirect_to:
                 url = fudge.Fake("url").expects("startswith").with_args("/").returns(True)
                 result = fudge.Fake("result")
@@ -440,7 +440,7 @@ describe "Options":
                 redirector2, _ = self.options.redirect_view('/stuff/asdf')
                 redirector2(self.request) |should| be(result)
             
-            @fudge.patch("src.sections.options.redirect_to")
+            @fudge.patch("cwf.sections.options.redirect_to")
             it "joins with request.path and removes multiple slashes if not starts with /", fake_redirect_to:
                 result = fudge.Fake("result")
                 self.redirect.expects_call().with_args(self.request).returns('one/two')

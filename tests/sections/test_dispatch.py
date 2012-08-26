@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.sections.dispatch import Dispatcher, dispatcher
+from cwf.sections.dispatch import Dispatcher, dispatcher
 
 from django.http import Http404
 import fudge

@@ -1,6 +1,6 @@
 # coding: spec
 
-from src.splitter.imports import FileFaker, steal, inject
+from cwf.splitter.imports import FileFaker, steal, inject
 import stolen_vars
 
 import fudge
@@ -8,7 +8,7 @@ import imp
 import sys
 import os
 
-src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
+src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'cwf'))
 
 describe "Injecting modules":
     def check_cant_import(self, name):
@@ -60,31 +60,31 @@ describe "Injecting modules":
 
     describe "With dot in fullname":
         it "works with modules imported with dot in fullname":
-            self.check_cant_import('src.models')
-            inject(stolen_vars, 'src.models')
-            mod = getattr(__import__('src.models'), 'models')
+            self.check_cant_import('cwf.models')
+            inject(stolen_vars, 'cwf.models')
+            mod = getattr(__import__('cwf.models'), 'models')
 
             mod.__file__ |should| equal_to(os.path.join(src_dir, "models.py"))
-            mod.__name__ |should| equal_to("src.models")
+            mod.__name__ |should| equal_to("cwf.models")
             self.check_imported_module(mod)
 
         it "works with dictionary":
-            self.check_cant_import('src.hulk')
-            inject({'blah':'things'}, 'src.hulk')
-            mod = getattr(__import__('src.hulk'), 'hulk')
+            self.check_cant_import('cwf.hulk')
+            inject({'blah':'things'}, 'cwf.hulk')
+            mod = getattr(__import__('cwf.hulk'), 'hulk')
 
             mod.__file__ |should| equal_to(os.path.join(src_dir, "hulk.py"))
-            mod.__name__ |should| equal_to("src.hulk")
+            mod.__name__ |should| equal_to("cwf.hulk")
             mod.blah |should| equal_to("things")
 
         it "works with non dictionary":
             val = type("val", (object, ), {})()
-            self.check_cant_import('src.hurmph')
-            inject(val, 'src.hurmph')
-            mod = getattr(__import__('src.hurmph'), 'hurmph')
+            self.check_cant_import('cwf.hurmph')
+            inject(val, 'cwf.hurmph')
+            mod = getattr(__import__('cwf.hurmph'), 'hurmph')
 
             mod.__file__ |should| equal_to(os.path.join(src_dir, "hurmph.py"))
-            mod.__name__ |should| equal_to("src.hurmph")
+            mod.__name__ |should| equal_to("cwf.hurmph")
             mod.value |should| be(val)
 
 describe "FileFaker":

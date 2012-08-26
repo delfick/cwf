@@ -7,8 +7,8 @@ from django.core.urlresolvers import reverse
 from django.utils.text import capfirst
 from django.contrib import admin
 
-from src.views.admin_views import AdminView
-from src.views.rendering import renderer
+from cwf.views.admin_views import AdminView
+from cwf.views.rendering import renderer
 
 ########################
 ###   BUTTON URLPATTERNS
