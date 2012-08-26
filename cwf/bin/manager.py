@@ -1,3 +1,7 @@
+#!/usr/bin/evn python
+
+import os, sys
+
 def manager(location, get_paths=None):
     """
         Custom version of the manage.py script that django provides
@@ -23,3 +27,18 @@ def manager(location, get_paths=None):
     # Start django
     from django.core.management import execute_from_command_line
     execute_from_command_line(sys.argv)
+
+def main():
+    if 'WEBLIBS' in os.environ:
+        sys.path.insert(0, os.environ['WEBLIBS'])
+
+    get_path = None
+    try:
+        from wsgibase import get_path
+    except ImportError:
+        pass
+
+    manager(os.getcwd(), get_path)
+
+if __name__ == '__main__':
+    main()
