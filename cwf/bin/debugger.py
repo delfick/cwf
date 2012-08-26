@@ -1,40 +1,78 @@
-#!/usr/bin/env python
-from cwf.splitter.debugger import Debugger
+from django.core.handlers.wsgi import WSGIHandler
+from django.views import debug
 
-import argparse
+from werkzeug import run_simple, DebuggedApplication
+from paste.debug.prints import PrintDebugMiddleware
+
 import sys
 import os
 
-def make_parser(self):
-    """Create an argparser to get things from the CLI"""
-    parser = argparse.ArgumentParser(description="Start debugger instance of your website")
-    parser.add_argument("project"
-        , help = "The project you want to start up"
-        , required = True
-        )
+class Debugger(object):
+    """
+        Object to setup and start a Debugger instance of your site
+    """
+    default_port = 8000
+    default_host = '0.0.0.0'
 
-    parser.add_argument("-p", "--port"
-        , help = "The port to run the website on"
-        , type = int
-        , default = 8000
-        )
+    def __init__(self, project=None, host=None, port=None, get_path=None):
+        self.host = host or self.default_host
+        self.port = port or self.default_port
+        self.project = project
+        self._get_path = get_path
 
-    parser.add_argument("-h", "--host"
-        , help = "The host to run the website on"
-        , default = '0.0.0.0'
-        )
+    ########################
+    ###   RUNNER
+    ########################
 
-    return parser
+    def run(self):
+        """Start the debugger"""
+        self.setup_500()
+        self.setup_path(self.project)
 
-def main(self, argv=None):
-    """Popuplate options on the class from sys.argv"""
-    if not argv:
-        argv = sys.argv[1:]
+        app = self.setup_app()
+        run_simple(self.host, self.port, app, True)
+    
+    ########################
+    ###   SETUP
+    ########################
 
-    parser = self.make_parser()
-    args = parser.parse_args(argv)
+    def setup_app(self):
+        """Create the application"""
+        app = WSGIHandler()
+        app = PrintDebugMiddleware(app)
+        app = DebuggedApplication(app, True)
 
-    Debugger(project=args.project, host=args.host, port=args.port).run()
+    def setup_500(self):
+        """Set 500 response"""
+        def null_technical_500_response(request, exc_type, exc_value, tb):
+            raise exc_type, exc_value, tb
+        debug.technical_500_response = null_technical_500_response
 
-if __name__ == '__name__':
-    main()
+    def setup_path(self, project):
+        """Alter the path where to find the application"""
+        sys.path = self.get_path(project) + sys.path
+        os.environ['DJANGO_SETTINGS_MODULE'] = '%s.settings' % project
+    
+    ########################
+    ###   UTILITY
+    ########################
+
+    @property
+    def get_path(self):
+        """
+            Find function to modify sys.path with
+            Use either _get_path already on class
+            Or Try to import wsgibase.get_path
+
+            If neither, use a function that just returns an empty list
+        """
+        if not self._get_path:
+            get_path = None
+            try:
+                from wsgibase import get_path
+            except ImportError:
+                pass
+
+            if not get_path or not callable(get_path):
+                self._get_path = lambda project: []
+        return self._get_path
