@@ -377,12 +377,12 @@ describe "Options":
             self.options.url_view(self.section) |should| be(None)
         
         @fudge.patch("cwf.sections.options.dispatcher")
-        it "returns (dispatcher, {self.get_view_kls(), target, section}) otherwise", fake_dispatcher:
+        it "returns (dispatcher, {self.get_view_kls(), target}) otherwise", fake_dispatcher:
             self.options.target = "thing"
             self.options.extra_context = {}
             self.fake_get_view_kls.expects_call().returns(self.kls)
             self.options.url_view(self.section) |should| equal_to(
-                (fake_dispatcher, {'kls':self.kls, 'target':"thing", 'section':self.section})
+                (fake_dispatcher, {'kls':self.kls, 'target':"thing"})
             )
         
         @fudge.patch("cwf.sections.options.dispatcher")
@@ -391,7 +391,7 @@ describe "Options":
             self.options.extra_context = {'one' : 1, 'two' : 2, 'kls' : 3}
             self.fake_get_view_kls.expects_call().returns(self.kls)
             self.options.url_view(self.section) |should| equal_to(
-                (fake_dispatcher, {'kls':self.kls, 'target':"thing", 'section':self.section, 'one' : 1, 'two' : 2})
+                (fake_dispatcher, {'kls':self.kls, 'target':"thing", 'one' : 1, 'two' : 2})
             )
     
     describe "Getting redirect view":

@@ -263,7 +263,7 @@ class Options(object):
             kwargs = {}
             if self.extra_context:
                 kwargs.update(self.extra_context)
-            kwargs.update(dict(kls=kls, target=target, section=section))
+            kwargs.update(dict(kls=kls, target=target))
             return view, kwargs
 
     def redirect_view(self, redirect):
