@@ -1,5 +1,6 @@
 from cwf.sections.section import Section
 from imports import inject
+import imp
 
 ########################
 ###   PARTS
@@ -126,10 +127,20 @@ class Part(object):
         if not hasattr(self.pkg, name):
             # If it doesn't know about it, perhaps we need to import it
             try:
-                __import__(self.pkg.__name__, globals(), locals(), [name], -1)
+                imp.find_module(name, self.pkg.__path__)
+                found_module = True
             except ImportError:
-                # We don't care if there isn't anything to import
-                pass
+                found_module = False
+
+            try:
+                __import__(self.pkg.__name__, globals(), locals(), [name], -1)
+            except ImportError as error:
+                if found_module:
+                    # A module was found, complain that we can't load this thing
+                    raise
+                else:
+                    # We don't care if there isn't anything to import
+                    pass
         
         if hasattr(self.pkg, name):
             return getattr(self.pkg, name)

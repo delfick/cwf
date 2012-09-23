@@ -3,6 +3,7 @@
 from cwf.splitter.parts import Part
 
 import fudge
+import types
 
 describe "Part":
     it "gets name, active and kwargs":
@@ -76,55 +77,38 @@ describe "Part":
             part.pkg |should| be(pkg)
 
     describe "Loading package from self.pkg":
-        before_each:
-            self.pkg = fudge.Fake("pgk")
-            self.obj = fudge.Fake("obj")
-            self.name = fudge.Fake("name")
-            self.active = fudge.Fake("active")
-            self.pkg_name = fudge.Fake("pkg_name")
-
-            self.pkg.__name__ = self.pkg_name
-            self.part = type("parts", (Part, ), {'pkg' : self.pkg})(self.name, self.active)
-
         it "gets it straight from package if already there":
-            self.pkg.blah = self.obj
-            self.part.load('blah') |should| be(self.obj)
+            part = Part("part1", True)
+            part.do_import("tests.splitter.website")
 
-        @fudge.test
+            part.pkg |should| respond_to("things")
+
+            # Want to make sure it doesn't need import again to get the thing
+            fake_import = fudge.Fake("__import__")
+            with fudge.patched_context("__builtin__", "__import__", fake_import):
+                thing = part.load("things")
+                thing |should| equal_to("things")
+
         it "imports it from package if not already there":
-            lcls = fudge.Fake("lcls")
-            glbls = fudge.Fake('glbls')
-            def do_import(*args):
-                self.pkg.blah = self.obj
+            part = Part("part1", True)
+            part.do_import("tests.splitter.website")
+            not_in_package = part.load("not_in_package")
+            type(not_in_package) |should| be(types.ModuleType)
+            not_in_package.not_in_package |should| equal_to("not_in_package")
 
-            fake_import = (fudge.Fake("import").expects_call()
-                .with_args(self.pkg_name, glbls, lcls, ['blah'], -1).calls(do_import)
-                )
-
-            with fudge.patched_context("__builtin__", "globals", lambda : glbls):
-                with fudge.patched_context("__builtin__", "locals", lambda : lcls):
-                    with fudge.patched_context("__builtin__", "__import__", fake_import):
-                        self.part.load('blah') |should| be(self.obj)
-
-        it "ignores import error if it needs to import":
-            lcls = fudge.Fake("lcls")
-            glbls = fudge.Fake('glbls')
-            fake_import = (fudge.Fake("import").expects_call()
-                .with_args(self.pkg_name, glbls, lcls, ['blah'], -1).raises(ImportError)
-                )
-
-            with fudge.patched_context("__builtin__", "globals", lambda : glbls):
-                with fudge.patched_context("__builtin__", "locals", lambda : lcls):
-                    with fudge.patched_context("__builtin__", "__import__", fake_import):
-                        self.part.load('blah') |should| be(None)
+        it "ignores import error if it can't find the module to be imported":
+            part2 = Part("part2", True)
+            part2.do_import("tests.splitter.website")
+            not_there = part2.load("not_there")
+            not_there |should| be(None)
         
-        it "works on an actual package":
+        it "raises errors if importing a module that has problems":
             part1 = Part("part1", True)
             part1.do_import("tests.splitter.website")
             with self.assertRaises(SyntaxError):
                 part1.load("syntax_error")
-            part1.load("things") |should| be("things")
 
+        it "successfully imports from module if there and has no errors on import":
             part2 = Part("part2", True)
             part2.do_import("tests.splitter.website")
             correct = part2.load("correct")
