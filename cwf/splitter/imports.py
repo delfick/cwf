@@ -1,4 +1,5 @@
 import __builtin__
+import inspect
 import types
 import sys
 import imp
