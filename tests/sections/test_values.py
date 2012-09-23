@@ -36,13 +36,13 @@ describe "Values":
             self.path = fudge.Fake("path")
             self.request = fudge.Fake("request")
             self.parent_url_parts = fudge.Fake("parent_url_parts")
-            self.info = (self.request, self.path, self.parent_url_parts)
+            self.info = (self.request, self.parent_url_parts, self.path)
             
             self.fake_get_values = fudge.Fake("get_values")
             self.values = type("Values", (Values, ), {'get_values' : self.fake_get_values})()
         
         def get_info(self):
-            return list(self.values.get_info(self.request, self.path, self.parent_url_parts))
+            return list(self.values.get_info(self.request, self.parent_url_parts, self.path))
         
         @fudge.test        
         it "yields all (alias, url) from result of get_values":
