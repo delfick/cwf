@@ -77,13 +77,13 @@ class Parts(object):
     def site(self, name, active_only=True):
         """
             Create and return a site object that holds each section.
-            Options for the add function is kept as self.kwargs in each part
+            Options for the add_child function is kept as self.kwargs in each part
         """
-        site = Section(name, promote_children=True)
+        site = Section(name).configure(promote_children=True)
         for part in self.each_part(active_only):
             urls = part.load("urls")
             if urls and hasattr(urls, 'section'):
-                site.add(urls.section, **part.kwargs)
+                site.add_child(urls.section, **part.kwargs)
         return site
 
     def add_url_defaults(self, urls):
