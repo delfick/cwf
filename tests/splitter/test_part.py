@@ -17,9 +17,13 @@ describe "Part":
 
     it "adds include_as to kwargs if name is a string and kwargs doesn't have include_as":
         name = "to include as"
-        active = fudge.Fake("active")
-        part = Part(name, active)
+        part = Part(name)
         part.kwargs['include_as'] |should| equal_to(name)
+
+    it "doesn't add include_as if 'first' is in kwargs and truthy":
+        name = "to include as"
+        part = Part(name, first=True)
+        part.kwargs |should_not| contain('include_as')
 
     it "leaves include_as alone if already in kwargs":
         name = "to include as"

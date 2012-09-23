@@ -105,7 +105,8 @@ class Part(object):
         
         # Add include_as if there is none already
         if type(name) in (str, unicode) and kwargs.get('include_as', None) is None:
-            kwargs['include_as'] = self.name
+            if not kwargs.get('first'):
+                kwargs['include_as'] = self.name
     
     def do_import(self, package):
         """Get the package we are representing"""
