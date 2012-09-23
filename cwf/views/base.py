@@ -127,17 +127,26 @@ class View(object):
     def get_state(self, request, target):
         """Get a state object for this request"""
         path = self.path_from_request(request)
+        section = self.get_section(request, path)
         base_url = self.base_url_from_request(request)
         if base_url != '' and path[0] == '':
             path.pop(0)
 
-        menu = Menu(request, path)
+        menu = None
+        if section:
+            menu = Menu(request, section)
+
         return DictObj(
               menu = menu
             , path = path
             , target = target
+            , section = section
             , base_url = base_url
             )
+
+    def get_section(self, request, path):
+        """Get a section from the request object"""
+        return getattr(request, 'section', None)
 
     ########################
     ###   UTILITY
