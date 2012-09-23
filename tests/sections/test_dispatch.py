@@ -39,16 +39,19 @@ describe "Dispatcher":
         
         @fudge.patch("__builtin__.locals", "__builtin__.globals", "__builtin__.__import__")
         it "using __import__ to find the view if location is a string", fake_locals, fake_globals, fake_import:
+            kls = fudge.Fake('kls')
+            view = fudge.Fake("view")
             lcls = fudge.Fake("locals")
             glbls = fudge.Fake("globals")
-            result = fudge.Fake("result")
             module = fudge.Fake("module")
-            module.name = result
+            module.name = kls
+
+            kls.expects_call().returns(view)
             fake_locals.expects_call().returns(lcls)
             fake_globals.expects_call().returns(glbls)
             fake_import.expects_call().with_args("path.to.place", glbls, lcls, ['name'], -1).returns(module)
             
-            self.dispatcher.find_view("path.to.place.name") |should| be(result)
+            self.dispatcher.find_view("path.to.place.name") |should| be(view)
     
     describe "Calling the dispatcher":
         before_each:
