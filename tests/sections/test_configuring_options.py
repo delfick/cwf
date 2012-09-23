@@ -134,7 +134,7 @@ describe "Configuring Options":
                     )
             
             @fudge.test
-            it "complains if any arguemtns aren't taken by a setter":
+            it "complains if any arguments aren't taken by a setter":
                 arg1 = fudge.Fake("arg1")
                 arg2 = fudge.Fake("arg2")
                 arg3 = fudge.Fake("arg3")
