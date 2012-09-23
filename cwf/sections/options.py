@@ -47,6 +47,10 @@ class Options(object):
         self.target = None
         self.redirect = None
         self.extra_context = None
+
+        # Some options for having a section as a django include
+        self.app_name = None
+        self.namespace = None
         
         # Determine what to show in the menu
         # alias: what appears in the menu
@@ -70,7 +74,7 @@ class Options(object):
         
     def setters(self):
         '''Determine each setter method and required args for that method'''
-        for method in ('set_conditionals', 'set_view', 'set_menu'):
+        for method in ('set_conditionals', 'set_view', 'set_urlname', 'set_menu'):
             func = getattr(self, method)
             required = list(arg for arg in inspect.getargspec(func).args if arg != 'self')
             yield func, required
@@ -166,6 +170,13 @@ class Options(object):
             raise ConfigurationError(
                 "Values must have a get_info method to get information from. %s does not" % self.values
                 )
+
+    def set_urlname(self, namespace=Empty, app_name=Empty):
+        """Set options for what's put in a django include if that is used to create patterns for this section"""
+        vals = (('namespace', namespace), ('app_name', app_name))
+        for name, val in vals:
+            if val is not Empty:
+                setattr(self, name, val)
 
     ########################
     ###   URL PATTERN
