@@ -1,6 +1,3 @@
-from django.views.generic.simple import redirect_to
-from django.http import Http404
-
 from errors import ConfigurationError
 from dispatch import dispatcher
 
@@ -272,6 +269,9 @@ class Options(object):
             If url is relative, it will make it absolute by joining with request.path
             If no url, a 404 will be raised
         '''
+        from django.views.generic.simple import redirect_to
+        from django.http import Http404
+        
         def redirector(request, redirect=redirect, **kwargs):
             url = redirect
             if callable(redirect):

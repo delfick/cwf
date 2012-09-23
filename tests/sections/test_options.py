@@ -423,7 +423,7 @@ describe "Options":
                 caller = lambda : redirector(self.request)
                 Http404 |should| be_thrown_by(caller)
             
-            @fudge.patch("cwf.sections.options.redirect_to")
+            @fudge.patch("django.views.generic.simple.redirect_to")
             it "uses self.redirect_to with url if it starts with /", fake_redirect_to:
                 url = fudge.Fake("url").expects("startswith").with_args("/").returns(True)
                 result = fudge.Fake("result")
@@ -440,7 +440,7 @@ describe "Options":
                 redirector2, _ = self.options.redirect_view('/stuff/asdf')
                 redirector2(self.request) |should| be(result)
             
-            @fudge.patch("cwf.sections.options.redirect_to")
+            @fudge.patch("django.views.generic.simple.redirect_to")
             it "joins with request.path and removes multiple slashes if not starts with /", fake_redirect_to:
                 result = fudge.Fake("result")
                 self.redirect.expects_call().with_args(self.request).returns('one/two')
