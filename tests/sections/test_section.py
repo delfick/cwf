@@ -195,34 +195,38 @@ describe "Section":
             describe "Without cloning":
                 @fudge.test
                 it "sets parent on each section as current section and uses add_child":
-                    consider_for_menu = fudge.Fake("consider_for_menu")
+                    kw1 = fudge.Fake("kw1")
+                    kw2 = fudge.Fake("kw2")
+
                     (self.fake_add_child.expects_call()
-                        .with_args(self.section1, consider_for_menu=consider_for_menu)
-                        .next_call().with_args(self.section2, consider_for_menu=consider_for_menu)
-                        .next_call().with_args(self.section3, consider_for_menu=consider_for_menu)
+                        .with_args(self.section1, kw1=kw1, kw2=kw2)
+                        .next_call().with_args(self.section2, kw1=kw1, kw2=kw2)
+                        .next_call().with_args(self.section3, kw1=kw1, kw2=kw2)
                         )
                     
                     self.section1.parent = self.parent1
                     self.section2.parent = self.parent2
                     self.section3.parent = self.parent3
                     
-                    self.section.adopt(self.section1, self.section2, self.section3, consider_for_menu=consider_for_menu)
+                    self.section.adopt(self.section1, self.section2, self.section3, kw1=kw1, kw2=kw2)
                     for section in (self.section1, self.section2, self.section3):
                         section.parent |should| be(self.section)
             
             describe "With cloning":
                 @fudge.test
-                it "uses self.copy on each section":     
-                    consider_for_menu = fudge.Fake("consider_for_menu")               
+                it "uses self.copy on each section and passes on all kwargs except clone":
+                    kw1 = fudge.Fake("kw1")
+                    kw2 = fudge.Fake("kw2")
+
                     (self.fake_copy.expects_call()
-                        .with_args(self.section1, consider_for_menu=consider_for_menu)
-                        .next_call().with_args(self.section2, consider_for_menu=consider_for_menu)
-                        .next_call().with_args(self.section3, consider_for_menu=consider_for_menu)
+                        .with_args(self.section1, kw1=kw1, kw2=kw2)
+                        .next_call().with_args(self.section2, kw1=kw1, kw2=kw2)
+                        .next_call().with_args(self.section3, kw1=kw1, kw2=kw2)
                         )
                     
                     self.section.adopt(self.section1, self.section2, self.section3
                         , clone=True
-                        , consider_for_menu=consider_for_menu
+                        , kw1=kw1, kw2=kw2
                         )
         
         describe "Merging in other sections":

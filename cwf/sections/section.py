@@ -74,7 +74,7 @@ class Section(object):
         section.options = self.options.clone(match=match)
         return section
     
-    def adopt(self, *sections, **kwargs):
+    def adopt(self, *sections, **options):
         '''
             Adopt zero or more sections as it's own
             Will also replace this section's parent with itself
@@ -82,13 +82,17 @@ class Section(object):
             If clone is specified as a keyword argument to be True then section is copied
             Otherwise, sections will just have their parent overriden and added as a child
         '''
-        clone = kwargs.get('clone')
+        clone = False
+        if 'clone' in options:
+            clone = options['clone']
+            del options['clone']
+
         for section in sections:
             if clone:
-                self.copy(section, consider_for_menu=kwargs.get("consider_for_menu"))
+                self.copy(section, **options)
             else:
                 section.parent=self
-                self.add_child(section, consider_for_menu=kwargs.get("consider_for_menu"))
+                self.add_child(section, **options)
         
         return self
     
