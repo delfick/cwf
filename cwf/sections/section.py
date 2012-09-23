@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import include, patterns
+from django.conf.urls.defaults import patterns as django_patterns
 from django.http import Http404
 from functools import wraps
 
@@ -6,6 +6,30 @@ from errors import ConfigurationError
 from pattern_list import PatternList
 from dispatch import dispatcher
 from options import Options
+
+class Item(object):
+    """
+        Data structure to represent an item in the menu
+    """
+    def __init__(self, section, consider_for_menu=True, include_as=None):
+        self.section = section
+        self.include_as = include_as
+        self.consider_for_menu = consider_for_menu
+
+    @classmethod
+    def create(cls, section, kwargs):
+        options = {key:val for key, val in kwargs.items() if key in ('consider_for_menu', 'include_as')}
+        return cls(section, **options)
+
+    def clone(self, parent):
+        """Convenience for making a clone of this itme"""
+        old_section = self.section
+        cloned_section = old_section.clone(parent=parent)
+        cloned_section.merge(old_section, take_base=True)
+        return self.__class__(cloned_section, consider_for_menu=self.consider_for_menu, include_as=self.include_as)
+
+    def __repr__(self):
+        return "<Item {}|:|menu:{}|:|include:{}>".format(self.section, self.consider_for_menu, self.include_as)
 
 class Section(object):
     '''
@@ -101,34 +125,36 @@ class Section(object):
             Copy children from a section into this section.
             Will only copy section._base if take_base is True
         '''
-        if take_base and hasattr(section, '_base') and section._base:
-            base, consider_for_menu = section._base
-            self.copy(base, first=True, consider_for_menu=consider_for_menu)
+        if take_base and section._base:
+            self._base = section._base.clone(parent=self)
         
-        for child, consider_for_menu in section._children:
-            self.copy(child, consider_for_menu=consider_for_menu)
+        for item in section._children:
+            self._children.append(item.clone(parent=self))
         
         return self
     
-    def copy(self, section, first=False, consider_for_menu=None):
-        """Create a clone of the given section, merge clone with original; and add clone as a child"""
-        cloned = section.clone(parent=self)
-        self.add_child(cloned, first=first, consider_for_menu=consider_for_menu)
-        cloned.merge(section, take_base=True)
-        return self
-    
-    def add_child(self, section, first=False, consider_for_menu=True):
+    def add_child(self, section, first=False, **options):
         """
             Add a child to the section
             If first, then overwrite _base, otherwise add to _children.
 
-            Will be appended as a tuple (children, consider_for_menu)
+            Will be appended as an instance of the Item object
         """
+        new_item = Item.create(section, options)
         if first:
-            self._base = (section, consider_for_menu)
+            self._base = new_item
         else:
-            self._children.append((section, consider_for_menu))
+            self._children.append(new_item)
         return section
+    
+    def copy(self, section, first=False, **kwargs):
+        """Create a clone of the given section, merge clone with original; and add clone as a child"""
+        options = {key:val for key, val in kwargs.items() if key in ('consider_for_menu', 'include_as')}
+
+        cloned = section.clone(parent=self)
+        self.add_child(cloned, first=first, **options)
+        cloned.merge(section, take_base=True)
+        return self
         
     ########################
     ###   SPECIAL
@@ -153,9 +179,8 @@ class Section(object):
             If the section has a base, then use options on that
             Otherwise just use options on the section itself
         """
-        if hasattr(self, '_base') and self._base:
-            base, _ = self._base
-            return base.options
+        if self._base:
+            return self._base.section.options
         else:
             return self.options
     
@@ -175,13 +200,12 @@ class Section(object):
         """
             Get all the children
             Children are from self._base and self._children.
-            All children are a tuple of (child, consider_for_menu)
         """
         if self._base:
-            yield self._base[0]
+            yield self._base
         
-        for child, _ in self._children:
-            yield child
+        for item in self._children:
+            yield item
     
     @property
     def url_children(self):
@@ -189,39 +213,38 @@ class Section(object):
             Yield all children followed by self
             This ensures longer urls are specified before shorter urls
         """
-        for child in self.children:
-            yield child
-        yield self
+        for item in self.children:
+            yield item
+        if not self._base:
+            yield Item(self)
     
     @property
-    def menu_sections(self):
+    def menu_children(self):
         """
             Get all the children that are considered for the menu
             Children are from self._base and self._children.
-            All children are a tuple of (child, consider_for_menu)
             Yield only those whose consider_for_menu is truthy
         """
-        if self._base and self._base[1]:
-            for promoted in self._base[0].promoted_menu_children:
+        if self._base and self._base.consider_for_menu:
+            for promoted in self._base.section.promoted_menu_children(self._base):
                 yield promoted
         
-        for child, consider_for_menu in self._children:
-            if consider_for_menu:
-                for promoted in child.promoted_menu_children:
+        for item in self._children:
+            if item.consider_for_menu:
+                for promoted in item.section.promoted_menu_children(item):
                     yield promoted
 
-    @property
-    def promoted_menu_children(self):
+    def promoted_menu_children(self, item):
         """
-            Used to get any promoted children when calculating menu_sections
+            Used to get any promoted children when calculating menu_children
             And recurse into promoted children of those promoted children
             If no promoted children, just yield self
         """
         if not self.options.promote_children:
-            yield self
+            yield item
         else:
-            for child in self.menu_sections:
-                for promoted in child.promoted_menu_children:
+            for item in self.menu_children:
+                for promoted in item.section.promoted_menu_children(item):
                     yield promoted
     
     @property

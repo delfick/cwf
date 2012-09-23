@@ -1,7 +1,7 @@
 # coding: spec
 
 from cwf.sections.errors import ConfigurationError
-from cwf.sections.section import Section
+from cwf.sections.section import Section, Item
 
 from contextlib import contextmanager
 from django.http import Http404
@@ -235,83 +235,81 @@ describe "Section":
                 self.new_section._base = None
                 self.new_section._children = []
                 
-                # Objects to represent consider_for_menu booleans
-                self.cfm1 = fudge.Fake("cfm1")
-                self.cfm2 = fudge.Fake("cfm2")
-                
-                # Objects to represent the children
+                # Objects to represent the children and their clones
                 self.child1 = fudge.Fake("child1")
                 self.child2 = fudge.Fake("child2")
+                self.cloned1 = fudge.Fake("cloned1")
+                self.cloned2 = fudge.Fake("cloned2")
                 
-                # Fake copy for the section to test
-                self.fake_copy = fudge.Fake("copy")
-                self.section = type("Section", (Section, ), { 'copy' : self.fake_copy})()
+                # Section to test with
+                self.section = Section()
             
             @fudge.test
             it "returns self":
-                self.fake_copy.expects_call()
-
                 self.section.merge(self.new_section) |should| be(self.section)
                 self.section.merge(self.new_section, take_base=True) |should| be(self.section)
                 
-                new_base = fudge.Fake("new_base")
-                self.new_section._base = (new_base, True)
+                new_base = fudge.Fake("new_base").expects("clone")
+                self.new_section._base = new_base
                 self.section.merge(self.new_section, take_base=True) |should| be(self.section)
 
             @fudge.test
-            it "will copy everything in new section's _children":
-                self.new_section._children = [(self.child1, self.cfm1), (self.child2, self.cfm2)]
-
-                (self.fake_copy.expects_call()
-                    .with_args(self.child1, consider_for_menu=self.cfm1)
-                    .next_call().with_args(self.child2, consider_for_menu=self.cfm2)
-                    )
-                
+            it "will clone everything in new section's _children":
+                self.child1.expects("clone").with_args(parent=self.section).returns(self.cloned1)
+                self.child2.expects("clone").with_args(parent=self.section).returns(self.cloned2)
+                self.new_section._children = [self.child1, self.child2]
                 self.section.merge(self.new_section)
+                self.assertListEqual(self.section._children, [self.cloned1, self.cloned2])
             
             describe "Using take_base":
                 @fudge.test
                 it "will not replace _base if new section has no base":
                     old_base = fudge.Fake("old_base")
-                    self.section._base = (old_base, True)
+                    self.section._base = old_base
                     self.section.merge(self.new_section, take_base=True)
-                    self.section._base |should| equal_to((old_base, True))
+                    self.section._base |should| be(old_base)
 
                 @fudge.test
                 it "will not replace _base if new section has base but take_base is False":
                     old_base = fudge.Fake("old_base")
                     new_base = fudge.Fake("new_base")
 
-                    self.section._base = (old_base, True)
-                    self.new_section._base = (new_base, True)
+                    self.section._base = old_base
+                    self.new_section._base = new_base
 
                     self.section.merge(self.new_section, take_base=False)
-                    self.section._base |should| equal_to((old_base, True))
+                    self.section._base |should| be(old_base)
             
                 @fudge.test
-                it "will replace copy base from new section if it has a base":
-                    old_base = fudge.Fake("old_base")
-                    new_base = fudge.Fake("new_base")
-                    new_section = Section()
-                    consider_for_menu = fudge.Fake("consider_for_menu")
+                it "will replace with clone base from new section if it has a base":
+                    cloned_base = fudge.Fake("cloned_base")
 
-                    self.section.add_child(old_base, first=True)
-                    new_section.add_child(new_base, first=True, consider_for_menu=consider_for_menu)
+                    old_base = fudge.Fake("old_base")
+                    new_base = (fudge.Fake("new_base").expects("clone")
+                        .with_args(parent=self.section).returns(cloned_base)
+                        )
+
+                    self.section._base = old_base
+                    self.new_section._base = new_base
 
                     # Copy will add the a clone of the new base
-                    self.fake_copy.expects_call().with_args(new_base, first=True, consider_for_menu=consider_for_menu)
-                    self.section.merge(new_section, take_base=True)
+                    self.section.merge(self.new_section, take_base=True)
+                    self.section._base |should| be(cloned_base)
         
         describe "Adding a copy of a section":
             before_each:
                 self.new_section = fudge.Fake("new_section")
                 self.fake_add_child = fudge.Fake("add_child")
-                self.section = type("Section", (Section, ), {'add_child' : self.fake_add_child})()
+                self.section = type("Section", (Section, )
+                    , { 'add_child' : self.fake_add_child
+                      }
+                    )()
             
             @fudge.test
             it "creates a clone of the given section with new parent and adds it as a child after merging with original":
+                ia = fudge.Fake("ia")
+                cfm = fudge.Fake("cfm")
                 first = fudge.Fake("first")
-                consider_for_menu = fudge.Fake("consider_for_menu")
 
                 # Cloned section is merged with original to get the children
                 cloned_section = (fudge.Fake("cloned_section").expects("merge")
@@ -323,31 +321,50 @@ describe "Section":
 
                 # Clone is added as a child along with first and consider_for_menu passed into copy
                 self.fake_add_child.expects_call().with_args(cloned_section
-                    , first=first, consider_for_menu=consider_for_menu
+                    , first=first, consider_for_menu=cfm, include_as=ia
                     )
 
-                self.section.copy(self.new_section, first=first, consider_for_menu=consider_for_menu) |should| be(self.section)
+                copy = self.section.copy(self.new_section, first=first, consider_for_menu=cfm, include_as=ia)
+                copy |should| be(self.section)
         
         describe "Adding a section":
             before_each:
                 self.section = Section()
-                self.section._base = self.original_base = fudge.Fake("original_base")
-                
+                self.old_base = fudge.Fake("old_base")
+                self.include_as = fudge.Fake("include_as")
                 self.new_section = fudge.Fake("new_section")
                 self.consider_for_menu = fudge.Fake("consider_for_menu")
+            
+            @fudge.patch("cwf.sections.section.Item.create")
+            it "adds to self._base if first is True", fake_create:
+                item = fudge.Fake("item")
+                options = dict(consider_for_menu=self.consider_for_menu, include_as=self.include_as)
+
+                fake_create.expects_call().with_args(self.new_section, options).returns(item)
+
+                self.section._base = self.old_base
+                self.section.add_child(self.new_section, first=True, **options)
+                self.section._base |should| be(item)
                 
-            it "adds to self._base if first is True":
-                self.section._base |should| be(self.original_base)
-                self.section.add_child(self.new_section, first=True, consider_for_menu=self.consider_for_menu)
-                self.section._base |should| equal_to((self.new_section, self.consider_for_menu))
-                
-            it "adds to self._children if first is False":
-                self.section._base |should| be(self.original_base)
-                self.section._children |should| be_empty
-                
-                self.section.add_child(self.new_section, first=False, consider_for_menu=self.consider_for_menu)
-                self.section._base |should| be(self.original_base)
-                self.section._children |should| equal_to([(self.new_section, self.consider_for_menu)])
+            @fudge.patch("cwf.sections.section.Item.create")
+            it "adds to self._children if first is False", fake_create:
+                item1 = fudge.Fake("item1")
+                item2 = fudge.Fake("item2")
+                options = dict(consider_for_menu=self.consider_for_menu, include_as=self.include_as)
+
+                (fake_create.expects_call()
+                    .with_args(self.new_section, options).returns(item1)
+                    .next_call().with_args(self.new_section, options).returns(item2)
+                    )
+
+                self.section._base = self.old_base
+                self.section.add_child(self.new_section, first=False, **options)
+                self.section._base |should| be(self.old_base)
+                self.section._children |should| equal_to([item1])
+
+                self.section.add_child(self.new_section, first=False, **options)
+                self.section._base |should| be(self.old_base)
+                self.section._children |should| equal_to([item1, item2])
 
             it "returns the section being added":
                 self.section.add_child(self.new_section, first=True) |should| be(self.new_section)
@@ -415,8 +432,14 @@ describe "Section":
             self.child2 = fudge.Fake("child2")
             
             self.section = Section()
-            self.section._base = (self.base, self.cfm)
-            self.section._children = [(self.child1, self.cfm), (self.child2, self.cfm)]
+            self.section._base = self.base
+            self.section._children = [self.child1, self.child2]
+
+        def assertEqualItem(self, item, section=None, consider_for_menu=True, include_as=None):
+            """Helper to check an item"""
+            item.section |should| be(section)
+            item.include_as |should| equal_to(include_as)
+            item.consider_for_menu |should| be(consider_for_menu)
             
         it "yields self._base first":
             list(self.section.children)[0] |should| be(self.base)
@@ -434,7 +457,12 @@ describe "Section":
             self.section.add_child(self.child1, consider_for_menu=self.cfm)
             self.section.add_child(self.base, first=True)
             self.section.add_child(self.child2)
-            list(self.section.children) |should| equal_to([self.base, self.child1, self.child2])
+
+            children = list(self.section.children)
+            len(children) |should| be(3)
+            self.assertEqualItem(children[0], section=self.base)
+            self.assertEqualItem(children[1], section=self.child1, consider_for_menu=self.cfm)
+            self.assertEqualItem(children[2], section=self.child2)
 
     describe "Determining url children":
         before_each:
@@ -446,53 +474,88 @@ describe "Section":
             yield section
             patched.restore()
 
-        it "yields all children first before itself":
-            c1 = fudge.Fake("child1")
-            c2 = fudge.Fake("child2")
-            c3 = fudge.Fake("child3")
-            with self.using_children(self.section, [c1, c2, c3]):
-                list(self.section.url_children) |should| equal_to([c1, c2, c3, self.section])
+        describe "With no base":
+            before_each:
+                self.section._base = None
 
-        it "yields just itself if no children":
-            list(self.section.url_children) |should| equal_to([self.section])
+            @fudge.patch("cwf.sections.section.Item")
+            it "yields all children first before itself", fakeItem:
+                c1 = fudge.Fake("child1")
+                c2 = fudge.Fake("child2")
+                c3 = fudge.Fake("child3")
+                item = fudge.Fake("item")
+                fakeItem.expects_call().with_args(self.section).returns(item)
+                with self.using_children(self.section, [c1, c2, c3]):
+                    list(self.section.url_children) |should| equal_to([c1, c2, c3, item])
+
+            @fudge.patch("cwf.sections.section.Item")
+            it "yields just itself if no children", fakeItem:
+                item = fudge.Fake("item")
+                fakeItem.expects_call().with_args(self.section).returns(item)
+                list(self.section.url_children) |should| equal_to([item])
+
+        describe "With a base":
+            before_each:
+                self.section._base = True
+
+            it "yields just children first before itself":
+                c1 = fudge.Fake("child1")
+                c2 = fudge.Fake("child2")
+                c3 = fudge.Fake("child3")
+                with self.using_children(self.section, [c1, c2, c3]):
+                    list(self.section.url_children) |should| equal_to([c1, c2, c3])
+
+            it "yields nothing if no children":
+                with self.using_children(self.section, []):
+                    list(self.section.url_children) |should| equal_to([])
     
-    describe "menu sections":
+    describe "menu children":
         before_each:
-            self.cfmb = fudge.Fake("cfmb")
-            self.cfm1 = fudge.Fake("cfm1")
-            self.cfm2 = fudge.Fake("cfm2")
-            
             self.base = fudge.Fake("base")
             self.pf_base = fudge.Fake("pf_base")
-            self.base.promoted_menu_children = [self.pf_base]
+            self.base_item = Item(self.base)
 
             self.child1 = fudge.Fake("child1")
             self.pf_child1 = fudge.Fake("pf_child1")
-            self.child1.promoted_menu_children = [self.pf_child1]
+            self.child1_item = Item(self.child1)
 
             self.child2 = fudge.Fake("child2")
             self.pf_child2 = fudge.Fake("pf_child2")
-            self.child2.promoted_menu_children = [self.pf_child2]
+            self.child2_item = Item(self.child2)
             
             self.section = Section()
-            self.section._base = (self.base, self.cfmb)
-            self.section._children = [(self.child1, self.cfm1), (self.child2, self.cfm2)]
+            self.section._base = self.base_item
+            self.section._children = [self.child1_item, self.child2_item]
             
         it "yields self._base first":
-            list(self.section.menu_sections)[0] |should| be(self.pf_base)
+            self.child1.expects("promoted_menu_children").returns([])
+            self.child2.expects("promoted_menu_children").returns([])
+            self.base.expects("promoted_menu_children").with_args(self.base_item).returns([self.pf_base])
+            list(self.section.menu_children)[0] |should| be(self.pf_base)
         
         it "yields children after self._base":
-            list(self.section.menu_sections) |should| equal_to([self.pf_base, self.pf_child1, self.pf_child2])
+            self.base.expects("promoted_menu_children").with_args(self.base_item).returns([self.pf_base])
+            self.child1.expects("promoted_menu_children").with_args(self.child1_item).returns([self.pf_child1])
+            self.child2.expects("promoted_menu_children").with_args(self.child2_item).returns([self.pf_child2])
+
+            list(self.section.menu_children) |should| equal_to([self.pf_base, self.pf_child1, self.pf_child2])
         
         it "doesn't yield self._base or children if consider_for_menu is Falsey":
-            self.section._base = (self.base, False)
-            list(self.section.menu_sections) |should| equal_to([self.pf_child1, self.pf_child2])
+            self.base.expects("promoted_menu_children").with_args(self.base_item).returns([self.pf_base])
+            self.child1.expects("promoted_menu_children").with_args(self.child1_item).returns([self.pf_child1])
+            self.child2.expects("promoted_menu_children").with_args(self.child2_item).returns([self.pf_child2])
+
+            self.section._base.consider_for_menu = False
+            list(self.section.menu_children) |should| equal_to([self.pf_child1, self.pf_child2])
             
-            self.section._children = [(self.child1, False), (self.child2, False)]
-            list(self.section.menu_sections) |should| be_empty
+            self.section._children = [self.child1_item, self.child2_item]
+            for child in self.section._children:
+                child.consider_for_menu = False
+            list(self.section.menu_children) |should| be_empty
 
     describe "Promoted menu sections":
         before_each:
+            self.item = fudge.Fake("item")
             self.section = Section()
 
             self.child1 = self.section.add("child1").configure(promote_children=True)
@@ -506,12 +569,12 @@ describe "Section":
             self.child2 = self.section.add("child2")
             self.child3 = self.section.add("child3")
 
-        it "yields self if options doesn't say to promote children":
-            list(self.section.promoted_menu_children) |should| equal_to([self.section])
+        it "yields item passed in if options doesn't say to promote children":
+            list(self.section.promoted_menu_children(self.item)) |should| equal_to([self.item])
 
         it "yields promoted children of it's children if options says to promote children":
             self.section.configure(promote_children=True)
-            list(self.section.promoted_menu_children) |should| equal_to(
+            [item.section for item in self.section.promoted_menu_children(self.item)] |should| equal_to(
                 [self.child111, self.child112, self.child12, self.child2, self.child3]
                 )
 
