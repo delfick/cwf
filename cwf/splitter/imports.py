@@ -53,8 +53,15 @@ def inject(obj, *names):
 
         Will complain if no names are specified
     """
+    # Be nice to being able to just pass in a list
+    if len(names) is 1 and type(names[0]) not in (str, unicode):
+        names = names[0]
+
+    # Complain if no names passed in at all
     if not names:
         raise Exception("Need atleast one name to inject the object into")      
+
+    # Inject!
     sys.meta_path.append(FileFaker(names, obj))
 
 class FileFaker(object):
