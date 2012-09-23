@@ -273,7 +273,7 @@ class Section(object):
     def make_view(self, view, section):
         """
             Wrap view for a pattern:
-             * Set section on requeset
+             * Set section on request
              * Make sure that the section is reachable
              * If section isn't reachable, raise Http404
         """
