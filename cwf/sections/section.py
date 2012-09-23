@@ -26,13 +26,13 @@ class Section(object):
     ###   USAGE
     ########################
     
-    def add(self, url, match=None, name=None):
+    def add(self, url, match=None, name=None, first=False):
         """Creates a new section and uses add_child to add it as a child"""
         if not url:
             raise ConfigurationError("Use section.first() to add a section with same url as parent")
         
         section = self.make_section(url, match, name)
-        self.add_child(section)
+        self.add_child(section, first=first)
         return section
 
     def first(self, url="", match=None, name=None):

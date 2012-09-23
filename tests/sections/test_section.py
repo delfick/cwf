@@ -55,6 +55,13 @@ describe "Section":
                 self.fake_make_section.expects_call().returns(self.new_section)
                 self.fake_add_child.expects_call().with_args(self.new_section)
                 self.section.add(self.url, match=self.match, name=self.name) |should| be(self.new_section)
+            
+            @fudge.test
+            it "adds as first child if first is specified":
+                first = fudge.Fake("first")
+                self.fake_make_section.expects_call().returns(self.new_section)
+                self.fake_add_child.expects_call().with_args(self.new_section, first=first)
+                self.section.add(self.url, match=self.match, name=self.name, first=first) |should| be(self.new_section)
         
         describe "Adding a first child":
             @fudge.test
