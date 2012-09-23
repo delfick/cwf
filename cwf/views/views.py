@@ -16,6 +16,6 @@ class LocalOnlyView(View):
 
 class JSView(View):
     def execute(self, target, request, args, kwargs):  
-        result = super(JSView, self).execute(target, request, *args, **kwargs)
+        result = super(JSView, self).execute(target, request, args, kwargs)
         template, data = result
-        return self.json(data)
+        return self.renderer.json(data)
