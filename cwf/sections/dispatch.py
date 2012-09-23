@@ -9,6 +9,17 @@ class Dispatcher(object):
     '''
     def __init__(self):
         self.views = {}
+
+    @property
+    def __name__(self):
+        """
+            Non-threadsafe hack to make amonpy happy
+            And to make the dispatcher object wrappable by the wraps decorator
+        """
+        if hasattr(self, 'view') and hasattr(self, 'target'):
+            return "Dispatcher: %s:%s" % (self.view.__class__.__name__, self.target)
+        else:
+            return self.__class__.__name__
         
     def get_view(self, location):
         '''Ensure view for given location is in self.views and then return that view'''
@@ -32,10 +43,9 @@ class Dispatcher(object):
             For this kls and target return the result of invoking the correct view
             It is assumed this is created by Section.patterns in which case Http404 is already raised if section is unreachable
         '''
-        # Non-threadsafe hack to make amonpy happy
-        self.__name__ = self.__class__.__name__
         view = self.get_view(kls)
-        self.__name__ = "Dispatcher: %s:%s" % (view.__class__.__name__, target)
+        self.view = view
+        self.target = target
         return view(request, target, *args, **kwargs)
 
 dispatcher = Dispatcher()
