@@ -49,6 +49,19 @@ describe "Parts Collection":
                 self.parts.models(self.active_only) |should| equal_to(dict(one=1, two=2, three=3))
 
             @fudge.test
+            it "loads models.__all__ and adds all to the dictionary if things in models are objects":
+                models = fudge.Fake("models")
+                models.one = type("one", (object, ), {})
+                models.two = type("two", (object, ), {})
+                models.three = type("three", (object, ), {})
+                models.__all__ = [models.one, models.two, models.three]
+                self.fake_each_part.expects_call().with_args(self.active_only).returns((self.p1, ))
+                self.p1.expects("load").with_args("models").returns(models)
+                self.parts.models(self.active_only) |should| equal_to(
+                    dict(one=models.one, two=models.two, three=models.three)
+                    )
+
+            @fudge.test
             it "doesn't care about duplicate names":
                 models1 = fudge.Fake("models")
                 models1.__all__ = ['one', 'two', 'three']

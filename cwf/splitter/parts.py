@@ -33,8 +33,12 @@ class Parts(object):
         for part in self.each_part(active_only):
             models = part.load("models")
             if hasattr(models, '__all__'):
-                for name in models.__all__:
-                    result[name] = getattr(models, name)
+                for thing in models.__all__:
+                    if type(thing) not in (str, unicode):
+                        name = thing.__name__
+                        result[name] = thing
+                    else:
+                        result[thing] = getattr(models, thing)
         return result
 
     def urls(self, active_only=False, include_defaults=False):
