@@ -47,13 +47,13 @@ describe "Section":
                     )
                 
                 # Make sure new section is added as a child
-                self.fake_add_child.expects_call().with_args(self.new_section)
+                self.fake_add_child.expects_call().with_args(self.new_section, first=False)
                 self.section.add(self.url, match=self.match, name=self.name)
             
             @fudge.test
             it "returns new section":
                 self.fake_make_section.expects_call().returns(self.new_section)
-                self.fake_add_child.expects_call().with_args(self.new_section)
+                self.fake_add_child.expects_call().with_args(self.new_section, first=False)
                 self.section.add(self.url, match=self.match, name=self.name) |should| be(self.new_section)
             
             @fudge.test
