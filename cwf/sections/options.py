@@ -179,35 +179,34 @@ class Options(object):
     ###   URL PATTERN
     ########################
     
-    def create_pattern(self, url_parts, end=True, start=True):
+    def create_pattern(self, url_parts, start=True):
         '''
             Determine pattern for this url
             If no url parts, use '.*'
-            if url parts is empty or just slashes, use ''
-            Otherwise join url parts with slashes
-            
-            * Ensure no leading or trailing slashes
-            * Prepend with ^ if start is True
-            * Append with $ if end is True
+
+            if pattern is empty or just a slash then use '^$'
+            otherwise
+              * Prepend with ^ if start
+              * And end with /$ if doesn't already end with a slash
         '''
         pattern = self.string_from_url_parts(url_parts)
         if pattern is None:
             # No url_parts, give anything pattern
             pattern = '.*'
         
-        # Removing leading  and trailing slashes
+        # Removing leading slash
         # Already deduplicated slashes    
         if pattern and pattern[0] == '/':
             pattern = pattern[1:]
         
-        if pattern and pattern[-1] == '/':
-            pattern = pattern[:-1]
-        
-        if start:
-            pattern = "^%s" % pattern
-        
-        if end:
-            pattern = "%s/$" % pattern
+        if pattern == '':
+            pattern = '^$'
+        else:
+            if start:
+                pattern = "^%s" % pattern
+            
+            if pattern[-1] != '/':
+                pattern = "%s/$" % pattern
         
         return pattern
     
