@@ -34,6 +34,12 @@ class PatternList(object):
             view, kwargs = view_info
             return (pattern, view, kwargs, self.section.name)
 
+    def pattern_tuple_includer(self):
+        """Yield path and arguments for django include for this section"""
+        path = "^{}/".format(self.include_as)
+        options = self.section.url_options
+        return path, (self.section.patterns(start=False, without_include=True), options.namespace, options.app_name)
+
     ########################
     ###   URL UTILITY
     ########################

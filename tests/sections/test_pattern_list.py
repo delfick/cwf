@@ -155,6 +155,38 @@ describe "PatternList":
             (_, _, _, name) = self.lst.pattern_tuple()
             name |should| be(self.name)
 
+    describe "Getting pattern tuple for includer":
+        before_each:
+            self.section = fudge.Fake("section")
+            self.include_as = fudge.Fake("include_as")
+            self.lst = PatternList(self.section, include_as=self.include_as)
+
+        @fudge.test
+        it "returns include_as as a path with leading ^ and trailing /":
+            self.section.is_a_stub()
+            expected = "^{}/".format(self.include_as)
+            path, _ = self.lst.pattern_tuple_includer()
+            path |should| equal_to(expected)
+
+        @fudge.test
+        it "returns patterns, namespace and app_name from the section":
+            patterns = fudge.Fake("patterns")
+            app_name = fudge.Fake("app_name")
+            namespace = fudge.Fake("namespace")
+            url_options = fudge.Fake("url_options")
+
+            # Start is false because we already know these patterns are included after the include_as path
+            # without_include is True so that we get atleast one level of actual patterns
+            self.section.expects("patterns").with_args(start=False, without_include=True).returns(patterns)
+
+            self.section.has_attr(url_options=url_options)
+            url_options.has_attr(namespace=namespace, app_name=app_name)
+
+            _, (ps, ns, an) = self.lst.pattern_tuple_includer()
+            ps |should| be(patterns)
+            an |should| be(app_name)
+            ns |should| be(namespace)
+
     ########################
     ####   URL UTILITY
     ########################
