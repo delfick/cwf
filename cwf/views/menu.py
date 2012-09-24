@@ -21,12 +21,13 @@ class Menu(object):
         return self._global_nav
 
     def side_nav(self):
-        selected = self.selected_top_nav
-        if selected:
-            return self.selected_top_nav.children()
-        else:
-            return []
-
+        if not hasattr(self, '_side_nav'):
+            selected = self.selected_top_nav
+            if selected:
+                self._side_nav = list(selected.children())
+            else:
+                self._side_nav = []
+        return self._side_nav
 
     @property
     def selected_top_nav(self):

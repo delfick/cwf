@@ -49,10 +49,20 @@ describe "Menu":
             )(self.request, self.section)
 
         @fudge.test
+        it "memoizes as self._side_nav":
+            side_nav = fudge.Fake("side_nav")
+            self.menu._side_nav = side_nav
+            self.menu.side_nav() |should| be(side_nav)
+
+        @fudge.test
         it "returns children of the selected top nav":
-            navs = fudge.Fake("navs")
+            nav1 = fudge.Fake("nav1")
+            nav2 = fudge.Fake("nav2")
+            nav3 = fudge.Fake("nav3")
+            navs = (nav1, nav2, nav3)
+
             self.selected_top_nav.expects("children").returns(navs)
-            self.menu.side_nav() |should| be(navs)
+            self.menu.side_nav() |should| equal_to([nav1, nav2, nav3])
 
         it "returns empty array if no selected top nav":
             self.menu.selected_top_nav = None
