@@ -220,7 +220,6 @@ describe "PatternList":
 
     describe "Getting pattern for url":
         before_each:
-            self.end = fudge.Fake("end")
             self.start = fudge.Fake("start")
             self.url_parts = fudge.Fake('url_parts')
 
@@ -230,10 +229,10 @@ describe "PatternList":
             self.lst = PatternList(self.section)
         
         @fudge.test
-        it "asks url_options to create patterns from the url_parts, start and end":
+        it "asks url_options to create patterns from the url_parts and start":
             pattern = fudge.Fake("pattern")
-            self.url_options.expects("create_pattern").with_args(self.url_parts, start=self.start, end=self.end).returns(pattern)
-            self.lst.create_pattern(self.url_parts, self.start, self.end) |should| be(pattern)
+            self.url_options.expects("create_pattern").with_args(self.url_parts, start=self.start).returns(pattern)
+            self.lst.create_pattern(self.url_parts, self.start) |should| be(pattern)
 
     describe "Getting view for url":
         before_each:

@@ -57,9 +57,9 @@ class PatternList(object):
     ###   URL UTILITY
     ########################
     
-    def create_pattern(self, url_parts, start, end):
+    def create_pattern(self, url_parts, start):
         """Use create_pattern on section.url_options to create a url pattern"""
-        return self.section.url_options.create_pattern(url_parts, start=start, end=end)
+        return self.section.url_options.create_pattern(url_parts, start=start)
     
     def url_view(self):
         """Return (view, kwargs) for this section"""
