@@ -20,6 +20,10 @@ describe "Configuring Options":
             , ('target',  None)
             , ('redirect',  None)
             , ('extra_context',  None)
+
+            # Url stuff
+            , ('app_name', None)
+            , ('namespace', None)
             
             # menu stuff
             , ('alias',  None)
@@ -53,6 +57,7 @@ describe "Configuring Options":
             self.specification = {
                   Options.set_view.im_func : ('kls', 'module', 'target', 'redirect', 'extra_context')
                 , Options.set_menu.im_func : ('alias', 'match', 'values', 'needs_auth', 'propogate_display', 'promote_children')
+                , Options.set_urlname.im_func : ('app_name', 'namespace')
                 , Options.set_conditionals.im_func : ('admin', 'active', 'exists', 'display')
                 }
         
@@ -134,7 +139,7 @@ describe "Configuring Options":
                     )
             
             @fudge.test
-            it "complains if any arguemtns aren't taken by a setter":
+            it "complains if any arguments aren't taken by a setter":
                 arg1 = fudge.Fake("arg1")
                 arg2 = fudge.Fake("arg2")
                 arg3 = fudge.Fake("arg3")
@@ -311,3 +316,15 @@ describe "Configuring Options":
                     options = Options()
                     self.setter(options, values=obj)
                     options.values |should| be(obj)
+            
+            describe "Setting url options":
+                before_each:
+                    self.setter = Options.set_urlname.im_func
+                
+                it "sets app_name and namespace":
+                    app_name = fudge.Fake("app_name")
+                    namespace = fudge.Fake("namespace")
+                    options = Options()
+                    self.setter(options, namespace=namespace, app_name=app_name)
+                    options.app_name |should| be(app_name)
+                    options.namespace |should| be(namespace)

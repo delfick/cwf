@@ -49,6 +49,19 @@ describe "Parts Collection":
                 self.parts.models(self.active_only) |should| equal_to(dict(one=1, two=2, three=3))
 
             @fudge.test
+            it "loads models.__all__ and adds all to the dictionary if things in models are objects":
+                models = fudge.Fake("models")
+                models.one = type("one", (object, ), {})
+                models.two = type("two", (object, ), {})
+                models.three = type("three", (object, ), {})
+                models.__all__ = [models.one, models.two, models.three]
+                self.fake_each_part.expects_call().with_args(self.active_only).returns((self.p1, ))
+                self.p1.expects("load").with_args("models").returns(models)
+                self.parts.models(self.active_only) |should| equal_to(
+                    dict(one=models.one, two=models.two, three=models.three)
+                    )
+
+            @fudge.test
             it "doesn't care about duplicate names":
                 models1 = fudge.Fake("models")
                 models1.__all__ = ['one', 'two', 'three']
@@ -203,13 +216,14 @@ describe "Parts Collection":
             self.p2.has_attr(kwargs=dict(three=3, four=4))
             self.p3.has_attr(kwargs=dict(five=5, six=6))
 
-            (site.expects("add")
+            (site.expects("add_child")
                 .with_args(self.section1, one=1, two=2)
                 .next_call().with_args(self.section2, three=3, four=4)
                 .next_call().with_args(self.section3, five=5, six=6)
                 )
 
-            fakeSection.expects_call().with_args(self.name, promote_children=True).returns(site)
+            section = fudge.Fake("section").expects("configure").with_args(promote_children=True).returns(site)
+            fakeSection.expects_call().with_args(self.name).returns(section)
             self.parts.site(self.name, self.active_only) |should| be(site)
 
         @fudge.patch("cwf.splitter.parts.Section")
@@ -228,8 +242,9 @@ describe "Parts Collection":
             # Only gets called with section3
             # Because p1 doesn't have urls
             # And p2 doesn't have urls.section
-            site.expects("add").with_args(self.section3, five=5, six=6)
-            fakeSection.expects_call().with_args(self.name, promote_children=True).returns(site)
+            site.expects("add_child").with_args(self.section3, five=5, six=6)
+            section = fudge.Fake("section").expects("configure").with_args(promote_children=True).returns(site)
+            fakeSection.expects_call().with_args(self.name).returns(section)
             self.parts.site(self.name, self.active_only) |should| be(site)
 
     describe "Adding url defaults":

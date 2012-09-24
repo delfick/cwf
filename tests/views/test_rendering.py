@@ -44,7 +44,7 @@ describe "Rendering helper":
 
             # Our result is a HttpResponse object
             result = fudge.Fake("result")
-            fakeHttpResponse.expects_call().with_args(render, mime=self.mime).returns(result)
+            fakeHttpResponse.expects_call().with_args(render, mimetype=self.mime).returns(result)
 
             self.helper.render(self.request, self.template, extra=self.extra, mime=self.mime) |should| be(result)
 
@@ -68,7 +68,7 @@ describe "Rendering helper":
                 )
 
             # Our result is a HttpResponse object
-            fakeHttpResponse.expects_call().with_args(modified, mime=self.mime).returns(result)
+            fakeHttpResponse.expects_call().with_args(modified, mimetype=self.mime).returns(result)
 
             self.helper.render(self.request, self.template
                 , extra=self.extra, mime=self.mime, modify=modify

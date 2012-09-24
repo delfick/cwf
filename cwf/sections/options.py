@@ -1,6 +1,3 @@
-from django.views.generic.simple import redirect_to
-from django.http import Http404
-
 from errors import ConfigurationError
 from dispatch import dispatcher
 
@@ -47,6 +44,10 @@ class Options(object):
         self.target = None
         self.redirect = None
         self.extra_context = None
+
+        # Some options for having a section as a django include
+        self.app_name = None
+        self.namespace = None
         
         # Determine what to show in the menu
         # alias: what appears in the menu
@@ -70,7 +71,7 @@ class Options(object):
         
     def setters(self):
         '''Determine each setter method and required args for that method'''
-        for method in ('set_conditionals', 'set_view', 'set_menu'):
+        for method in ('set_conditionals', 'set_view', 'set_urlname', 'set_menu'):
             func = getattr(self, method)
             required = list(arg for arg in inspect.getargspec(func).args if arg != 'self')
             yield func, required
@@ -167,39 +168,45 @@ class Options(object):
                 "Values must have a get_info method to get information from. %s does not" % self.values
                 )
 
+    def set_urlname(self, namespace=Empty, app_name=Empty):
+        """Set options for what's put in a django include if that is used to create patterns for this section"""
+        vals = (('namespace', namespace), ('app_name', app_name))
+        for name, val in vals:
+            if val is not Empty:
+                setattr(self, name, val)
+
     ########################
     ###   URL PATTERN
     ########################
     
-    def create_pattern(self, url_parts, end=True, start=True):
+    def create_pattern(self, url_parts, start=True):
         '''
             Determine pattern for this url
             If no url parts, use '.*'
-            if url parts is empty or just slashes, use ''
-            Otherwise join url parts with slashes
-            
-            * Ensure no leading or trailing slashes
-            * Prepend with ^ if start is True
-            * Append with $ if end is True
+
+            if pattern is empty or just a slash then use '^$'
+            otherwise
+              * Prepend with ^ if start
+              * And end with /$ if doesn't already end with a slash
         '''
         pattern = self.string_from_url_parts(url_parts)
         if pattern is None:
             # No url_parts, give anything pattern
             pattern = '.*'
         
-        # Removing leading  and trailing slashes
+        # Removing leading slash
         # Already deduplicated slashes    
         if pattern and pattern[0] == '/':
             pattern = pattern[1:]
         
-        if pattern and pattern[-1] == '/':
-            pattern = pattern[:-1]
-        
-        if start:
-            pattern = "^%s" % pattern
-        
-        if end:
-            pattern = "%s/$" % pattern
+        if pattern == '':
+            pattern = '^$'
+        else:
+            if start:
+                pattern = "^%s" % pattern
+            
+            if pattern[-1] != '/':
+                pattern = "%s/$" % pattern
         
         return pattern
     
@@ -252,7 +259,7 @@ class Options(object):
             kwargs = {}
             if self.extra_context:
                 kwargs.update(self.extra_context)
-            kwargs.update(dict(kls=kls, target=target, section=section))
+            kwargs.update(dict(kls=kls, target=target))
             return view, kwargs
 
     def redirect_view(self, redirect):
@@ -261,6 +268,9 @@ class Options(object):
             If url is relative, it will make it absolute by joining with request.path
             If no url, a 404 will be raised
         '''
+        from django.views.generic.simple import redirect_to
+        from django.http import Http404
+        
         def redirector(request, redirect=redirect, **kwargs):
             url = redirect
             if callable(redirect):

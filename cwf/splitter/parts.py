@@ -1,5 +1,6 @@
 from cwf.sections.section import Section
 from imports import inject
+import imp
 
 ########################
 ###   PARTS
@@ -32,8 +33,12 @@ class Parts(object):
         for part in self.each_part(active_only):
             models = part.load("models")
             if hasattr(models, '__all__'):
-                for name in models.__all__:
-                    result[name] = getattr(models, name)
+                for thing in models.__all__:
+                    if type(thing) not in (str, unicode):
+                        name = thing.__name__
+                        result[name] = thing
+                    else:
+                        result[thing] = getattr(models, thing)
         return result
 
     def urls(self, active_only=False, include_defaults=False):
@@ -76,13 +81,13 @@ class Parts(object):
     def site(self, name, active_only=True):
         """
             Create and return a site object that holds each section.
-            Options for the add function is kept as self.kwargs in each part
+            Options for the add_child function is kept as self.kwargs in each part
         """
-        site = Section(name, promote_children=True)
+        site = Section(name).configure(promote_children=True)
         for part in self.each_part(active_only):
             urls = part.load("urls")
             if urls and hasattr(urls, 'section'):
-                site.add(urls.section, **part.kwargs)
+                site.add_child(urls.section, **part.kwargs)
         return site
 
     def add_url_defaults(self, urls):
@@ -105,7 +110,8 @@ class Part(object):
         
         # Add include_as if there is none already
         if type(name) in (str, unicode) and kwargs.get('include_as', None) is None:
-            kwargs['include_as'] = self.name
+            if not kwargs.get('first'):
+                kwargs['include_as'] = self.name
     
     def do_import(self, package):
         """Get the package we are representing"""
@@ -125,10 +131,20 @@ class Part(object):
         if not hasattr(self.pkg, name):
             # If it doesn't know about it, perhaps we need to import it
             try:
-                __import__(self.pkg.__name__, globals(), locals(), [name], -1)
+                imp.find_module(name, self.pkg.__path__)
+                found_module = True
             except ImportError:
-                # We don't care if there isn't anything to import
-                pass
+                found_module = False
+
+            try:
+                __import__(self.pkg.__name__, globals(), locals(), [name], -1)
+            except ImportError as error:
+                if found_module:
+                    # A module was found, complain that we can't load this thing
+                    raise
+                else:
+                    # We don't care if there isn't anything to import
+                    pass
         
         if hasattr(self.pkg, name):
             return getattr(self.pkg, name)

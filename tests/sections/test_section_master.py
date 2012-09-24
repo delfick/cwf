@@ -223,37 +223,25 @@ describe "SectionMaster":
                 self.master.display_value(self.section) |should| be(result)
 
         describe "Getting url parts":
-            before_each:
-                self.section.options = fudge.Fake("options")
-                self.section2.options = fudge.Fake("options2")
-
             it "returns empty list if given None":
                 self.master.url_parts_value(None) |should| equal_to([])
-            
+
             @fudge.test
             it "if no parent then it returns list of ['', section.url] with no leading slash":
                 self.section.url = '/hi'
                 self.section.parent = None
-                self.section.options.has_attr(promote_children=False)
                 self.master.url_parts_value(self.section) |should| equal_to(['', 'hi'])
                 
                 self.section2.url = 'hi'
                 self.section2.parent = None
-                self.section2.options.has_attr(promote_children=False)
                 self.master.url_parts_value(self.section2) |should| equal_to(['', 'hi'])
 
             @fudge.test
-            it "if no parent and promotes children then it returns list of [''] with no leading slash":
-                self.section.url = '/hi'
+            it "will not return multiple '' if section.url is ''":
+                self.section.url = ''
                 self.section.parent = None
-                self.section.options.has_attr(promote_children=True)
                 self.master.url_parts_value(self.section) |should| equal_to([''])
-                
-                self.section2.url = 'hi'
-                self.section2.parent = None
-                self.section2.options.has_attr(promote_children=True)
-                self.master.url_parts_value(self.section2) |should| equal_to([''])
-        
+
             @fudge.test
             it "prepends section.url with parts from parent if it has one":
                 (self.fake_memoized.expects("url_parts")
@@ -263,36 +251,23 @@ describe "SectionMaster":
                 
                 self.section.url = '/hi'
                 self.section.parent = self.parent
-                self.section.options.has_attr(promote_children=False)
                 self.master.url_parts_value(self.section) |should| equal_to(['', 'one', 'two', 'hi'])
                 
                 self.section2.url = 'hi'
                 self.section2.parent = self.parent2
-                self.section2.options.has_attr(promote_children=False)
                 self.master.url_parts_value(self.section2) |should| equal_to(['', 'four', 'hi'])
-
-            @fudge.test
-            it "just uses parts from parent if it has one when promotes children":
-                (self.fake_memoized.expects("url_parts")
-                    .with_args(self.parent).returns(['', 'one', 'two'])
-                    .next_call().with_args(self.parent2).returns(['four'])
-                    )
-                
-                self.section.url = '/hi'
-                self.section.parent = self.parent
-                self.section.options.has_attr(promote_children=True)
-                self.master.url_parts_value(self.section) |should| equal_to(['', 'one', 'two'])
-                
-                self.section2.url = 'hi'
-                self.section2.parent = self.parent2
-                self.section2.options.has_attr(promote_children=True)
-                self.master.url_parts_value(self.section2) |should| equal_to(['', 'four'])
 
         describe "Getting selected":
             before_each:
                 self.url = fudge.Fake("url")
                 self.path = fudge.Fake("path")
                 self.section.url = self.url
+            
+            @fudge.test
+            it "returns (True, []) if no path is provided and url is an empty string":
+                self.section.url = ''
+                self.section.parent = None
+                self.master.selected_value(self.section, None) |should| equal_to((True, []))
             
             @fudge.test
             it "returns (False, []) if no path is provided":
@@ -304,6 +279,27 @@ describe "SectionMaster":
                 self.section.parent = self.parent
                 self.fake_memoized.expects("selected").with_args(self.parent, path=None).returns([False, []])
                 self.master.selected_value(self.section, None) |should| equal_to((False, []))
+            
+            @fudge.test
+            it "returns (True, []) if parent is selected and no path is left and url is empty string":
+                self.section.url = ''
+                self.section.parent = self.parent
+                self.fake_memoized.expects("selected").with_args(self.parent, path=self.path).returns([True, []])
+                self.master.selected_value(self.section, self.path) |should| equal_to((True, []))
+            
+            @fudge.test
+            it "returns (False, []) if url is empty string but parent is not selected":
+                self.section.url = ''
+                self.section.parent = self.parent
+                self.fake_memoized.expects("selected").with_args(self.parent, path=self.path).returns([False, []])
+                self.master.selected_value(self.section, self.path) |should| equal_to((False, []))
+            
+            @fudge.test
+            it "returns (False, []) if parent is selected and no path is left but url is not empty string":
+                self.section.url = self.url
+                self.section.parent = self.parent
+                self.fake_memoized.expects("selected").with_args(self.parent, path=self.path).returns([True, []])
+                self.master.selected_value(self.section, self.path) |should| equal_to((False, []))
             
             @fudge.test
             it "returns (False, []) if parent isn't selected":
@@ -371,6 +367,7 @@ describe "SectionMaster":
             self.values = fudge.Fake("values")
             self.parent = fudge.Fake("parent")
             self.options = fudge.Fake("options")
+            self.include_as = fudge.Fake("include_as")
             
             self.section = fudge.Fake("section")
             self.fake_memoized = fudge.Fake("memoized")
@@ -384,7 +381,7 @@ describe "SectionMaster":
             it "yields nothing if active conditional is False":
                 self.section.options = self.options
                 self.options.expects("conditional").with_args('active', self.request).returns(False)
-                list(self.master.iter_section(self.section, self.path)) |should| equal_to([])
+                list(self.master.iter_section(self.section, self.include_as, self.path)) |should| equal_to([])
             
             @fudge.test
             it "yields section.url, section.alias if no values":
@@ -393,10 +390,25 @@ describe "SectionMaster":
                 self.section.options = self.options
                 self.section.options.values = None
                 self.options.expects("conditional").with_args('active', self.request).returns(True)
-                list(self.master.iter_section(self.section, self.path)) |should| equal_to([(self.url, self.alias)])
+                list(self.master.iter_section(self.section, None, self.path)) |should| equal_to([(self.url, self.alias)])
             
             @fudge.test
-            it "yields url, alias for each value if has values":
+            it "yields section.url, section.alias if no values and use include_as instead of url if passed in":
+                self.section.url = self.url
+                self.section.alias = self.alias
+                self.section.options = self.options
+                self.section.options.values = None
+                self.options.expects("conditional").with_args('active', self.request).returns(True)
+                list(self.master.iter_section(self.section, self.include_as, self.path)) |should| equal_to([(self.include_as, self.alias)])
+
+            @fudge.test
+            it "yields url, alias for each value if has values and gets url parts attributed to parent from aligning path and parent_url_parts":
+                p1 = fudge.Fake("p1")
+                p2 = fudge.Fake("p2")
+                p3 = fudge.Fake("p3")
+                p4 = fudge.Fake("p4")
+                p5 = fudge.Fake("p5")
+
                 url1 = fudge.Fake("url1")
                 url2 = fudge.Fake("url2")
                 alias1 = fudge.Fake("alias1")
@@ -406,15 +418,19 @@ describe "SectionMaster":
                 self.section.parent = self.parent
                 self.section.options = self.options
                 self.section.options.values = self.values
-                parent_url_parts = fudge.Fake("parent_url_parts")
-                self.fake_memoized.expects("url_parts").with_args(self.parent).returns(parent_url_parts)
-                self.values.expects("get_info").with_args(self.request, self.path, parent_url_parts).returns(things)
+
+                path = [p1, p2, p3, p4, p5]
+                matched_parent_url_parts = [p1, p2, p3]
+                self.fake_memoized.expects("url_parts").with_args(self.parent).returns([1, 2, 3])
+                self.values.expects("get_info").with_args(self.request, matched_parent_url_parts, path).returns(things)
                 self.options.expects("conditional").with_args('active', self.request).returns(True)
-                list(self.master.iter_section(self.section, self.path)) |should| equal_to(things)
+                list(self.master.iter_section(self.section, self.include_as, path)) |should| equal_to(things)
     
         describe "Getting info for each (url, alias) in section":
             before_each:
                 self.path = [9, 9, 9]
+                self.include_as = fudge.Fake("include_as")
+
                 self.fake_iter_section = fudge.Fake("iter_section")
                 self.patched_iter_section = fudge.patch_object(self.master, 'iter_section', self.fake_iter_section)
 
@@ -426,8 +442,8 @@ describe "SectionMaster":
             
             @fudge.test
             it "yields Info object for each (url, alias) for the section":
-                self.fake_iter_section.expects_call().with_args(self.section, self.path).returns([(1, 2), (3, 4)])
-                result = list(self.master.get_info(self.section, self.path))
+                self.fake_iter_section.expects_call().with_args(self.section, self.include_as, self.path).returns([(1, 2), (3, 4)])
+                result = list(self.master.get_info(self.section, self.include_as, self.path))
                 result |should| have(2).infos
                 all(type(r) == Info for r in result) |should| be(True)
             
@@ -442,9 +458,9 @@ describe "SectionMaster":
                         path = self.path
                     
                     (self.fake_iter_section.expects_call()
-                        .with_args(self.section, path).returns([(self.url, self.alias)])
+                        .with_args(self.section, self.include_as, path).returns([(self.url, self.alias)])
                         )
-                    results = list(self.master.get_info(self.section, path))
+                    results = list(self.master.get_info(self.section, self.include_as, path))
                     results |should| have(1).info
                     return results[0]
                     

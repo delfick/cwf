@@ -45,8 +45,8 @@ add_r0 = section.add('add_r0').configure(redirect="add1")
 
 # Add with promoted children
 add_ignored = section.add("ignored").configure(promote_children=True)
-add_ignored.add("one").configure(target=make_view("/one/"))
-add_ignored.add("two").configure(target=make_view("/two/"))
+add_ignored.add("one").configure(target=make_view("/ignored/one/"))
+add_ignored.add("two").configure(target=make_view("/ignored/two/"))
 
     ########################
     ### Foster section
@@ -128,8 +128,8 @@ class SectionTesterBase(TestCase):
 
     def promoted(self):
         return [
-              ('ensure', '/one/')
-            , ('ensure', '/two/')
+              ('ensure', '/ignored/one/')
+            , ('ensure', '/ignored/two/')
             ]
 
     def with_first(self):

@@ -4,9 +4,7 @@ setup(
       name = "cwf"
     , version = "1.0"
     , packages = ['cwf'] + ['cwf.%s' % pkg for pkg in find_packages('cwf')]
-    , install_requires =
-      [
-      ]
+    , include_package_data = True
 
     , entry_points =
       { 'console_scripts' :

@@ -22,7 +22,7 @@ def make_view(response):
     ########################
     ### Normal section
 
-root = Section('root').configure(promote_children=True)
+root = Section('').configure(promote_children=True, namespace='root')
 
 root.add("one").configure(target=make_view("one"))
 
@@ -117,8 +117,8 @@ describe "Menu":
                 , ['Two',   ['', 'two']]
                 , ['Three', ['', 'three']]
                 , ['Four',  ['', 'four']]
-                , ['Six',   ['', 'six']]
-                , ['Seven', ['', 'seven']]
+                , ['Six',   ['', 'five', 'six']]
+                , ['Seven', ['', 'five', 'seven']]
                 ]
             )
     
@@ -140,12 +140,12 @@ describe "Menu":
 
             extracted = self.extract(infos, 'alias', 'url_parts', 'selected', look_at_selected=True)
             extracted |should| equal_to(
-                [ [ [2010, ['', 'seven', 2010], (True, ['1'])]
-                  , [ [ [1,  ['', 'seven', 2010, 1], (True, [])]
+                [ [ [2010, ['', 'five', 'seven', 2010], (True, ['1'])]
+                  , [ [ [1,  ['', 'five', 'seven', 2010, 1], (True, [])]
                       , []
                       ]
                     ]
                   ]
-                , [ 2009, ['', 'seven', 2009], (False, [])]
+                , [ 2009, ['', 'five', 'seven', 2009], (False, [])]
                 ]
             )

@@ -15,7 +15,7 @@ def init(package, name=None, kls='views'):
         name = package.split('.')[-1]
     alias = name.capitalize()
 
-    return S('', name, None).configure(''
+    return S('', name).configure(''
          , kls = kls
          , alias = alias
          , module = '%s.views' % package

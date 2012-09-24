@@ -251,28 +251,47 @@ describe "View":
             self.menu = fudge.Fake("menu")
             self.target = fudge.Fake("target")
             self.request = fudge.Fake("request")
+            self.section = fudge.Fake("section")
             self.base_url = fudge.Fake("base_url")
 
+            self.fake_get_section = fudge.Fake("get_section")
             self.fake_path_from_request = fudge.Fake("path_from_request")
             self.fake_base_url_from_request = fudge.Fake("request_from_url")
 
             self.view = type("view", (View, )
-                , { 'path_from_request' : self.fake_path_from_request
+                , { 'get_section' : self.fake_get_section
+                  , 'path_from_request' : self.fake_path_from_request
                   , 'base_url_from_request' : self.fake_base_url_from_request
                   }
                 )()
 
         @fudge.patch("cwf.views.base.Menu", "cwf.views.base.DictObj")
-        it "returns a dictobj with menu, path, target and base_url", fakeMenu, fakeDictObj:
+        it "returns a dictobj with menu, path, target, section and base_url", fakeMenu, fakeDictObj:
             path = fudge.Fake("path")
             result = fudge.Fake("result")
-            fakeMenu.expects_call().with_args(self.request, path).returns(self.menu)
+            fakeMenu.expects_call().with_args(self.request, self.section).returns(self.menu)
 
+            self.fake_get_section.expects_call().with_args(self.request, path).returns(self.section)
             self.fake_path_from_request.expects_call().with_args(self.request).returns(path)
             self.fake_base_url_from_request.expects_call().with_args(self.request).returns('')
 
             (fakeDictObj.expects_call()
-                .with_args(menu=self.menu, target=self.target, path=path, base_url='').returns(result)
+                .with_args(menu=self.menu, target=self.target, section=self.section, path=path, base_url='').returns(result)
+                )
+
+            self.view.get_state(self.request, self.target) |should| be(result)
+
+        @fudge.patch("cwf.views.base.Menu", "cwf.views.base.DictObj")
+        it "doesn't make a menu if can't get a section", fakeMenu, fakeDictObj:
+            path = fudge.Fake("path")
+            result = fudge.Fake("result")
+
+            self.fake_get_section.expects_call().with_args(self.request, path).returns(None)
+            self.fake_path_from_request.expects_call().with_args(self.request).returns(path)
+            self.fake_base_url_from_request.expects_call().with_args(self.request).returns('')
+
+            (fakeDictObj.expects_call()
+                .with_args(menu=None, target=self.target, section=None, path=path, base_url='').returns(result)
                 )
 
             self.view.get_state(self.request, self.target) |should| be(result)
@@ -281,14 +300,15 @@ describe "View":
         it "pops start of path if base url isn't an empty string and path starts with ''", fakeMenu, fakeDictObj:
             path = ['', 'asdf', 'weouri']
             result = fudge.Fake("result")
-            fakeMenu.expects_call().with_args(self.request, path).returns(self.menu)
+            fakeMenu.expects_call().with_args(self.request, self.section).returns(self.menu)
 
+            self.fake_get_section.expects_call().with_args(self.request, path).returns(self.section)
             self.fake_path_from_request.expects_call().with_args(self.request).returns(path)
             self.fake_base_url_from_request.expects_call().with_args(self.request).returns(self.base_url)
 
             (fakeDictObj.expects_call()
                 .with_args(
-                      menu=self.menu, target=self.target
+                      menu=self.menu, target=self.target, section=self.section
                     , path=['asdf', 'weouri'], base_url=self.base_url
                     ).returns(result)
                 )
@@ -299,19 +319,34 @@ describe "View":
         it "doesn't pop start of path if base url isn't an empty string but path doesn't start with ''", fakeMenu, fakeDictObj:
             path = ['asdf', 'weouri']
             result = fudge.Fake("result")
-            fakeMenu.expects_call().with_args(self.request, path).returns(self.menu)
+            fakeMenu.expects_call().with_args(self.request, self.section).returns(self.menu)
 
+            self.fake_get_section.expects_call().with_args(self.request, path).returns(self.section)
             self.fake_path_from_request.expects_call().with_args(self.request).returns(path)
             self.fake_base_url_from_request.expects_call().with_args(self.request).returns(self.base_url)
 
             (fakeDictObj.expects_call()
                 .with_args(
-                      menu=self.menu, target=self.target
+                      menu=self.menu, target=self.target, section=self.section
                     , path=['asdf', 'weouri'], base_url=self.base_url
                     ).returns(result)
                 )
 
             self.view.get_state(self.request, self.target) |should| be(result)
+
+    describe "Getting the current section":
+        before_each:
+            self.path = fudge.Fake("path")
+            self.request = fudge.Fake("request")
+            self.section = fudge.Fake("section")
+
+        it "returns the section attribute on the request":
+            self.request.has_attr(section=self.section)
+            self.view.get_section(self.request, self.path) |should| be(self.section)
+
+        it "returns None if the request has no section":
+            self.request |should_not| respond_to('section')
+            self.view.get_section(self.request, self.path) |should| be(None)
 
     describe "getting base url from a request":
         before_each:

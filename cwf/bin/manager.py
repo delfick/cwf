@@ -2,7 +2,21 @@
 
 import os, sys
 
-def manager(location, get_paths=None):
+def setup_project(project, expected=False):
+    """If project has a project_setup function, then execute it"""
+    project_setup = None
+    try:
+        imported = __import__(project, globals(), locals(), ['project_setup'], -1)
+        project_setup = getattr(imported, 'project_setup')
+    except ImportError:
+        if expected:
+            raise
+        pass
+
+    if project_setup:
+        project_setup()
+
+def manager(project, get_paths=None):
     """
         Custom version of the manage.py script that django provides
 
@@ -17,8 +31,8 @@ def manager(location, get_paths=None):
     import os
     
     # Find the project and set DJANGO_SETTINGS_MODULE
-    project = location.split(os.sep)[-1]
-    os.environ['DJANGO_SETTINGS_MODULE'] = '%s.settings' % project
+    os.environ['DJANGO_SETTINGS_MODULE'] = '{0}.settings'.format(project)
+    setup_project(project)
     
     # Extend sys.path
     if get_paths and callable(get_paths):
@@ -29,13 +43,8 @@ def manager(location, get_paths=None):
     execute_from_command_line(sys.argv)
 
 def main():
-    get_path = None
-    try:
-        from wsgibase import get_path
-    except ImportError:
-        pass
-
-    manager(os.getcwd(), get_path)
+    project = os.getcwd().split(os.sep)[-1]
+    manager(project)
 
 if __name__ == '__main__':
     main()

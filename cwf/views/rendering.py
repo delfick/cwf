@@ -13,7 +13,7 @@ class Renderer(object):
         c = Context(extra)
         return t.render(c)
 
-    def render(self, request, template, extra=None, mime="text/plain", modify=None):
+    def render(self, request, template, extra=None, mime="text/html", modify=None):
         """
             Create a template, give it context and display as some mime type
 
@@ -32,7 +32,7 @@ class Renderer(object):
         if modify and callable(modify):
             render = modify(render)
 
-        return HttpResponse(render, mime=mime)
+        return HttpResponse(render, mimetype=mime)
 
     def request_context(self, request, extra):
         """

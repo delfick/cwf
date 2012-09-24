@@ -14,11 +14,11 @@ class Debugger(object):
     default_port = 8000
     default_host = '0.0.0.0'
 
-    def __init__(self, project=None, host=None, port=None, get_path=None):
+    def __init__(self, project=None, host=None, port=None, setup_project=None):
         self.host = host or self.default_host
         self.port = port or self.default_port
         self.project = project
-        self._get_path = get_path
+        self._setup_project = setup_project
 
     ########################
     ###   RUNNER
@@ -51,32 +51,27 @@ class Debugger(object):
 
     def setup_path(self, project):
         """Alter the path where to find the application"""
-        sys.path = self.get_path(project) + sys.path
-        os.environ['DJANGO_SETTINGS_MODULE'] = '%s.settings' % project
+        os.environ['DJANGO_SETTINGS_MODULE'] = '{0}.settings'.format(project)
+        self.setup_project(project)
     
     ########################
     ###   UTILITY
     ########################
 
     @property
-    def get_path(self):
+    def setup_project(self):
         """
-            Find function to modify sys.path with
-            Use either _get_path already on class
-            Or Try to import wsgibase.get_path
+            Find function to setup the project with
+            Use either _setup_project already on class
+            Or Try to import <project>.project_setup
 
-            If neither, use a function that just returns an empty list
+            If neither, use a function that does nothing
         """
-        get_path = self._get_path
-        if not get_path:
-            try:
-                from wsgibase import get_path
-            except ImportError:
-                pass
-
-            if get_path and callable(get_path):
-                self._get_path = get_path
+        setup_project = self._setup_project
+        if not setup_project:
+            if setup_project and callable(setup_project):
+                self._setup_project = setup_project
             else:
-                self._get_path = lambda project: []
+                self._setup_project = lambda project: None
 
-        return self._get_path
+        return self._setup_project

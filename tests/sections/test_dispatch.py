@@ -39,16 +39,19 @@ describe "Dispatcher":
         
         @fudge.patch("__builtin__.locals", "__builtin__.globals", "__builtin__.__import__")
         it "using __import__ to find the view if location is a string", fake_locals, fake_globals, fake_import:
+            kls = fudge.Fake('kls')
+            view = fudge.Fake("view")
             lcls = fudge.Fake("locals")
             glbls = fudge.Fake("globals")
-            result = fudge.Fake("result")
             module = fudge.Fake("module")
-            module.name = result
+            module.name = kls
+
+            kls.expects_call().returns(view)
             fake_locals.expects_call().returns(lcls)
             fake_globals.expects_call().returns(glbls)
             fake_import.expects_call().with_args("path.to.place", glbls, lcls, ['name'], -1).returns(module)
             
-            self.dispatcher.find_view("path.to.place.name") |should| be(result)
+            self.dispatcher.find_view("path.to.place.name") |should| be(view)
     
     describe "Calling the dispatcher":
         before_each:
@@ -57,7 +60,12 @@ describe "Dispatcher":
             self.target = fudge.Fake("target")
             self.result = fudge.Fake("result")
             self.request = fudge.Fake("request")
-            self.dispatcher = Dispatcher()
+
+            self.fake_get_view = fudge.Fake("get_view")
+            self.dispatcher = type("dispatch", (Dispatcher, )
+                , { 'get_view' : self.fake_get_view
+                  }
+                )()
         
         @fudge.test
         it "calls view for provided kls with request, target and other arguments":
@@ -65,12 +73,22 @@ describe "Dispatcher":
             arg2 = fudge.Fake("arg2")
             kwa1 = fudge.Fake("kwa1")
             kwa2 = fudge.Fake("kwa2")
-            self.view.expects_call().with_args(
-                self.request, self.target, arg1, arg2, kw1=kwa1, kw2=kwa2
-            ).returns(self.result)
+
+            (self.view.expects_call()
+                .with_args(self.request, self.target, arg1, arg2, kw1=kwa1, kw2=kwa2).returns(self.result)
+                )
             
-            fake_get_view = fudge.Fake("get_view").expects_call().with_args(self.kls).returns(self.view)
-            with fudge.patched_context(self.dispatcher, 'get_view', fake_get_view):
-                self.dispatcher(
-                    self.request, self.kls, self.target, arg1, arg2, kw1=kwa1, kw2=kwa2
-                ) |should| be(self.result)
+            self.fake_get_view .expects_call().with_args(self.kls).returns(self.view)
+            result = self.dispatcher(self.request, self.kls, self.target, arg1, arg2, kw1=kwa1, kw2=kwa2)
+            result |should| be(self.result)
+        
+        @fudge.test
+        it "sets view and target on the dispatcher":
+            self.view.expects_call()            
+            self.fake_get_view .expects_call().returns(self.view)
+
+            self.dispatcher |should_not| respond_to("view")
+            self.dispatcher |should_not| respond_to("target")
+            result = self.dispatcher(self.request, self.kls, self.target)
+            self.dispatcher.view |should| be(self.view)
+            self.dispatcher.target |should| be(self.target)

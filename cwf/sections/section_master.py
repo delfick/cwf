@@ -63,12 +63,12 @@ class SectionMaster(object):
         if type(url) in (str, unicode) and url.startswith("/"):
             url = url[1:]
         
-        if not section.options.promote_children:
+        if not urls or urls[-1] != '' or url != '':
             urls.append(url)
 
         if not urls or urls[0] != '':
             urls.insert(0, '')
-        
+
         return urls
     
     def active_value(self, section):
@@ -96,14 +96,30 @@ class SectionMaster(object):
     def selected_value(self, section, path):
         """Return True and rest of path if selected else False and no path."""
         url = section.url
+        if not path and url == '':
+            # No path and section is base
+            return True, []
+
+        # Make sure that regardless of what this section is, it's parent is selected
+        # Also get here the rest of the path to check this section against
         parent_selected = True
         if section.parent:
             parent_selected, path = self.memoized.selected(section.parent, path=path)
 
+        if parent_selected and not path and url == '':
+            # Parent consumed the rest of the path
+            # And this section is base
+            return True, []
+
+        # If the parent is selected or we have no path left
+        # Then obviously no match
         if not parent_selected or not path:
             return False, []
 
-        if (path[0] == '' and str(url) == '/') or (path[0].lower() == str(url).lower()):
+        # Check against the url
+        if path[0] == '' and unicode(url) in ('', '/'):
+            return True, path[1:]
+        elif path[0].lower() == unicode(url).lower():
             return True, path[1:]
         else:
             if section.options.promote_children:
@@ -115,7 +131,7 @@ class SectionMaster(object):
     ###   INFO
     ########################
 
-    def iter_section(self, section, path):
+    def iter_section(self, section, include_as, path):
         """
             Yield (url, alias) pairs for this section
             If section isn't active, nothing is yielded
@@ -127,20 +143,29 @@ class SectionMaster(object):
             return
         
         if section.options.values:
-            # This section has multiple items to show in the menu
-            parent_url_parts = self.memoized.url_parts(section.parent)
-            for url, alias in section.options.values.get_info(self.request, path, parent_url_parts):
+            # We determine the parent url parts to give to the values
+            parent_url_definition = self.memoized.url_parts(section.parent)
+            parent_url_parts = []
+
+            for index in range(len(parent_url_definition)):
+                parent_url_parts.append(path[index])
+
+            # Get the values!
+            for url, alias in section.options.values.get_info(self.request, parent_url_parts, path):
                 yield url, alias
         else:
             # This item only has one item to show in the menu
-            yield section.url, section.alias
+            url = section.url
+            if include_as:
+                url = include_as
+            yield url, section.alias
     
-    def get_info(self, section, path, parent=None):
+    def get_info(self, section, include_as, path, parent=None):
         '''
             Yield Info objects for this section
             Used by templates to render the menus
         '''
-        for url, alias in self.iter_section(section, path):
+        for url, alias in self.iter_section(section, include_as, path):
             for info in self._get_info(url, alias, section, path, parent):
                 yield info
 
@@ -179,15 +204,16 @@ class Info(object):
         self.selected = selected
         self.url_parts = url_parts
 
-    def setup_children(self, children):
+    def setup_children(self, children, has_children):
         self.children = children
+        self.has_children = has_children
 
     def can_display(self, request):
         return self.section.can_display(request)
 
     @property
-    def menu_sections(self):
-        return self.section.menu_sections
+    def menu_children(self):
+        return self.section.menu_children
 
     @property
     def full_url(self):

@@ -16,28 +16,25 @@ class Menu(object):
         self.master = SectionMaster(self.request)
 
     def global_nav(self):
-        return self.navs_for(self.top_nav, setup_children=False)
+        if not hasattr(self, '_global_nav'):
+            self._global_nav = list(self.navs_for(self.section.root_ancestor().menu_children))
+        return self._global_nav
 
     def side_nav(self):
-        selected = self.selected_top_nav
-        if selected:
-            return self.selected_top_nav.children()
-        else:
-            return []
-
-    @property
-    def top_nav(self):
-        """Get all the top nav info objects"""
-        if not hasattr(self, '_top_nav'):
-            self._top_nav = list(self.navs_for(self.section.root_ancestor().menu_sections))
-        return self._top_nav
+        if not hasattr(self, '_side_nav'):
+            selected = self.selected_top_nav
+            if selected:
+                self._side_nav = list(selected.children())
+            else:
+                self._side_nav = []
+        return self._side_nav
 
     @property
     def selected_top_nav(self):
         """Get the selected top nav"""
         if not hasattr(self, '_selected_top_nav'):
             selected = None
-            filtered = filter(lambda nav: nav.selected()[0], self.top_nav)
+            filtered = filter(lambda nav: nav.selected()[0], self.global_nav())
             if filtered:
                 selected = filtered[0]
 
@@ -52,7 +49,10 @@ class Menu(object):
             Make sure no trailing or leading slashes
         """
         if not hasattr(self, "_path"):
-            path = self.request['PATH_INFO']
+            meta = self.request
+            if hasattr(self.request, 'META'):
+                meta = self.request.META
+            path = meta['PATH_INFO']
             while path and path.startswith("/"):
                 path = path[1:]
             while path and path.endswith("/"):
@@ -62,23 +62,24 @@ class Menu(object):
 
     def children_function_for(self, section, parent):
         """Return lambda to get menu for children of some section"""
-        return lambda : self.navs_for(section.menu_sections, parent=parent)
+        return lambda : self.navs_for(section.menu_children, parent=parent)
 
-    def navs_for(self, section, setup_children=True, parent=None):
+    def navs_for(self, items, parent=None):
         """
             Return list of infos representing each top nav item
         """
-        for child in section:
-            for info in self.master.get_info(child, self.path, parent=parent):
-                if setup_children:
-                    info.setup_children(self.children_function_for(child, info))
+        for item in items:
+            child = item.section
+            include_as = item.include_as
+            for info in self.master.get_info(child, include_as, self.path, parent=parent):
+                info.setup_children(self.children_function_for(child, info), child.has_children)
                 yield info
 
-    def render(self, menu, template):
+    def render(self, menu, template, ignore_children=False):
         """
             Turn a list of info objects into html using a particular template
             Menu is result of self.global_nav or self.side_nav
             Template is path to the template to use
         """
-        extra = dict(menu=menu, children_template=template)
+        extra = dict(menu=menu, children_template=template, ignore_children=ignore_children)
         return renderer.simple_render(template, extra)

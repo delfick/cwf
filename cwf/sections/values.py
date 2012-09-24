@@ -15,7 +15,7 @@ class Values(object):
         self.sort_after_transform = sort_after_transform
         
         # each: Transform each value in values individually into alias, url_part
-        #   Must be callable((request, path, parent_url_parts), value)->(alias, url_part)
+        #   Must be callable((request, parent_url_parts, path), value)->(alias, alias)
         self.each = each
         if self.each and not callable(self.each):
             raise ConfigurationError("each must be a callable, not %s" % self.each)
@@ -27,10 +27,10 @@ class Values(object):
         if type(sorter) is not bool and not callable(self.sorter):
             raise ConfigurationError("Sorter must be a callable, not %s" % self.sorter)
     
-    def get_info(self, request, path, parent_url_parts):
+    def get_info(self, request, parent_url_parts, path):
         """Yield (alias, url) for each value"""
         # Get sorted values
-        info = (request, path, parent_url_parts)
+        info = (request, parent_url_parts, path)
         values = self.get_values(info)
             
         # Yield some information
