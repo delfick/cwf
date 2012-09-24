@@ -187,8 +187,8 @@ class Info(object):
         return self.section.can_display(request)
 
     @property
-    def menu_sections(self):
-        return self.section.menu_sections
+    def menu_children(self):
+        return self.section.menu_children
 
     @property
     def full_url(self):

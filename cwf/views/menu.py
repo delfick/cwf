@@ -62,7 +62,7 @@ class Menu(object):
 
     def children_function_for(self, section, parent):
         """Return lambda to get menu for children of some section"""
-        return lambda : self.navs_for(section.menu_sections, parent=parent)
+        return lambda : self.navs_for(section.menu_children, parent=parent)
 
     def navs_for(self, items, parent=None):
         """

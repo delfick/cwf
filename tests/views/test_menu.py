@@ -49,7 +49,7 @@ describe "Menu":
 
             self.section1 = fudge.Fake("section1")
             self.section2 = fudge.Fake("section2")
-            self.menu_sections = fudge.Fake("menu_sections")
+            self.menu_children = fudge.Fake("menu_children")
 
             self.navs = (self.section1, self.section2)
 
@@ -68,9 +68,9 @@ describe "Menu":
 
         @fudge.test
         it "gets navs for the menu sections of the root ancestor":
-            self.root_ancestor.menu_sections = self.menu_sections
+            self.root_ancestor.menu_children = self.menu_children
             self.section.expects("root_ancestor").returns(self.root_ancestor)
-            self.fake_navs_for.expects_call().with_args(self.menu_sections).returns(self.navs)
+            self.fake_navs_for.expects_call().with_args(self.menu_children).returns(self.navs)
 
             self.menu.top_nav |should| equal_to([self.section1, self.section2])
 
@@ -124,7 +124,7 @@ describe "Menu":
         before_each:
             self.parent = fudge.Fake("parent")
             self.fake_navs_for = fudge.Fake("navs_for")
-            self.menu_sections = fudge.Fake("menu_sections")
+            self.menu_children = fudge.Fake("menu_children")
 
             self.menu = type("Menu", (Menu, ), 
                 { 'navs_for' : self.fake_navs_for
@@ -132,10 +132,10 @@ describe "Menu":
             )(self.request, self.section)
 
         @fudge.test
-        it "calls navs_for for the menu_sections on specified section":
+        it "calls navs_for for the menu_children on specified section":
             navs = fudge.Fake("navs")
-            self.section.menu_sections = self.menu_sections
-            self.fake_navs_for.expects_call().with_args(self.menu_sections, parent=self.parent).returns(navs)
+            self.section.menu_children = self.menu_children
+            self.fake_navs_for.expects_call().with_args(self.menu_children, parent=self.parent).returns(navs)
             self.menu.children_function_for(self.section, self.parent)() |should| be(navs)
 
     describe "Getting navs for a list of sections":
