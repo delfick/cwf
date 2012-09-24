@@ -34,25 +34,6 @@ class PatternList(object):
             view, kwargs = view_info
             return self.section, (pattern, view, kwargs, self.section.name)
         
-    def include_path(self, include_as=None, start=False, end=False):
-        """
-            Determine path to this includer
-            Will use self.url_pattern without trailing $
-            unless include_as is specified which will override this
-        """
-        if not include_as:
-            url_parts = self.determine_url_parts()
-        else:
-            while include_as.startswith("^"):
-                include_as = include_as[1:]
-            
-            while include_as.endswith("/"):
-                include_as = include_as[:-1]
-            
-            url_parts = [include_as]
-        
-        return self.create_pattern(url_parts, start=start, end=end)
-        
     ########################
     ###   URL UTILITY
     ########################

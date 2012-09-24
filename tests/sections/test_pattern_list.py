@@ -160,59 +160,6 @@ describe "PatternList":
             name |should| be(self.name)
             section |should| be(self.section)
     
-    describe "Getting path for pattern include":
-        before_each:
-            self.end = fudge.Fake("end")
-            self.path = fudge.Fake("path")
-            self.start = fudge.Fake("start")
-            self.section = fudge.Fake("section")
-            self.section.has_children = False
-            
-            self.fake_create_pattern = fudge.Fake("create_pattern")
-            self.fake_determine_url_parts = fudge.Fake("determine_url_parts")
-            self.lst = type("Lst", (PatternList, ),
-                { 'create_pattern' : self.fake_create_pattern
-                , 'determine_url_parts' : self.fake_determine_url_parts
-                }
-            )(self.section)
-            
-        def get_path(self, include_as):
-            """Call include_path with provided include_as and self.start and self.end"""
-            return self.lst.include_path(include_as, start=self.start, end=self.end)
-        
-        def set_create_pattern_expectation(self, url_parts):
-            """
-                Set expectation for create_pattern to be called with url_parts supplied and self.start and self.end
-                And that it returns self.path
-            """
-            self.fake_create_pattern.expects_call().with_args(url_parts, start=self.start, end=self.end).returns(self.path)
-        
-        describe "When include_as is specified":
-            @fudge.test
-            it "passes include_as into create_pattern":
-                include_as = "blah"
-                self.set_create_pattern_expectation([include_as])
-                self.get_path(include_as) |should| equal_to(self.path)
-            
-            @fudge.test
-            it "ensures no caret at the start":
-                include_as = "^^^^^^^blah/"
-                self.set_create_pattern_expectation(["blah"])
-                self.get_path(include_as) |should| equal_to(self.path)
-            
-            @fudge.test
-            it "ensures no slash at the end":
-                include_as = "^blah/////"
-                self.set_create_pattern_expectation(["blah"])
-                self.get_path(include_as) |should| equal_to(self.path)
-            
-        describe "When include_as is not specified":
-            @fudge.test
-            it "gets url_parts from determine_url_parts":
-                url_parts = fudge.Fake("url_parts")
-                self.fake_determine_url_parts.expects_call().returns(url_parts)
-                self.set_create_pattern_expectation(url_parts)
-                self.get_path(None) |should| equal_to(self.path)
         
     ########################
     ####   URL UTILITY
