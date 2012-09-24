@@ -2,10 +2,11 @@ class PatternList(object):
     """
         Encapsulate logic in creating a pattern_list
     """
-    def __init__(self, section, start=True, stop_at=None):
-        self.end = not section.has_children
+    def __init__(self, section, start=True, stop_at=None, include_as=None, without_include=False):
         self.start = start
         self.section = section
+        self.include_as = include_as
+        self.without_include = without_include
         
         if stop_at is None:
             stop_at = self.section

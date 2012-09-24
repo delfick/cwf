@@ -10,20 +10,19 @@ describe "PatternList":
             self.start = fudge.Fake("start")
             self.stop_at = fudge.Fake("stop_at")
             self.section = fudge.Fake("section")
+            self.include_as = fudge.Fake("include_as")
+            self.without_include = fudge.Fake("without_include")
             self.section.has_children = True
         
-        it "sets end to whether section has no children":
-            self.section.has_children = True
-            PatternList(self.section).end |should| be(False)
-            
-            self.section.has_children = False
-            PatternList(self.section).end |should| be(True)
-        
-        it "sets section, start and stop_at to what's passed in":
-            lst = PatternList(self.section, start=self.start, stop_at=self.stop_at)
+        it "sets section, start, stop_at, include_as and without_include to what's passed in":
+            lst = PatternList(self.section
+                , start=self.start, stop_at=self.stop_at, include_as=self.include_as, without_include=self.without_include
+                )
             lst.start |should| be(self.start)
             lst.stop_at |should| be(self.stop_at)
             lst.section |should| be(self.section)
+            lst.include_as |should| be(self.include_as)
+            lst.without_include |should| be(self.without_include)
         
         it "sets stop_at to section if passed in as None or not passed in":
             PatternList(self.section).stop_at |should| be(self.section)
