@@ -655,105 +655,27 @@ describe "Section":
                 ret = self.section.make_view(self.view, self.section)(self.request, 1, 2, d=True, c=False) 
                 ret |should| be(self.view_result)
     
-    describe "Patterns":
+    describe "Getting patterns":
         before_each:
-            self.fake_make_view = fudge.Fake("make_view")
-            self.section = type("Section", (Section, ), {'make_view' : self.fake_make_view})()
+            self.start = fudge.Fake("start")
+            self.without_include = fudge.Fake("without_include")
+            self.section = Section()
 
-        describe "Getting expanded list":
-            @fudge.patch("cwf.sections.section.patterns", "cwf.sections.section.PatternList")
-            it "uses a PatternList object with django patterns generator and wraps view with function that adds section to request", fake_patterns, fakePatternList:
-                infos = {}
-                patterns = []
-                final_results = []
+        @fudge.patch("cwf.sections.section.PatternList", "cwf.sections.section.django_patterns")
+        it "creates a patternlist and passes result of that into a django patterns object", fakePatternList, fake_django_patterns:
+            tuple1 = fudge.Fake("tuple1")
+            tuple2 = fudge.Fake("tuple2")
+            tuple3 = fudge.Fake("tuple3")
+            tuples = (tuple1, tuple2, tuple3)
 
-                for i in range(3):
-                    info = infos[i] = {}
+            (fakePatternList.expects_call()
+                .with_args(self.section, start=self.start, without_include=self.without_include).returns(tuples)
+                )
 
-                    info['name'] = fudge.Fake("name_%d % i")
-                    info['kwarg'] = fudge.Fake("kwarg_%d" % i)
-                    info['pattern'] = fudge.Fake("pattern_%d" % i)
-                    info['section'] = fudge.Fake("section_%d" % i)
-                    info['view_result'] = fudge.Fake("view_result_%d" % i)
+            result = fudge.Fake("result")
+            fake_django_patterns.expects_call().with_args('', tuple1, tuple2, tuple3).returns(result)
+            self.section.patterns(start=self.start, without_include=self.without_include) |should| be(result)
 
-                    # The view is wrapped before going into the tuple
-                    info['view'] = fudge.Fake("view")
-                    info['wrapped_view'] = fudge.Fake("wrapped_view")
-                    if i == 0:
-                        next_call = self.fake_make_view.expects_call()
-                    else:
-                        next_call = self.fake_make_view.next_call()
-                    next_call.with_args(info['view'], info['section']).returns(info['wrapped_view'])
-
-                    # Original tuple to go into section.patterns()
-                    # And modified tuple to go into django patterns()
-                    info['tuple'] = (info['pattern'], info['view'], info['kwarg'], info['name'])
-                    info['modified_tuple'] = (info['pattern'], info['wrapped_view'], info['kwarg'], info['name'])
-
-                    info['result'] = fudge.Fake("result_%d" % i)
-                    info['patterns_result'] = [info['result']] 
-
-                    patterns.append((info['section'], info['tuple']))
-                    final_results.append(info['result'])
-
-                fakePatternList.expects_call().with_args(self.section).returns(patterns)
-                (fake_patterns.expects_call()
-                    .with_args('', infos[0]['modified_tuple']).returns(infos[0]['patterns_result'])
-                    .next_call().with_args('', infos[1]['modified_tuple']).returns(infos[1]['patterns_result'])
-                    .next_call().with_args('', infos[2]['modified_tuple']).returns(infos[2]['patterns_result'])
-                    )
-                self.section.patterns() |should| equal_to(final_results)
-
-        describe "Getting as includes":
-            before_each:
-                self.app_name = fudge.Fake("app_name")
-                self.namespace = fudge.Fake("namespace")
-                self.fake_patterns = fudge.Fake("patterns")
-                self.section = type("Section", (Section, ), {'patterns' : self.fake_patterns})()
-
-            @fudge.patch("cwf.sections.section.include", "cwf.sections.section.PatternList")
-            it "returns include_path from PatternList as first item in tuple", fake_include, fakePatternList:
-                end = fudge.Fake("end")
-                path = fudge.Fake("path")
-                start = fudge.Fake("start")
-                include_as = fudge.Fake("include_as")
-
-                # Make fake PatternList instance
-                pattern_list = (fudge.Fake("pattern_list").expects("include_path")
-                    .with_args(include_as, start, end).returns(path)
-                    )
-                fakePatternList.expects_call().with_args(self.section).returns(pattern_list)
-
-                # Patterns are for the includer
-                self.fake_patterns.expects_call()
-
-                fake_include.expects_call()
-                p, _ = self.section.include_patterns(self.namespace, self.app_name
-                    , include_as=include_as, start=start, end=end
-                    )
-
-                # Make sure we got the path returned from PatternList
-                p |should| be(path)
-
-            @fudge.patch("cwf.sections.section.include", "cwf.sections.section.PatternList")
-            it "returns includer function using django include generator as second item in tuple", fake_include, fakePatternList:
-                patterns = fudge.Fake("patterns")
-                includer = fudge.Fake("includer")
-
-                # include_path gets path for first item of returned tuple
-                pattern_list = fudge.Fake("pattern_list").expects("include_path")
-                fakePatternList.expects_call().with_args(self.section).returns(pattern_list)
-
-                # Patterns are passed into include
-                self.fake_patterns.expects_call().returns(patterns)
-
-                # includer generates the includer
-                fake_include.expects_call().with_args(patterns, self.namespace, self.app_name).returns(includer)
-                _, i = self.section.include_patterns(self.namespace, self.app_name)
-
-                # Make sure we got the includer function
-                i |should| be(includer)
-    
     describe "Cloning":
         @fudge.test
         it "defaults url, name and parent to values on the section":

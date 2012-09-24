@@ -272,30 +272,10 @@ class Section(object):
     ###   URL PATTERNS
     ########################
 
-    def patterns(self):
-        """
-            Return patterns object for this section
-            A django patterns object
-                with (pattern, view, kwarg, name) tuples for the section and it's children
-        """
-        result = []
-        for section, (pattern, view, kwarg, name) in PatternList(self):
-            view = self.make_view(view, section)
-            urls = patterns('', (pattern, view, kwarg, name))
-            result.extend(urls)
-        return result
-    
-    def include_patterns(self, namespace, app_name, include_as=None, start=False, end=False):
-        """
-            Return patterns object for this section using an include
-            Equivalent to:
-                (path, include(patterns(), namespace, app_name))
-            
-            Where path is determined by self.include_path(include_as, start, end)
-        """
-        path = PatternList(self).include_path(include_as, start, end)
-        includer = include(self.patterns(), namespace, app_name)
-        return (path, includer)
+    def patterns(self, start=True, without_include=False):
+        """Get urlpatterns for this section"""
+        tuples = list(PatternList(self, start=start, without_include=without_include))
+        return django_patterns('', *tuples)
 
     def make_view(self, view, section):
         """
