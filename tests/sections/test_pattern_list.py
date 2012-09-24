@@ -242,10 +242,18 @@ describe "PatternList":
             self.lst = PatternList(self.section)
         
         @fudge.test
-        it "asks url_options to get the view for the url":
+        it "asks url_options to get the view for the url and returns nothing if get nothing":
+            self.url_options.expects("url_view").with_args(self.section).returns(None)
+            self.lst.url_view() |should| be(None)
+        
+        @fudge.test
+        it "asks url_options to get the view for the url, modifies view using the section and returns view, kwargs":
             view = fudge.Fake("view")
-            self.url_options.expects("url_view").with_args(self.section).returns(view)
-            self.lst.url_view() |should| be(view)
+            kwargs = fudge.Fake("kwargs")
+            modified_view = fudge.Fake("modified_view")
+            self.url_options.expects("url_view").with_args(self.section).returns((view, kwargs))
+            self.section.expects("make_view").with_args(view, self.section).returns(modified_view)
+            self.lst.url_view() |should| equal_to((modified_view, kwargs))
 
     describe "Getting url part":
         before_each:

@@ -63,7 +63,11 @@ class PatternList(object):
     
     def url_view(self):
         """Return (view, kwargs) for this section"""
-        return self.section.url_options.url_view(self.section)
+        view_info = self.section.url_options.url_view(self.section)
+        if view_info:
+            view, kwargs = view_info
+            view = self.section.make_view(view, self.section)
+            return view, kwargs
     
     def url_part(self):
         """Get url part for this section"""
