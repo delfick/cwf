@@ -27,12 +27,6 @@ class Menu(object):
         else:
             return []
 
-    @property
-    def top_nav(self):
-        """Get all the top nav info objects"""
-        if not hasattr(self, '_top_nav'):
-            self._top_nav = list(self.navs_for(self.section.root_ancestor().menu_sections))
-        return self._top_nav
 
     @property
     def selected_top_nav(self):

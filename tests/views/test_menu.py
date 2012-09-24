@@ -58,37 +58,6 @@ describe "Menu":
             self.menu.selected_top_nav = None
             self.menu.side_nav() |should| equal_to([])
 
-    describe "Getting top nav":
-        before_each:
-            self.root_ancestor = fudge.Fake("root_ancestor")
-
-            self.section1 = fudge.Fake("section1")
-            self.section2 = fudge.Fake("section2")
-            self.menu_children = fudge.Fake("menu_children")
-
-            self.navs = (self.section1, self.section2)
-
-            self.fake_navs_for = fudge.Fake("navs_for")
-
-            self.menu = type("Menu", (Menu, ), 
-                { 'navs_for' : self.fake_navs_for
-                }
-            )(self.request, self.section)
-
-        @fudge.test
-        it "memoizes self._top_nav":
-            top_nav = fudge.Fake("top_nav")
-            self.menu._top_nav = top_nav
-            self.menu.top_nav |should| be(top_nav)
-
-        @fudge.test
-        it "gets navs for the menu sections of the root ancestor":
-            self.root_ancestor.menu_children = self.menu_children
-            self.section.expects("root_ancestor").returns(self.root_ancestor)
-            self.fake_navs_for.expects_call().with_args(self.menu_children).returns(self.navs)
-
-            self.menu.top_nav |should| equal_to([self.section1, self.section2])
-
     describe "Determining selected top nav":
         before_each:
             self.section1 = fudge.Fake("section1")
