@@ -140,45 +140,46 @@ describe "Menu":
 
     describe "Getting navs for a list of sections":
         before_each:
-            self.child1 = fudge.Fake("child1")
-            self.child2 = fudge.Fake("child2")
-            self.children = [self.child1, self.child2]
-
             self.path = fudge.Fake("path")
+            self.parent = fudge.Fake("parent")
 
             self.info1 = fudge.Fake("info1")
             self.info2 = fudge.Fake("info2")
             self.info3 = fudge.Fake("info3")
 
-            self.child_function1 = fudge.Fake("child_function1")
-            self.child_function2 = fudge.Fake("child_function1")
-            self.child_function3 = fudge.Fake("child_function1")
+            self.section1 = fudge.Fake("section1")
+            self.section2 = fudge.Fake("section2")
+            self.include_as1 = fudge.Fake("include_as1")
+            self.include_as2 = fudge.Fake("include_as2")
 
+            self.item1 = fudge.Fake("item1").has_attr(section=self.section1, include_as=self.include_as1)
+            self.item2 = fudge.Fake("item2").has_attr(section=self.section2, include_as=self.include_as2)
+            self.items = [self.item1, self.item2]
+
+            self.child_function1 = fudge.Fake("child_function1")
+            self.child_function2 = fudge.Fake("child_function2")
+            self.child_function3 = fudge.Fake("child_function3")
             self.fake_children_function_for = fudge.Fake("children_function_for")
 
-        @fudge.patch("cwf.views.menu.SectionMaster")
-        it "gets info using section master for each child using path and sets up children", fakeSectionMaster:
+            self.menu = type("Menu", (Menu, )
+                , { 'path' : self.path
+                  , 'children_function_for' : self.fake_children_function_for
+                  }
+                )(self.request, self.section)
+
+        @fudge.test
+        it "gets info using section master for each child using path and sets up children":
             master = (fudge.Fake("master").expects("get_info")
-                .with_args(self.child1, self.path, parent=None).returns([self.info1])
-                .next_call().with_args(self.child2, self.path, parent=None).returns([self.info2, self.info3])
+                .with_args(self.section1, self.path, parent=self.parent).returns([self.info1])
+                .next_call().with_args(self.section2, self.path, parent=self.parent).returns([self.info2, self.info3])
                 )
 
-            # Master is an instance of SectionMaster
-            fakeSectionMaster.expects_call().with_args(self.request).returns(master)
-
-            menu = type("Menu", (Menu, ),
-                { 'path' : self.path
-                , 'children_function_for' : self.fake_children_function_for
-                }
-            )(self.request, self.section)
-            menu.master |should| be(master)
-
             # The children function allows us to inject into the infos logic from the menu
-            # Child2 has two infos so it gets called twice
+            # item2 has two infos so it gets called twice
             (self.fake_children_function_for.expects_call()
-                .with_args(self.child1, self.info1).returns(self.child_function1)
-                .next_call().with_args(self.child2, self.info2).returns(self.child_function2)
-                .next_call().with_args(self.child2, self.info3).returns(self.child_function3)
+                .with_args(self.section1, self.info1).returns(self.child_function1)
+                .next_call().with_args(self.section2, self.info2).returns(self.child_function2)
+                .next_call().with_args(self.section2, self.info3).returns(self.child_function3)
                 )
 
             # setup_children is how we inject menu logic
@@ -186,23 +187,5 @@ describe "Menu":
             self.info2.expects("setup_children").with_args(self.child_function2)
             self.info3.expects("setup_children").with_args(self.child_function3)
 
-            list(menu.navs_for(self.children)) |should| equal_to([self.info1, self.info2, self.info3])
-
-        @fudge.patch("cwf.views.menu.SectionMaster")
-        it "doesn't setup children if setup_children is False", fakeSectionMaster:
-            master = (fudge.Fake("master").expects("get_info")
-                .with_args(self.child1, self.path, parent=None).returns([self.info1])
-                .next_call().with_args(self.child2, self.path, parent=None).returns([self.info2, self.info3])
-                )
-
-            # Master is an instance of SectionMaster
-            fakeSectionMaster.expects_call().with_args(self.request).returns(master)
-
-            menu = type("Menu", (Menu, ),
-                { 'path' : self.path
-                , 'children_function_for' : self.fake_children_function_for
-                }
-            )(self.request, self.section)
-            menu.master |should| be(master)
-
-            list(menu.navs_for(self.children, setup_children=False)) |should| equal_to([self.info1, self.info2, self.info3])
+            self.menu.master = master
+            list(self.menu.navs_for(self.items, parent=self.parent)) |should| equal_to([self.info1, self.info2, self.info3])

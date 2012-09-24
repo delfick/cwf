@@ -64,14 +64,15 @@ class Menu(object):
         """Return lambda to get menu for children of some section"""
         return lambda : self.navs_for(section.menu_sections, parent=parent)
 
-    def navs_for(self, section, setup_children=True, parent=None):
+    def navs_for(self, items, parent=None):
         """
             Return list of infos representing each top nav item
         """
-        for child in section:
+        for item in items:
+            child = item.section
+            include_as = item.include_as
             for info in self.master.get_info(child, self.path, parent=parent):
-                if setup_children:
-                    info.setup_children(self.children_function_for(child, info))
+                info.setup_children(self.children_function_for(child, info))
                 yield info
 
     def render(self, menu, template):
