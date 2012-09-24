@@ -27,13 +27,13 @@ class PatternList(object):
                     yield url_pattern
     
     def pattern_tuple(self):
-        """Yield pattern list for this section"""
-        pattern = self.create_pattern(self.determine_url_parts(), self.start, self.end)
+        """Return arguments for django pattern object for this section"""
+        pattern = self.create_pattern(self.determine_url_parts(), self.start)
         view_info = self.url_view()
         if view_info:
             view, kwargs = view_info
-            return self.section, (pattern, view, kwargs, self.section.name)
-        
+            return (pattern, view, kwargs, self.section.name)
+
     ########################
     ###   URL UTILITY
     ########################

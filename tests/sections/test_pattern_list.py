@@ -121,18 +121,15 @@ describe "PatternList":
         
         @fudge.test
         it "gets pattern from self.create_pattern":
-            end = fudge.Fake("end")
             start = fudge.Fake("start")
             url_parts = fudge.Fake("url_parts")
             
-            self.lst.end = end
             self.lst.start = start
             self.fake_determine_url_parts.expects_call().returns(url_parts)
-            self.fake_create_pattern.expects_call().with_args(url_parts, start, end).returns(self.pattern)
+            self.fake_create_pattern.expects_call().with_args(url_parts, start).returns(self.pattern)
             self.fake_url_view.expects_call().returns([1, 2])
-            section, (pattern, _, _, _) = self.lst.pattern_tuple()
+            (pattern, _, _, _) = self.lst.pattern_tuple()
             pattern |should| be(self.pattern)
-            section |should| be(self.section)
             
         @fudge.test
         it "returns None if url_view returns None":
@@ -146,21 +143,18 @@ describe "PatternList":
             self.fake_determine_url_parts.expects_call()
             self.fake_create_pattern.expects_call()
             self.fake_url_view.expects_call().returns([self.view, self.kwargs])
-            section, (_, view, kwargs, _) = self.lst.pattern_tuple()
+            (_, view, kwargs, _) = self.lst.pattern_tuple()
             view |should| be(self.view)
             kwargs |should| be(self.kwargs)
-            section |should| be(self.section)
         
         @fudge.test
         it "gets name from self.section":
             self.fake_determine_url_parts.expects_call()
             self.fake_create_pattern.expects_call()
             self.fake_url_view.expects_call().returns([1, 2])
-            section, (_, _, _, name) = self.lst.pattern_tuple()
+            (_, _, _, name) = self.lst.pattern_tuple()
             name |should| be(self.name)
-            section |should| be(self.section)
-    
-        
+
     ########################
     ####   URL UTILITY
     ########################
