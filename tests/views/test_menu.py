@@ -147,8 +147,11 @@ describe "Menu":
             self.info2 = fudge.Fake("info2")
             self.info3 = fudge.Fake("info3")
 
-            self.section1 = fudge.Fake("section1")
-            self.section2 = fudge.Fake("section2")
+            self.has_children1 = fudge.Fake("has_children1")
+            self.has_children2 = fudge.Fake("has_children2")
+
+            self.section1 = fudge.Fake("section1").has_attr(has_children=self.has_children1)
+            self.section2 = fudge.Fake("section2").has_attr(has_children=self.has_children2)
             self.include_as1 = fudge.Fake("include_as1")
             self.include_as2 = fudge.Fake("include_as2")
 
@@ -183,9 +186,9 @@ describe "Menu":
                 )
 
             # setup_children is how we inject menu logic
-            self.info1.expects("setup_children").with_args(self.child_function1)
-            self.info2.expects("setup_children").with_args(self.child_function2)
-            self.info3.expects("setup_children").with_args(self.child_function3)
+            self.info1.expects("setup_children").with_args(self.child_function1, self.has_children1)
+            self.info2.expects("setup_children").with_args(self.child_function2, self.has_children2)
+            self.info3.expects("setup_children").with_args(self.child_function3, self.has_children2)
 
             self.menu.master = master
             list(self.menu.navs_for(self.items, parent=self.parent)) |should| equal_to([self.info1, self.info2, self.info3])

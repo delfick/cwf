@@ -179,8 +179,9 @@ class Info(object):
         self.selected = selected
         self.url_parts = url_parts
 
-    def setup_children(self, children):
+    def setup_children(self, children, has_children):
         self.children = children
+        self.has_children = has_children
 
     def can_display(self, request):
         return self.section.can_display(request)
