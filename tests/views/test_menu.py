@@ -80,14 +80,18 @@ describe "Menu":
             self.section2 = fudge.Fake("section1")
             self.section3 = fudge.Fake("section1")
 
-            self.top_nav = [self.section1, self.section2, self.section3]
-            self.menu = type("Menu", (Menu, ), {'top_nav' : self.top_nav})(self.request, self.section)
+            self.fake_global_nav = fudge.Fake("global_nav")
+            self.menu = type("Menu", (Menu, )
+                , { 'global_nav' : self.fake_global_nav
+                  }
+              )(self.request, self.section)
 
         @fudge.test
         it "returns the first top nav to be selected":
             self.section1.expects("selected").returns([False, []])
             self.section2.expects("selected").returns([True, []])
             self.section3.expects("selected").returns([True, []])
+            self.fake_global_nav.expects_call().times_called(1).returns([self.section1, self.section2, self.section3])
             self.menu.selected_top_nav |should| be(self.section2)
 
             # Value should be memoized, calling again won't make fudge complain
@@ -98,6 +102,7 @@ describe "Menu":
             self.section1.expects("selected").returns([False, []])
             self.section2.expects("selected").returns([False, []])
             self.section3.expects("selected").returns([False, []])
+            self.fake_global_nav.expects_call().times_called(1).returns([self.section1, self.section2, self.section3])
             self.menu.selected_top_nav |should| be(None)
 
             # Value should be memoized, calling again won't make fudge complain

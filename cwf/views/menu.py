@@ -37,7 +37,7 @@ class Menu(object):
         """Get the selected top nav"""
         if not hasattr(self, '_selected_top_nav'):
             selected = None
-            filtered = filter(lambda nav: nav.selected()[0], self.top_nav)
+            filtered = filter(lambda nav: nav.selected()[0], self.global_nav())
             if filtered:
                 selected = filtered[0]
 
