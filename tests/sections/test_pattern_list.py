@@ -298,6 +298,35 @@ describe "PatternList":
             self.lst.determine_url_parts() |should| equal_to([p1, p2, own])
             self.lst._url_parts |should| equal_to([p1, p2, own])
 
+        @fudge.test
+        it "uses include_as instead of parent url parts if defined":
+            ia = fudge.Fake("ia")
+            own = fudge.Fake("own")
+
+            self.fake_url_part.expects_call().returns(own)
+
+            self.lst.include_as = ia
+            self.lst.determine_url_parts() |should| equal_to([ia, own])
+            self.lst._url_parts |should| equal_to([ia, own])
+
+        @fudge.test
+        it "doesn't add own url part if it's an empty string":
+            ia = fudge.Fake("ia")
+            p1 = fudge.Fake("p1")
+            p2 = fudge.Fake("p2")
+            self.fake_url_part.expects_call().returns('')
+            self.fake_parent_url_parts.expects_call().returns([p1, p2])
+
+            # Using parent url parts, doesn't add on ''
+            self.lst.determine_url_parts() |should| equal_to([p1, p2])
+            self.lst._url_parts |should| equal_to([p1, p2])
+            del self.lst.__dict__['_url_parts']
+
+            # Using include_as, doesn't add on ''
+            self.lst.include_as = ia
+            self.lst.determine_url_parts() |should| equal_to([ia])
+            self.lst._url_parts |should| equal_to([ia])
+
     describe "Getting url parts from parent":
         before_each:
             self.stop_at = fudge.Fake("stop_at")

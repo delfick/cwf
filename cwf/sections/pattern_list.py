@@ -77,8 +77,14 @@ class PatternList(object):
     def determine_url_parts(self):
         """Get list of patterns making the full pattern for this section"""
         if not hasattr(self, '_url_parts'):
-            url_parts = self.parent_url_parts()
-            url_parts.append(self.url_part())
+            if self.include_as is None:
+                url_parts = self.parent_url_parts()
+            else:
+                url_parts = [self.include_as]
+
+            url_part = self.url_part()
+            if url_part != "":
+                url_parts.append(url_part)
             self._url_parts = url_parts
         return self._url_parts    
     
