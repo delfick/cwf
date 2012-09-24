@@ -16,7 +16,9 @@ class Menu(object):
         self.master = SectionMaster(self.request)
 
     def global_nav(self):
-        return self.navs_for(self.top_nav, setup_children=False)
+        if not hasattr(self, '_global_nav'):
+            self._global_nav = list(self.navs_for(self.section.root_ancestor().menu_children))
+        return self._global_nav
 
     def side_nav(self):
         selected = self.selected_top_nav

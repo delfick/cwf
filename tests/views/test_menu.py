@@ -11,19 +11,34 @@ describe "Menu":
 
     describe "Getting global menu":
         before_each:
-            self.top_nav = fudge.Fake("top_nav")
             self.fake_navs_for = fudge.Fake("navs_for")
             self.menu = type("Menu", (Menu, ),
-                { 'top_nav' : self.top_nav
-                , 'navs_for' : self.fake_navs_for
+                { 'navs_for' : self.fake_navs_for
                 }
             )(self.request, self.section)
 
         @fudge.test
-        it "returns the navigation items for the top nav":
-            navs = fudge.Fake("nav")
-            self.fake_navs_for.expects_call().with_args(self.top_nav, setup_children=False).returns(navs)
-            self.menu.global_nav() |should| be(navs)
+        it "memoizes as self._global_nav":
+            global_nav = fudge.Fake("global_nav")
+            self.menu._global_nav = global_nav
+            self.menu.global_nav() |should| be(global_nav)
+
+        @fudge.test
+        it "returns the navigation items for the menu_children of the root_ancestor of section":
+            nav1 = fudge.Fake("nav1")
+            nav2 = fudge.Fake("nav2")
+            nav3 = fudge.Fake("nav3")
+            navs = (nav1, nav2, nav3)
+
+            menu_children = fudge.Fake("menu_children")
+            root_ancestor = fudge.Fake("root_ancestor").has_attr(menu_children=menu_children)
+            self.section.expects("root_ancestor").times_called(1).returns(root_ancestor)
+
+            self.fake_navs_for.expects_call().with_args(menu_children).returns(navs)
+            self.menu.global_nav() |should| equal_to([nav1, nav2, nav3])
+
+            # Should be memoized
+            self.menu.global_nav() |should| equal_to([nav1, nav2, nav3])
 
     describe "Getting side nav":
         before_each:
