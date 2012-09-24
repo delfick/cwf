@@ -307,6 +307,12 @@ describe "SectionMaster":
                 self.section.url = self.url
             
             @fudge.test
+            it "returns (True, []) if no path is provided and url is an empty string":
+                self.section.url = ''
+                self.section.parent = None
+                self.master.selected_value(self.section, None) |should| equal_to((True, []))
+            
+            @fudge.test
             it "returns (False, []) if no path is provided":
                 self.section.parent = None
                 self.master.selected_value(self.section, None) |should| equal_to((False, []))
@@ -316,6 +322,27 @@ describe "SectionMaster":
                 self.section.parent = self.parent
                 self.fake_memoized.expects("selected").with_args(self.parent, path=None).returns([False, []])
                 self.master.selected_value(self.section, None) |should| equal_to((False, []))
+            
+            @fudge.test
+            it "returns (True, []) if parent is selected and no path is left and url is empty string":
+                self.section.url = ''
+                self.section.parent = self.parent
+                self.fake_memoized.expects("selected").with_args(self.parent, path=self.path).returns([True, []])
+                self.master.selected_value(self.section, self.path) |should| equal_to((True, []))
+            
+            @fudge.test
+            it "returns (False, []) if url is empty string but parent is not selected":
+                self.section.url = ''
+                self.section.parent = self.parent
+                self.fake_memoized.expects("selected").with_args(self.parent, path=self.path).returns([False, []])
+                self.master.selected_value(self.section, self.path) |should| equal_to((False, []))
+            
+            @fudge.test
+            it "returns (False, []) if parent is selected and no path is left but url is not empty string":
+                self.section.url = self.url
+                self.section.parent = self.parent
+                self.fake_memoized.expects("selected").with_args(self.parent, path=self.path).returns([True, []])
+                self.master.selected_value(self.section, self.path) |should| equal_to((False, []))
             
             @fudge.test
             it "returns (False, []) if parent isn't selected":

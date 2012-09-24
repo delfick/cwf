@@ -97,14 +97,30 @@ class SectionMaster(object):
     def selected_value(self, section, path):
         """Return True and rest of path if selected else False and no path."""
         url = section.url
+        if not path and url == '':
+            # No path and section is base
+            return True, []
+
+        # Make sure that regardless of what this section is, it's parent is selected
+        # Also get here the rest of the path to check this section against
         parent_selected = True
         if section.parent:
             parent_selected, path = self.memoized.selected(section.parent, path=path)
 
+        if parent_selected and not path and url == '':
+            # Parent consumed the rest of the path
+            # And this section is base
+            return True, []
+
+        # If the parent is selected or we have no path left
+        # Then obviously no match
         if not parent_selected or not path:
             return False, []
 
-        if (path[0] == '' and str(url) == '/') or (path[0].lower() == str(url).lower()):
+        # Check against the url
+        if path[0] == '' and unicode(url) in ('', '/'):
+            return True, path[1:]
+        elif path[0].lower() == unicode(url).lower():
             return True, path[1:]
         else:
             if section.options.promote_children:
