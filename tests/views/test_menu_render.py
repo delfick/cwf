@@ -93,7 +93,7 @@ describe "Rendering the menu":
 
         def lookat_global(self, section, path, desired):
             menu = type("Menu", (Menu, ), {'path' : path.split('/')})(self.request, section)
-            rendered = menu.render(menu.global_nav(), 'menu/base.html')
+            rendered = menu.render(menu.global_nav(), 'menu/base.html', ignore_children=True)
             self.assertHTMLEqual(desired, rendered)
                 
         it 'makes a global menu with base selected':
@@ -123,7 +123,7 @@ describe "Rendering the menu":
                 </ul>
                 """)
         
-        it 'smakes global menu when the url is longer than selected section':
+        it 'makes global menu when the url is longer than selected section':
             self.lookat_global(self.section, "/one/some/", """
                 <ul>
                     <li><a href="/">Home</a></li>

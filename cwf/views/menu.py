@@ -49,7 +49,10 @@ class Menu(object):
             Make sure no trailing or leading slashes
         """
         if not hasattr(self, "_path"):
-            path = self.request.META['PATH_INFO']
+            meta = self.request
+            if hasattr(self.request, 'META'):
+                meta = self.request.META
+            path = meta['PATH_INFO']
             while path and path.startswith("/"):
                 path = path[1:]
             while path and path.endswith("/"):
@@ -72,11 +75,11 @@ class Menu(object):
                 info.setup_children(self.children_function_for(child, info), child.has_children)
                 yield info
 
-    def render(self, menu, template):
+    def render(self, menu, template, ignore_children=False):
         """
             Turn a list of info objects into html using a particular template
             Menu is result of self.global_nav or self.side_nav
             Template is path to the template to use
         """
-        extra = dict(menu=menu, children_template=template)
+        extra = dict(menu=menu, children_template=template, ignore_children=ignore_children)
         return renderer.simple_render(template, extra)
