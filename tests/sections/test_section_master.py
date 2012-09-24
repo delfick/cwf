@@ -415,6 +415,8 @@ describe "SectionMaster":
         describe "Getting info for each (url, alias) in section":
             before_each:
                 self.path = [9, 9, 9]
+                self.include_as = fudge.Fake("include_as")
+
                 self.fake_iter_section = fudge.Fake("iter_section")
                 self.patched_iter_section = fudge.patch_object(self.master, 'iter_section', self.fake_iter_section)
 
@@ -426,8 +428,8 @@ describe "SectionMaster":
             
             @fudge.test
             it "yields Info object for each (url, alias) for the section":
-                self.fake_iter_section.expects_call().with_args(self.section, self.path).returns([(1, 2), (3, 4)])
-                result = list(self.master.get_info(self.section, self.path))
+                self.fake_iter_section.expects_call().with_args(self.section, self.include_as, self.path).returns([(1, 2), (3, 4)])
+                result = list(self.master.get_info(self.section, self.include_as, self.path))
                 result |should| have(2).infos
                 all(type(r) == Info for r in result) |should| be(True)
             
@@ -442,9 +444,9 @@ describe "SectionMaster":
                         path = self.path
                     
                     (self.fake_iter_section.expects_call()
-                        .with_args(self.section, path).returns([(self.url, self.alias)])
+                        .with_args(self.section, self.include_as, path).returns([(self.url, self.alias)])
                         )
-                    results = list(self.master.get_info(self.section, path))
+                    results = list(self.master.get_info(self.section, self.include_as, path))
                     results |should| have(1).info
                     return results[0]
                     

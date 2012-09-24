@@ -173,8 +173,8 @@ describe "Menu":
         @fudge.test
         it "gets info using section master for each child using path and sets up children":
             master = (fudge.Fake("master").expects("get_info")
-                .with_args(self.section1, self.path, parent=self.parent).returns([self.info1])
-                .next_call().with_args(self.section2, self.path, parent=self.parent).returns([self.info2, self.info3])
+                .with_args(self.section1, self.include_as1, self.path, parent=self.parent).returns([self.info1])
+                .next_call().with_args(self.section2, self.include_as2, self.path, parent=self.parent).returns([self.info2, self.info3])
                 )
 
             # The children function allows us to inject into the infos logic from the menu

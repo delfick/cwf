@@ -135,12 +135,12 @@ class SectionMaster(object):
             # This item only has one item to show in the menu
             yield section.url, section.alias
     
-    def get_info(self, section, path, parent=None):
+    def get_info(self, section, include_as, path, parent=None):
         '''
             Yield Info objects for this section
             Used by templates to render the menus
         '''
-        for url, alias in self.iter_section(section, path):
+        for url, alias in self.iter_section(section, include_as, path):
             for info in self._get_info(url, alias, section, path, parent):
                 yield info
 

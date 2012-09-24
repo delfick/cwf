@@ -71,7 +71,7 @@ class Menu(object):
         for item in items:
             child = item.section
             include_as = item.include_as
-            for info in self.master.get_info(child, self.path, parent=parent):
+            for info in self.master.get_info(child, include_as, self.path, parent=parent):
                 info.setup_children(self.children_function_for(child, info), child.has_children)
                 yield info
 
