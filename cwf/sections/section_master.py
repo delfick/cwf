@@ -115,7 +115,7 @@ class SectionMaster(object):
     ###   INFO
     ########################
 
-    def iter_section(self, section, path):
+    def iter_section(self, section, include_as, path):
         """
             Yield (url, alias) pairs for this section
             If section isn't active, nothing is yielded
@@ -127,13 +127,22 @@ class SectionMaster(object):
             return
         
         if section.options.values:
-            # This section has multiple items to show in the menu
-            parent_url_parts = self.memoized.url_parts(section.parent)
-            for url, alias in section.options.values.get_info(self.request, path, parent_url_parts):
+            # We determine the parent url parts to give to the values
+            parent_url_definition = self.memoized.url_parts(section.parent)
+            parent_url_parts = []
+
+            for index in range(len(parent_url_definition)):
+                parent_url_parts.append(path[index])
+
+            # Get the values!
+            for url, alias in section.options.values.get_info(self.request, parent_url_parts, path):
                 yield url, alias
         else:
             # This item only has one item to show in the menu
-            yield section.url, section.alias
+            url = section.url
+            if include_as:
+                url = include_as
+            yield url, section.alias
     
     def get_info(self, section, include_as, path, parent=None):
         '''
