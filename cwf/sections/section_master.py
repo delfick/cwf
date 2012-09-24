@@ -64,7 +64,8 @@ class SectionMaster(object):
             url = url[1:]
         
         if not section.options.promote_children:
-            urls.append(url)
+            if not urls or urls[-1] != '' or url != '':
+                urls.append(url)
 
         if not urls or urls[0] != '':
             urls.insert(0, '')

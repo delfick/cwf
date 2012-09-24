@@ -229,7 +229,7 @@ describe "SectionMaster":
 
             it "returns empty list if given None":
                 self.master.url_parts_value(None) |should| equal_to([])
-            
+
             @fudge.test
             it "if no parent then it returns list of ['', section.url] with no leading slash":
                 self.section.url = '/hi'
@@ -243,17 +243,29 @@ describe "SectionMaster":
                 self.master.url_parts_value(self.section2) |should| equal_to(['', 'hi'])
 
             @fudge.test
+            it "will not return multiple '' if section.url is ''":
+                self.section.url = ''
+                self.section.parent = None
+                self.section.options.has_attr(promote_children=False)
+                self.master.url_parts_value(self.section) |should| equal_to([''])
+
+            @fudge.test
             it "if no parent and promotes children then it returns list of [''] with no leading slash":
                 self.section.url = '/hi'
                 self.section.parent = None
                 self.section.options.has_attr(promote_children=True)
                 self.master.url_parts_value(self.section) |should| equal_to([''])
-                
+
                 self.section2.url = 'hi'
                 self.section2.parent = None
                 self.section2.options.has_attr(promote_children=True)
                 self.master.url_parts_value(self.section2) |should| equal_to([''])
-        
+
+                self.section2.url = ''
+                self.section2.parent = None
+                self.section2.options.has_attr(promote_children=True)
+                self.master.url_parts_value(self.section2) |should| equal_to([''])
+
             @fudge.test
             it "prepends section.url with parts from parent if it has one":
                 (self.fake_memoized.expects("url_parts")
