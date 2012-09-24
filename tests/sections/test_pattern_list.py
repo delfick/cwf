@@ -366,11 +366,8 @@ describe "PatternList":
 
     describe "Getting url parts from parent":
         before_each:
-            self.stop_at = fudge.Fake("stop_at")
-
             self.parent = fudge.Fake("parent")
-            self.parent_options = fudge.Fake("parent_options")
-            self.parent.options = self.parent_options
+            self.stop_at = fudge.Fake("stop_at")
 
             self.section = fudge.Fake("section").has_attr(has_children=False)
             self.lst = PatternList(self.section, stop_at=self.stop_at)
@@ -389,20 +386,5 @@ describe "PatternList":
             parts = fudge.Fake("parts")
             pattern_list = fudge.Fake("pattern_list").expects("determine_url_parts").returns(parts)
             fakePatternList.expects_call().with_args(self.parent, stop_at=self.stop_at).returns(pattern_list)
-            self.parent_options.has_attr(promote_children=False)
             self.section.parent = self.parent
             self.lst.parent_url_parts() |should| be(parts)
-
-        @fudge.patch("cwf.sections.pattern_list.PatternList")
-        it "ignores last url part if parent promotes it's children", fakePatternList:
-            p1 = fudge.Fake("p1")
-            p2 = fudge.Fake("p2")
-            p3 = fudge.Fake("p3")
-            parts = [p1, p2, p3]
-            pattern_list = fudge.Fake("pattern_list").expects("determine_url_parts").returns(parts)
-
-            fakePatternList.expects_call().with_args(self.parent, stop_at=self.stop_at).returns(pattern_list)
-
-            self.section.parent = self.parent
-            self.parent_options.has_attr(promote_children=True)
-            self.lst.parent_url_parts() |should| equal_to([p1, p2])

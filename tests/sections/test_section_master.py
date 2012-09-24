@@ -223,10 +223,6 @@ describe "SectionMaster":
                 self.master.display_value(self.section) |should| be(result)
 
         describe "Getting url parts":
-            before_each:
-                self.section.options = fudge.Fake("options")
-                self.section2.options = fudge.Fake("options2")
-
             it "returns empty list if given None":
                 self.master.url_parts_value(None) |should| equal_to([])
 
@@ -234,37 +230,17 @@ describe "SectionMaster":
             it "if no parent then it returns list of ['', section.url] with no leading slash":
                 self.section.url = '/hi'
                 self.section.parent = None
-                self.section.options.has_attr(promote_children=False)
                 self.master.url_parts_value(self.section) |should| equal_to(['', 'hi'])
                 
                 self.section2.url = 'hi'
                 self.section2.parent = None
-                self.section2.options.has_attr(promote_children=False)
                 self.master.url_parts_value(self.section2) |should| equal_to(['', 'hi'])
 
             @fudge.test
             it "will not return multiple '' if section.url is ''":
                 self.section.url = ''
                 self.section.parent = None
-                self.section.options.has_attr(promote_children=False)
                 self.master.url_parts_value(self.section) |should| equal_to([''])
-
-            @fudge.test
-            it "if no parent and promotes children then it returns list of [''] with no leading slash":
-                self.section.url = '/hi'
-                self.section.parent = None
-                self.section.options.has_attr(promote_children=True)
-                self.master.url_parts_value(self.section) |should| equal_to([''])
-
-                self.section2.url = 'hi'
-                self.section2.parent = None
-                self.section2.options.has_attr(promote_children=True)
-                self.master.url_parts_value(self.section2) |should| equal_to([''])
-
-                self.section2.url = ''
-                self.section2.parent = None
-                self.section2.options.has_attr(promote_children=True)
-                self.master.url_parts_value(self.section2) |should| equal_to([''])
 
             @fudge.test
             it "prepends section.url with parts from parent if it has one":
@@ -275,30 +251,11 @@ describe "SectionMaster":
                 
                 self.section.url = '/hi'
                 self.section.parent = self.parent
-                self.section.options.has_attr(promote_children=False)
                 self.master.url_parts_value(self.section) |should| equal_to(['', 'one', 'two', 'hi'])
                 
                 self.section2.url = 'hi'
                 self.section2.parent = self.parent2
-                self.section2.options.has_attr(promote_children=False)
                 self.master.url_parts_value(self.section2) |should| equal_to(['', 'four', 'hi'])
-
-            @fudge.test
-            it "just uses parts from parent if it has one when promotes children":
-                (self.fake_memoized.expects("url_parts")
-                    .with_args(self.parent).returns(['', 'one', 'two'])
-                    .next_call().with_args(self.parent2).returns(['four'])
-                    )
-                
-                self.section.url = '/hi'
-                self.section.parent = self.parent
-                self.section.options.has_attr(promote_children=True)
-                self.master.url_parts_value(self.section) |should| equal_to(['', 'one', 'two'])
-                
-                self.section2.url = 'hi'
-                self.section2.parent = self.parent2
-                self.section2.options.has_attr(promote_children=True)
-                self.master.url_parts_value(self.section2) |should| equal_to(['', 'four'])
 
         describe "Getting selected":
             before_each:
