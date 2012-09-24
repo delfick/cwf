@@ -43,62 +43,119 @@ describe "PatternList":
             self.fake_pattern_list.expects_call().returns(iter([one, two, three]))
             list(self.lst) |should| equal_to([one, two, three])    
 
-    describe "Getting pattern list":
+    describe "Determining pattern list":
         before_each:
-            self.child1 = fudge.Fake("child1")
-            self.child2 = fudge.Fake("child2")
-            
+            self.start = fudge.Fake("start")
             self.stop_at = fudge.Fake("stop_at")
             self.section = fudge.Fake("section")
-            self.section.has_children = False
-            
-            self.fake_pattern_tuple = fudge.Fake("pattern_tuple")
-            self.lst_kls = type("Lst", (PatternList, ), {'pattern_tuple' : self.fake_pattern_tuple})
-        
-        @fudge.test
-        it "returns result of pattern_tuple if child is the section":
-            result = fudge.Fake("result")
-            self.fake_pattern_tuple.expects_call().returns(result)
-            self.section.url_children = [self.section]
-            list(self.lst_kls(self.section).pattern_list()) |should| equal_to([result])
-        
-        @fudge.test
-        it "yields nothing if result of pattern_tuple if is None":
-            self.fake_pattern_tuple.expects_call().returns(None)
-            self.section.url_children = [self.section]
-            list(self.lst_kls(self.section).pattern_list()) |should| equal_to([])
-        
+            self.include_as = fudge.Fake("include_as")
+            self.without_include = fudge.Fake("without_include")
+
+            self.fake_pattern_list_for = fudge.Fake("pattern_list_for")
+
+            self.lst = type("lst", (PatternList, )
+                , { 'pattern_list_for' : self.fake_pattern_list_for
+                  }
+                )(self.section
+                    , stop_at=self.stop_at, start=self.start, include_as=self.include_as, without_include=self.without_include
+                    )
+
         @fudge.patch("cwf.sections.pattern_list.PatternList")
-        it "returns all yielded from itering a PatternList from child if not the section", fakePatternList:
-            u1 = fudge.Fake("u1")
-            u2 = fudge.Fake("u2")
-            u3 = fudge.Fake("u3")
-            u4 = fudge.Fake("u4")
-            self.section.url_children = [self.child1, self.child2]
+        it "creates a PatternList for each url child of the section and uses pattern_list_for to extract pattern tuples", fakePatternList:
+            t1 = fudge.Fake("t1")
+            t2 = fudge.Fake("t2")
+            t3 = fudge.Fake("t3")
+            t4 = fudge.Fake("t4")
+            t5 = fudge.Fake("t5")
+            t6 = fudge.Fake("t6")
+
+            section1 = fudge.Fake("section1")
+            section2 = fudge.Fake("section2")
+            section3 = fudge.Fake("section3")
+
+            include_as1 = fudge.Fake("include_as1")
+            include_as2 = fudge.Fake("include_as2")
+            include_as3 = fudge.Fake("include_as3")
+
+            item1 = fudge.Fake("item1").has_attr(section=section1, include_as=include_as1)
+            item2 = fudge.Fake("item2").has_attr(section=section2, include_as=include_as2)
+            item3 = fudge.Fake("item3").has_attr(section=section3, include_as=include_as3)
+
+            list1 = fudge.Fake("list1")
+            list2 = fudge.Fake("list2")
+            list3 = fudge.Fake("list3")
             (fakePatternList.expects_call()
-                .with_args(self.child1, start=False, stop_at=self.stop_at).returns([u1, u2])
-                .next_call().with_args(self.child2, start=False, stop_at=self.stop_at).returns([u3, u4])
+                            .with_args(section1, start=self.start, stop_at=self.stop_at, include_as=include_as1).returns(list1)
+                .next_call().with_args(section2, start=self.start, stop_at=self.stop_at, include_as=include_as2).returns(list2)
+                .next_call().with_args(section3, start=self.start, stop_at=self.stop_at, include_as=include_as3).returns(list3)
                 )
-            
-            list(self.lst_kls(self.section, stop_at=self.stop_at).pattern_list()) |should| equal_to([u1, u2, u3, u4])
-        
-        @fudge.patch("cwf.sections.pattern_list.PatternList")
-        it "works on multiple children", fakePatternList:
-            u1 = fudge.Fake("u1")
-            u2 = fudge.Fake("u2")
-            u3 = fudge.Fake("u3")
-            u4 = fudge.Fake("u4")
-            result = fudge.Fake("result")
-            self.fake_pattern_tuple.expects_call().returns(result)
-            
-            self.section.url_children = [self.child1, self.section, self.child2]
-            (fakePatternList.expects_call()
-                .with_args(self.child1, start=False, stop_at=self.stop_at).returns([u1, u2])
-                .next_call().with_args(self.child2, start=False, stop_at=self.stop_at).returns([u3, u4])
+
+            (self.fake_pattern_list_for.expects_call()
+                .with_args(item1, list1).returns((t1, t2))
+                .next_call().with_args(item2, list2).returns((t3, ))
+                .next_call().with_args(item3, list3).returns((t4, t5, t6))
                 )
-            
-            list(self.lst_kls(self.section, stop_at=self.stop_at).pattern_list()) |should| equal_to([u1, u2, result, u3, u4])
-    
+
+            self.section.has_attr(url_children=[item1, item2, item3])
+            list(self.lst.pattern_list()) |should| equal_to([t1, t2, t3, t4, t5, t6])
+
+    describe "Getting pattern tuples for an item":
+        before_each:
+            self.item = fudge.Fake("item")
+            self.section = fudge.Fake("section")
+            self.include_as = fudge.Fake("include_as")
+
+            self.pattern_list = fudge.Fake("pattern_list")
+
+            self.lst_section = fudge.Fake("lst_section")
+            self.lst_without_include = fudge.Fake('lst_without_include')
+            self.lst = PatternList(self.lst_section, without_include=self.lst_without_include)
+
+        @fudge.patch("cwf.sections.pattern_list.django_include")
+        it "yields tuple for django include if item has an include_as", fake_django_include:
+            opt1 = fudge.Fake("opt1")
+            opt2 = fudge.Fake("opt2")
+            path = fudge.Fake("path")
+            includer = fudge.Fake("includer")
+
+            self.item.has_attr(include_as=self.include_as)
+            self.pattern_list.expects("pattern_tuple_includer").returns((path, (opt1, opt2)))
+            fake_django_include.expects_call().with_args(opt1, opt2).returns(includer)
+
+            self.lst.without_include = False
+            list(self.lst.pattern_list_for(self.item, self.pattern_list)) |should| equal_to([(path, includer)])
+
+        @fudge.test
+        it "yields pattern_tuple from pattern_list if the item's section is the same as this section":
+            self.item.has_attr(include_as=None, section=self.lst_section)
+            pattern_tuple = fudge.Fake("pattern_tuple")
+            self.pattern_list.expects("pattern_tuple").returns(pattern_tuple)
+            list(self.lst.pattern_list_for(self.item, self.pattern_list)) |should| equal_to([pattern_tuple])
+
+        @fudge.test
+        it "yields nothing if pattern_tuple from pattern_list returns None when item's section is the same as this section":
+            self.item.has_attr(include_as=None, section=self.lst_section)
+            self.pattern_list.expects("pattern_tuple").returns(None)
+            list(self.lst.pattern_list_for(self.item, self.pattern_list)) |should| equal_to([])
+
+        @fudge.test
+        it "ignores include_as if without_include is truthy":
+            self.item.has_attr(include_as=self.include_as, section=self.lst_section)
+            pattern_tuple = fudge.Fake("pattern_tuple")
+            self.pattern_list.expects("pattern_tuple").returns(pattern_tuple)
+            self.lst.without_include = True
+            list(self.lst.pattern_list_for(self.item, self.pattern_list)) |should| equal_to([pattern_tuple])
+
+        @fudge.test
+        it "just extracts tuples from the pattern list if neither include_as or current section":
+            t1 = fudge.Fake("t1")
+            t2 = fudge.Fake("t2")
+            t3 = fudge.Fake("t3")
+
+            pattern_list = (t1, t2, t3)
+            self.item.has_attr(include_as=None, section=self.section)
+            list(self.lst.pattern_list_for(self.item, pattern_list)) |should| equal_to([t1, t2, t3])
+
     describe "Determining pattern tuple":
         before_each:
             self.view = fudge.Fake("view")

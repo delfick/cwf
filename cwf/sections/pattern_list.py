@@ -1,3 +1,5 @@
+from django.conf.urls.defaults import include as django_include
+
 class PatternList(object):
     """
         Encapsulate logic in creating a pattern_list
@@ -17,14 +19,33 @@ class PatternList(object):
     
     def pattern_list(self):
         """Return list of url patterns for this section and its children"""
-        for child in self.section.url_children:
-            if child is self.section:
-                pattern_tuple = self.pattern_tuple()
-                if pattern_tuple:
-                    yield pattern_tuple
-            else:
-                for url_pattern in PatternList(child, start=False, stop_at=self.stop_at):
-                    yield url_pattern
+        for item in self.section.url_children:
+            pattern_list = PatternList(item.section, start=self.start, stop_at=self.stop_at, include_as=item.include_as)
+            for pattern_tuple in self.pattern_list_for(item, pattern_list):
+                yield pattern_tuple
+
+    def pattern_list_for(self, item, pattern_list):
+        """
+            Determine all pattern_tuples given an Item and associated PatternList object
+
+            If item has an include_as and we haven't said without_include
+                * yield path and django includer
+            if item's section belongs to this pattern list
+                * yield pattern_tuple from this pattern list
+            Otherwise
+                * yield all patterns from the pattern_list
+        """
+        if item.include_as is not None and not self.without_include:
+            path, includer_options = pattern_list.pattern_tuple_includer()
+            yield path, django_include(*includer_options)
+
+        elif item.section is self.section:
+            pattern_tuple = pattern_list.pattern_tuple()
+            if pattern_tuple:
+                yield pattern_tuple
+        else:
+            for pattern_tuple in pattern_list:
+                yield pattern_tuple
     
     def pattern_tuple(self):
         """Return arguments for django pattern object for this section"""
