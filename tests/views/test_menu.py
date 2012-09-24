@@ -105,19 +105,19 @@ describe "Menu":
 
     describe "Getting path":
         it "Gets PATH_INFO from request and splits by slash":
-            request = {'PATH_INFO' : 'blah/things'}
+            request = fudge.Fake('request').has_attr(META={'PATH_INFO' : 'blah/things'})
             Menu(request, None).path |should| equal_to(['blah', 'things'])
 
         it "strips trailing slashes":
-            request = {'PATH_INFO' : 'blah/things///'}
+            request = fudge.Fake('request').has_attr(META={'PATH_INFO' : 'blah/things///'})
             Menu(request, None).path |should| equal_to(['blah', 'things'])
 
         it "strips leading slashes":
-            request = {'PATH_INFO' : '////blah/things'}
+            request = fudge.Fake('request').has_attr(META={'PATH_INFO' : '////blah/things'})
             Menu(request, None).path |should| equal_to(['blah', 'things'])
 
         it "strips leading and trailing slashes":
-            request = {'PATH_INFO' : '////blah/things///'}
+            request = fudge.Fake('request').has_attr(META={'PATH_INFO' : '////blah/things///'})
             Menu(request, None).path |should| equal_to(['blah', 'things'])
 
     describe "Generating function to act as children":

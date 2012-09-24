@@ -52,7 +52,7 @@ class Menu(object):
             Make sure no trailing or leading slashes
         """
         if not hasattr(self, "_path"):
-            path = self.request['PATH_INFO']
+            path = self.request.META['PATH_INFO']
             while path and path.startswith("/"):
                 path = path[1:]
             while path and path.endswith("/"):
