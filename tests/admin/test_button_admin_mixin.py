@@ -70,7 +70,7 @@ describe "ButtonAdminMixin":
                 fake_get_object_or_404.expects_call().with_args(self.model, pk=self.object_id).returns(obj)
 
                 # Button_view_context combines context from button and extra
-                self.fake_button_view_context.expects_call().with_args(self.button, self.extra).returns(ctxt)
+                self.fake_button_view_context.expects_call().with_args(obj, self.button, self.extra).returns(ctxt)
 
                 # Get back (template, extra) from button result
                 (self.fake_button_result.expects_call()

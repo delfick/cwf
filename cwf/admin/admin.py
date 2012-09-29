@@ -88,13 +88,14 @@ class ButtonAdminMixin(object):
         else:
             return result
         
-        context = self.button_view_context(button, extra)
+        context = self.button_view_context(obj, button, extra)
         return renderer.render(request, template, context)
 
-    def button_view_context(self, button, extra):
+    def button_view_context(self, obj, button, extra):
         """Get context for a button view"""
         opts = self.model._meta
         app_label = opts.app_label
+
         context = {
               'title': _('%s: %s') % (button.description, force_unicode(obj))
             , 'object': obj
