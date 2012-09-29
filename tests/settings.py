@@ -4,9 +4,8 @@
 # This is a Django settings file with debug set to False
 
 import os
-HOMEDIR = os.sep.join(__file__.split('/')[:3])
-PROJECTDIR = os.sep.join(__file__.split('/')[:-1])
-PROJECTNAME = os.path.dirname(__file__).split(os.sep)[-1]
+this_dir = os.path.dirname(__file__)
+
 APPEND_SLASH = True
 TEMPLATE_DEBUG = DEBUG = False
 
@@ -51,12 +50,10 @@ NOSE_ARGS = [
 
 INSTALLED_APPS = (
       'cwf'
-    , 'tests'
     , 'django_nose'
-    , PROJECTNAME
     )
 
 TEMPLATE_DIRS = (
-	  '%s/tests/templates' % PROJECTDIR
-	, '%s/cwf/templates' % PROJECTDIR
+	  os.path.join(this_dir, 'templates')
+	, os.path.join(this_dir, '..', 'cwf', 'templates')
     )
