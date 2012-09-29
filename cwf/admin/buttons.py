@@ -79,26 +79,14 @@ class ButtonWrap(object):
         return all(user.has_perm(auth) for auth in iter_auth())
 
 ########################
-###   GROUP
-########################
-
-class ButtonGroup(object):
-    group = True
-    def __init__(self, name, buttons, **kwargs):
-        self.name = name
-        self.buttons = buttons
-
-    def copy_for_request(self, request, original=None):
-        """Return a button group with all it's buttons wrapped in a button wrap"""
-        buttons = [b.copy_for_request(request, original) for b in self.buttons]
-        return ButtonGroup(self.name, buttons)
-
-########################
 ###   SINGLE
 ########################
 
 class ButtonProperties(object):
     def __init__(self, kwargs):
+        if kwargs is None:
+            kwargs = {}
+
         if kwargs.get("for_all", False):
             kwargs['save_on_click'] = False
 
@@ -143,14 +131,7 @@ class ButtonProperties(object):
         else:
             self._kwargs[key] = val
 
-class Button(object):
-    group = False
-    def __init__(self, url, desc, **kwargs):
-        # Avoid custom setattr in __init__
-        object.__setattr__(self, 'url', url)
-        object.__setattr__(self, 'desc', desc)
-        object.__setattr__(self, 'kwargs', kwargs)
-
+class ButtonBase(object):
     def __getattr__(self, key):
         """Proxy to self.properties if key not on self"""
         if key.startswith('_'):
@@ -178,17 +159,32 @@ class Button(object):
                 object.__setattr__(self, key, val)
 
     @property
+    def properties(self):
+        if not hasattr(self, "_properties"):
+            # Need properties for normal setattr to work
+            kwargs = None
+            if hasattr(self, 'kwargs'):
+                kwargs = object.__getattribute__(self, 'kwargs')
+            object.__setattr__(self, '_properties', ButtonProperties(kwargs))
+        return self._properties
+
+########################
+###   BUTTON
+########################
+
+class Button(ButtonBase):
+    group = False
+    def __init__(self, url, desc, **kwargs):
+        # Avoid custom setattr in __init__
+        object.__setattr__(self, 'url', url)
+        object.__setattr__(self, 'desc', desc)
+        object.__setattr__(self, 'kwargs', kwargs)
+
+    @property
     def html(self):
         if not hasattr(self, "_html"):
             self._html = self.determine_html()
         return self._html
-
-    @property
-    def properties(self):
-        if not hasattr(self, "_properties"):
-            # Need properties for normal setattr to work
-            object.__setattr__(self, '_properties', ButtonProperties(self.kwargs))
-        return self._properties
 
     def copy_for_request(self, request, original=None):
         """Set request and original on the button"""
@@ -218,3 +214,20 @@ class Button(object):
             options.append(u'target="_blank"')
         
         return u'<a href="%s" %s>%s</a>' % (url, ' '.join(options), self.desc)
+
+########################
+###   GROUP
+########################
+
+class ButtonGroup(ButtonBase):
+    group = True
+    def __init__(self, name, buttons, **kwargs):
+        # Avoid custom setattr in __init__
+        object.__setattr__(self, 'name', name)
+        object.__setattr__(self, 'buttons', buttons)
+        object.__setattr__(self, 'kwargs', kwargs)
+
+    def copy_for_request(self, request, original=None):
+        """Return a button group with all it's buttons wrapped in a button wrap"""
+        buttons = [b.copy_for_request(request, original) for b in self.buttons]
+        return ButtonGroup(self.name, buttons)
