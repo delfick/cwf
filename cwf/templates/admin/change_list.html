@@ -1,7 +1,7 @@
-{% extends "grappelli/templates/admin/change_list.html" %}
+{% extends "grappelli/admin/change_list.html" %}
 {% block object-tools-items %}
     {% for button in buttons %}
-        {% if button.show and button.forAll %}
+        {% if button.display and button.for_all %}
         <li>{{button.html}}</li>
         {% endif %}
     {% endfor %}
