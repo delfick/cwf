@@ -13,6 +13,11 @@ setup(
         ]
       }
 
+    , install_requires =
+        [ 'werkzeug'
+        , 'paste'
+        ]
+
     # metadata for upload to PyPI
     , author = "Stephen Moore"
     , author_email = "stephen@delfick.com"
