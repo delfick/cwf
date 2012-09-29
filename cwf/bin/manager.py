@@ -16,7 +16,7 @@ def setup_project(project, expected=False):
     if project_setup:
         project_setup()
 
-def manager(project, get_paths=None):
+def manager(project):
     """
         Custom version of the manage.py script that django provides
 
@@ -33,10 +33,6 @@ def manager(project, get_paths=None):
     # Find the project and set DJANGO_SETTINGS_MODULE
     os.environ['DJANGO_SETTINGS_MODULE'] = '{0}.settings'.format(project)
     setup_project(project)
-    
-    # Extend sys.path
-    if get_paths and callable(get_paths):
-        sys.path = get_paths(project, ignoreMissing=True) + sys.path
     
     # Start django
     from django.core.management import execute_from_command_line
