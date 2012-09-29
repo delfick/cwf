@@ -125,7 +125,7 @@ describe "ButtonAdminMixin":
                 url = fudge.Fake("url")
                 result = fudge.Fake("result")
                 fakeAdminView.expects("change_view").with_args(self.obj).returns(url)
-                fake_renderer.expects("redirect").with_args(url, no_processing=True).returns(result)
+                fake_renderer.expects("redirect").with_args(self.request, url, no_processing=True).returns(result)
 
                 self.mixin.button_result(self.request, self.obj, self.button) |should| be(result)
 

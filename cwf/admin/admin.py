@@ -131,7 +131,7 @@ class ButtonAdminMixin(object):
 
                 # And redirect
                 url = AdminView.change_view(obj)
-                return renderer.redirect(url, no_processing=True)
+                return renderer.redirect(request, url, no_processing=True)
         
         return func(request, obj, button)
     
@@ -193,6 +193,6 @@ class ButtonAdmin(admin.ModelAdmin, ButtonAdminMixin):
                 redirect = key
         
         if redirect:
-            return renderer.redirect(redirect, no_processing=True)
+            return renderer.redirect(request, redirect, no_processing=True)
         else:
             return super(ButtonAdmin, self).response_change(request, obj)

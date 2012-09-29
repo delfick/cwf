@@ -90,7 +90,7 @@ describe "ButtonAdmin":
         it "redirects to the key in POST that begins with tool_ if one is there", fake_renderer:
             redirect = fudge.Fake("redirect")
             self.request.POST = {'a':1, "tool_bob" : True}
-            fake_renderer.expects("redirect").with_args("tool_bob", no_processing=True).returns(redirect)
+            fake_renderer.expects("redirect").with_args(self.request, "tool_bob", no_processing=True).returns(redirect)
 
             self.admin.response_change(self.request, self.obj) |should| be(redirect)
 
