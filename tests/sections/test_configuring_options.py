@@ -273,7 +273,13 @@ describe "Configuring Options":
                         ):
                         self.check_expectation(self.setter, val
                             , error = "%%(name)s must be either a string or a callble, not %s (%s)" % (typ, val)
+                            , exclude = 'extra_context'
                             )
+
+                it "allows extra_context to be a dict":
+                    options = Options()
+                    self.setter(options, extra_context={})
+                    assert True
                 
                 it "sets argument on class if it's valid":
                     kls_func = lambda self, request: 1

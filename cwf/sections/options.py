@@ -141,12 +141,14 @@ class Options(object):
             )
         for name, val in vals:
             if val is not Empty:
-                if val is not None and type(val) not in (str, unicode) and not callable(val):
-                    raise ConfigurationError(
-                        "%s must be either a string or a callble, not %s (%s)" % (
-                            name, type(val), val
+                valid_extra_context = name == 'extra_context' and type(val) is dict
+                if name != 'extra_context' or not valid_extra_context:
+                    if val is not None and type(val) not in (str, unicode) and not callable(val):
+                        raise ConfigurationError(
+                            "%s must be either a string or a callble, not %s (%s)" % (
+                                name, type(val), val
+                            )
                         )
-                    )
                 setattr(self, name, val)
     
     def set_menu(self
