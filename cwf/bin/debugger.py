@@ -26,11 +26,13 @@ class Debugger(object):
 
     def run(self):
         """Start the debugger"""
-        self.setup_500()
-        self.setup_path(self.project)
-
+        def setup_func():
+            self.setup_500()
+            self.setup_path(self.project)
         app = self.setup_app()
-        run_simple(self.host, self.port, app, True, use_debugger=True)
+        run_simple(self.host, self.port, app
+            , use_debugger=True, use_reloader=True, setup_func=setup_func
+            )
     
     ########################
     ###   SETUP
