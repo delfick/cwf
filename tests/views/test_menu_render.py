@@ -102,6 +102,7 @@ describe "Rendering the menu":
                     <li class="selected"><a href="/">Home</a></li>
                     <li><a href="/one">One</a></li>
                     <li><a href="/2">two</a></li>
+                    <li><a href="/4">4</a></li>
                 </ul>
             """)
         
@@ -111,6 +112,7 @@ describe "Rendering the menu":
                     <li><a href="/">Home</a></li>
                     <li class="selected"><a href="/one">One</a></li>
                     <li><a href="/2">two</a></li>
+                    <li><a href="/4">4</a></li>
                 </ul>
                 """)
         
@@ -120,6 +122,7 @@ describe "Rendering the menu":
                     <li><a href="/">Home</a></li>
                     <li class="selected"><a href="/one">One</a></li>
                     <li><a href="/2">two</a></li>
+                    <li><a href="/4">4</a></li>
                 </ul>
                 """)
         
@@ -129,6 +132,7 @@ describe "Rendering the menu":
                     <li><a href="/">Home</a></li>
                     <li class="selected"><a href="/one">One</a></li>
                     <li><a href="/2">two</a></li>
+                    <li><a href="/4">4</a></li>
                 </ul>
                 """)
 

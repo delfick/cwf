@@ -325,5 +325,7 @@ class Section(object):
 
     def can_display(self, request):
         """Determine if we can display this section"""
-        options = self.url_options
-        return options.conditional('display', request), options.propogate_display
+        options = self.options
+        can_display = options.conditional('display', request)
+        has_permissions = options.has_permissions(request.user)
+        return has_permissions and can_display, options.propogate_display

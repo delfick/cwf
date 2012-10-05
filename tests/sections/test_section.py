@@ -811,21 +811,66 @@ describe "Section":
     describe "Determining if can display":
         before_each:
             self.request = fudge.Fake("request")
-            self.display = fudge.Fake("display")
-            self.propogate_display = fudge.Fake("propogate_display")
-            self.section = Section().configure(''
-                , display = lambda r: self.display
-                , propogate_display =self.propogate_display
-                )
+            self.options = fudge.Fake("options")
+            self.section = Section()
 
-        it "returns display and propogate from section if no base is defined":
-            self.section.can_display(self.request) |should| equal_to((self.display, self.propogate_display))
-
-        it "returns display and propogate display from base if base is defined":
-            display = fudge.Fake("display")
+        @fudge.test
+        it "it can display if has permissions and options says can display":
+            user = fudge.Fake("user")
             propogate_display = fudge.Fake("propogate_display")
-            self.section.first().configure(''
-                , display = lambda r: display
-                , propogate_display = propogate_display
+
+            self.request.user = user
+            self.section.options = self.options.has_attr(propogate_display=propogate_display)
+
+            (self.options
+                .expects("conditional").with_args("display", self.request).returns(True)
+                .expects("has_permissions").with_args(user).returns(True)
                 )
-            self.section.can_display(self.request) |should| equal_to((display, propogate_display))
+
+            self.section.can_display(self.request) |should| equal_to((True, propogate_display))
+
+        @fudge.test
+        it "it can't display if no permissions":
+            user = fudge.Fake("user")
+            propogate_display = fudge.Fake("propogate_display")
+
+            self.request.user = user
+            self.section.options = self.options.has_attr(propogate_display=propogate_display)
+
+            (self.options
+                .expects("conditional").with_args("display", self.request).returns(False)
+                .expects("has_permissions").with_args(user).returns(True)
+                )
+
+            self.section.can_display(self.request) |should| equal_to((False, propogate_display))
+
+        @fudge.test
+        it "it can't display if not options.can_display":
+            user = fudge.Fake("user")
+            propogate_display = fudge.Fake("propogate_display")
+
+            self.request.user = user
+            self.section.options = self.options.has_attr(propogate_display=propogate_display)
+
+            (self.options
+                .expects("conditional").with_args("display", self.request).returns(True)
+                .expects("has_permissions").with_args(user).returns(False)
+                )
+
+            self.section.can_display(self.request) |should| equal_to((False, propogate_display))
+
+        @fudge.test
+        it "it can't display if neither permissions nor options.can_display":
+            user = fudge.Fake("user")
+            has_permissions = fudge.Fake("has_permissions")
+            propogate_display = fudge.Fake("propogate_display")
+
+            self.request.user = user
+            self.section.options = self.options.has_attr(propogate_display=propogate_display)
+
+            (self.options
+                .expects("conditional").with_args("display", self.request).returns(False)
+                .expects("has_permissions").with_args(user).returns(False)
+                )
+
+            self.section.can_display(self.request) |should| equal_to((False, propogate_display))
