@@ -4,8 +4,7 @@ class PatternList(object):
     """
         Encapsulate logic in creating a pattern_list
     """
-    def __init__(self, section, start=True, stop_at=None, include_as=None, without_include=False):
-        self.start = start
+    def __init__(self, section, stop_at=None, include_as=None, without_include=False):
         self.section = section
         self.include_as = include_as
         self.without_include = without_include
@@ -20,7 +19,7 @@ class PatternList(object):
     def pattern_list(self):
         """Return list of url patterns for this section and its children"""
         for item in self.section.url_children:
-            pattern_list = PatternList(item.section, start=self.start, stop_at=self.stop_at, include_as=item.include_as)
+            pattern_list = PatternList(item.section, stop_at=self.stop_at, include_as=item.include_as)
             for pattern_tuple in self.pattern_list_for(item, pattern_list):
                 yield pattern_tuple
 
@@ -49,7 +48,7 @@ class PatternList(object):
     
     def pattern_tuple(self):
         """Return arguments for django pattern object for this section"""
-        pattern = self.create_pattern(self.determine_url_parts(), self.start)
+        pattern = self.create_pattern(self.determine_url_parts())
         view_info = self.url_view()
         if view_info:
             view, kwargs = view_info
@@ -59,15 +58,15 @@ class PatternList(object):
         """Yield path and arguments for django include for this section"""
         path = "^{}/".format(self.include_as)
         options = self.section.url_options
-        return path, (self.section.patterns(start=False, without_include=True), options.namespace, options.app_name)
+        return path, (self.section.patterns(without_include=True), options.namespace, options.app_name)
 
     ########################
     ###   URL UTILITY
     ########################
     
-    def create_pattern(self, url_parts, start):
+    def create_pattern(self, url_parts):
         """Use create_pattern on section.url_options to create a url pattern"""
-        return self.section.url_options.create_pattern(url_parts, start=start)
+        return self.section.url_options.create_pattern(url_parts)
     
     def url_view(self):
         """Return (view, kwargs) for this section"""

@@ -272,9 +272,9 @@ class Section(object):
     ###   URL PATTERNS
     ########################
 
-    def patterns(self, start=True, without_include=False):
+    def patterns(self, without_include=False):
         """Get urlpatterns for this section"""
-        tuples = list(PatternList(self, start=start, without_include=without_include))
+        tuples = list(PatternList(self, without_include=without_include))
         return django_patterns('', *tuples)
 
     def make_view(self, view, section):

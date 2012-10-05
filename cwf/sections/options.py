@@ -181,14 +181,14 @@ class Options(object):
     ###   URL PATTERN
     ########################
     
-    def create_pattern(self, url_parts, start=True):
+    def create_pattern(self, url_parts):
         '''
             Determine pattern for this url
             If no url parts, use '.*'
 
             if pattern is empty or just a slash then use '^$'
             otherwise
-              * Prepend with ^ if start
+              * Prepend with ^
               * And end with /$ if doesn't already end with a slash
         '''
         pattern = self.string_from_url_parts(url_parts)
@@ -204,8 +204,7 @@ class Options(object):
         if pattern == '':
             pattern = '^$'
         else:
-            if start:
-                pattern = "^%s" % pattern
+            pattern = "^%s" % pattern
             
             if pattern[-1] != '/':
                 pattern = "%s/$" % pattern

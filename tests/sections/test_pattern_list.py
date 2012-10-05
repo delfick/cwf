@@ -7,18 +7,16 @@ import re
 describe "PatternList":
     describe "Initialization":
         before_each:
-            self.start = fudge.Fake("start")
             self.stop_at = fudge.Fake("stop_at")
             self.section = fudge.Fake("section")
             self.include_as = fudge.Fake("include_as")
             self.without_include = fudge.Fake("without_include")
             self.section.has_children = True
         
-        it "sets section, start, stop_at, include_as and without_include to what's passed in":
+        it "sets section, stop_at, include_as and without_include to what's passed in":
             lst = PatternList(self.section
-                , start=self.start, stop_at=self.stop_at, include_as=self.include_as, without_include=self.without_include
+                , stop_at=self.stop_at, include_as=self.include_as, without_include=self.without_include
                 )
-            lst.start |should| be(self.start)
             lst.stop_at |should| be(self.stop_at)
             lst.section |should| be(self.section)
             lst.include_as |should| be(self.include_as)
@@ -45,7 +43,6 @@ describe "PatternList":
 
     describe "Determining pattern list":
         before_each:
-            self.start = fudge.Fake("start")
             self.stop_at = fudge.Fake("stop_at")
             self.section = fudge.Fake("section")
             self.include_as = fudge.Fake("include_as")
@@ -57,7 +54,7 @@ describe "PatternList":
                 , { 'pattern_list_for' : self.fake_pattern_list_for
                   }
                 )(self.section
-                    , stop_at=self.stop_at, start=self.start, include_as=self.include_as, without_include=self.without_include
+                    , stop_at=self.stop_at, include_as=self.include_as, without_include=self.without_include
                     )
 
         @fudge.patch("cwf.sections.pattern_list.PatternList")
@@ -85,9 +82,9 @@ describe "PatternList":
             list2 = fudge.Fake("list2")
             list3 = fudge.Fake("list3")
             (fakePatternList.expects_call()
-                            .with_args(section1, start=self.start, stop_at=self.stop_at, include_as=include_as1).returns(list1)
-                .next_call().with_args(section2, start=self.start, stop_at=self.stop_at, include_as=include_as2).returns(list2)
-                .next_call().with_args(section3, start=self.start, stop_at=self.stop_at, include_as=include_as3).returns(list3)
+                            .with_args(section1, stop_at=self.stop_at, include_as=include_as1).returns(list1)
+                .next_call().with_args(section2, stop_at=self.stop_at, include_as=include_as2).returns(list2)
+                .next_call().with_args(section3, stop_at=self.stop_at, include_as=include_as3).returns(list3)
                 )
 
             (self.fake_pattern_list_for.expects_call()
@@ -178,12 +175,10 @@ describe "PatternList":
         
         @fudge.test
         it "gets pattern from self.create_pattern":
-            start = fudge.Fake("start")
             url_parts = fudge.Fake("url_parts")
             
-            self.lst.start = start
             self.fake_determine_url_parts.expects_call().returns(url_parts)
-            self.fake_create_pattern.expects_call().with_args(url_parts, start).returns(self.pattern)
+            self.fake_create_pattern.expects_call().with_args(url_parts).returns(self.pattern)
             self.fake_url_view.expects_call().returns([1, 2])
             (pattern, _, _, _) = self.lst.pattern_tuple()
             pattern |should| be(self.pattern)
@@ -232,9 +227,8 @@ describe "PatternList":
             namespace = fudge.Fake("namespace")
             url_options = fudge.Fake("url_options")
 
-            # Start is false because we already know these patterns are included after the include_as path
             # without_include is True so that we get atleast one level of actual patterns
-            self.section.expects("patterns").with_args(start=False, without_include=True).returns(patterns)
+            self.section.expects("patterns").with_args(without_include=True).returns(patterns)
 
             self.section.has_attr(url_options=url_options)
             url_options.has_attr(namespace=namespace, app_name=app_name)
@@ -250,7 +244,6 @@ describe "PatternList":
 
     describe "Getting pattern for url":
         before_each:
-            self.start = fudge.Fake("start")
             self.url_parts = fudge.Fake('url_parts')
 
             self.url_options = fudge.Fake("url_options")
@@ -259,10 +252,10 @@ describe "PatternList":
             self.lst = PatternList(self.section)
         
         @fudge.test
-        it "asks url_options to create patterns from the url_parts and start":
+        it "asks url_options to create patterns from the url_parts":
             pattern = fudge.Fake("pattern")
-            self.url_options.expects("create_pattern").with_args(self.url_parts, start=self.start).returns(pattern)
-            self.lst.create_pattern(self.url_parts, self.start) |should| be(pattern)
+            self.url_options.expects("create_pattern").with_args(self.url_parts).returns(pattern)
+            self.lst.create_pattern(self.url_parts) |should| be(pattern)
 
     describe "Getting view for url":
         before_each:

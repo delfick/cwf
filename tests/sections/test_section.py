@@ -657,7 +657,6 @@ describe "Section":
     
     describe "Getting patterns":
         before_each:
-            self.start = fudge.Fake("start")
             self.without_include = fudge.Fake("without_include")
             self.section = Section()
 
@@ -669,12 +668,12 @@ describe "Section":
             tuples = (tuple1, tuple2, tuple3)
 
             (fakePatternList.expects_call()
-                .with_args(self.section, start=self.start, without_include=self.without_include).returns(tuples)
+                .with_args(self.section, without_include=self.without_include).returns(tuples)
                 )
 
             result = fudge.Fake("result")
             fake_django_patterns.expects_call().with_args('', tuple1, tuple2, tuple3).returns(result)
-            self.section.patterns(start=self.start, without_include=self.without_include) |should| be(result)
+            self.section.patterns(without_include=self.without_include) |should| be(result)
 
     describe "Cloning":
         @fudge.test

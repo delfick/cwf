@@ -255,9 +255,9 @@ describe "Options":
             self.options = type("Options", (Options, ), {'string_from_url_parts' : self.fake_string_from_url_parts})()
         
         @fudge.test
-        it "returns '.*' if string_from_url_parts is None":
+        it "returns '^.*' if string_from_url_parts is None":
             self.fake_string_from_url_parts.expects_call().with_args(self.url_parts).returns(None)
-            self.options.create_pattern(self.url_parts, start=False) |should| equal_to(".*/$")
+            self.options.create_pattern(self.url_parts) |should| equal_to("^.*/$")
         
         @fudge.test
         it "returns '^$' if string_from_url_parts is '' or '/'":
@@ -267,7 +267,7 @@ describe "Options":
                 )
             
             for expected in ('^$', '^$'):
-                self.options.create_pattern(self.url_parts, start=False) |should| equal_to(expected)
+                self.options.create_pattern(self.url_parts) |should| equal_to(expected)
 
         @fudge.test
         it "returns result of string_from_url_parts without leading slashes if ends with slash":
@@ -278,8 +278,8 @@ describe "Options":
                 .next_call().with_args(self.url_parts).returns("/ghjd/")
                 )
             
-            for expected in ('asdf/', 'jlkl/', 'qwer/', 'ghjd/'):
-                self.options.create_pattern(self.url_parts, start=False) |should| equal_to(expected)
+            for expected in ('^asdf/', '^jlkl/', '^qwer/', '^ghjd/'):
+                self.options.create_pattern(self.url_parts) |should| equal_to(expected)
 
         @fudge.test
         it "returns with trailing /$ if doesn't already have trailing slash":
@@ -290,23 +290,8 @@ describe "Options":
                 .next_call().with_args(self.url_parts).returns("/ghjd")
                 )
             
-            for expected in ('asdf/$', 'jlkl/$', 'qwer/$', 'ghjd/$'):
-                self.options.create_pattern(self.url_parts, start=False) |should| equal_to(expected)
-
-        @fudge.test
-        it "prepends with ^ if start is True":
-            (self.fake_string_from_url_parts.expects_call()
-                            .with_args(self.url_parts).returns(None)
-                .next_call().with_args(self.url_parts).returns('/')
-                .next_call().with_args(self.url_parts).returns('')
-                .next_call().with_args(self.url_parts).returns('asdf')
-                .next_call().with_args(self.url_parts).returns('/jlkl')
-                .next_call().with_args(self.url_parts).returns('qwer/')
-                .next_call().with_args(self.url_parts).returns("/ghjd/")
-                )
-            
-            for expected in ('^.*/$', '^$', '^$', '^asdf/$', '^jlkl/$', '^qwer/', '^ghjd/'):
-                self.options.create_pattern(self.url_parts, start=True) |should| equal_to(expected)
+            for expected in ('^asdf/$', '^jlkl/$', '^qwer/$', '^ghjd/$'):
+                self.options.create_pattern(self.url_parts) |should| equal_to(expected)
     
     describe "Getting string from url_parts":
         before_each:
