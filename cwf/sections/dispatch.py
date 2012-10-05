@@ -20,13 +20,13 @@ class Dispatcher(object):
             return "Dispatcher: %s:%s" % (self.view.__class__.__name__, self.target)
         else:
             return self.__class__.__name__
-        
+
     def get_view(self, location):
         '''Ensure view for given location is in self.views and then return that view'''
         if location not in self.views:
             self.views[location] = self.find_view(location)
         return self.views[location]
-    
+
     def find_view(self, location):
         '''Find the kls for the given location and return an instance of this kls'''
         if type(location) not in (unicode, str):
@@ -37,7 +37,7 @@ class Dispatcher(object):
             path, name = obj[:-1], obj[-1]
             pkg = __import__('.'.join(path), globals(), locals(), [name], -1)
             return getattr(pkg, name)()
-    
+
     def __call__(self, request, kls, target, *args, **kwargs):
         '''
             For this kls and target return the result of invoking the correct view

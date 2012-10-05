@@ -39,7 +39,7 @@ class RedirectAddress(object):
         address = self.add_get_params(address)
 
         return address
-    
+
     ########################
     ###   GETTERS
     ########################
@@ -70,7 +70,7 @@ class RedirectAddress(object):
             if key not in self.ignore_get:
                 params[key] = val
         return params
-    
+
     ########################
     ###   UTILITY
     ########################

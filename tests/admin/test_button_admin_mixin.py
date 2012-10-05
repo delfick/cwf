@@ -66,7 +66,7 @@ describe "ButtonAdminMixin":
                 obj = fudge.Fake("object")
                 ctxt = fudge.Fake("ctxt")
                 render = fudge.Fake("render")
-                
+
                 fake_get_object_or_404.expects_call().with_args(self.model, pk=self.object_id).returns(obj)
 
                 # Button_view_context combines context from button and extra
@@ -80,7 +80,7 @@ describe "ButtonAdminMixin":
                 # Render the request with the template and the ctxt we constructed
                 fake_renderer.expects("render").with_args(self.request, self.template, ctxt).returns(render)
                 self.mixin.button_view(self.request, self.object_id, self.button) |should| be(render)
-    
+
     describe "Getting result from a button":
         before_each:
             self.obj = fudge.Fake("obj")
@@ -107,7 +107,7 @@ describe "ButtonAdminMixin":
             name = "tool_%s" % url
             with self.assertRaisesRegexp(Exception, "doesn't have a function for %s" % name):
                 self.mixin.button_result(self.request, self.obj, self.button) |should| be(result)
-        
+
         describe "When button has execute_and_redirect set":
             @fudge.test
             it "finds delegate from button.execute_and_redirect and complains if admin doesn't have that attribute":

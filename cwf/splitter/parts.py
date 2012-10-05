@@ -18,12 +18,12 @@ class Parts(object):
     ########################
     ###   USAGE
     ########################
-    
+
     def load_admin(self, active_only=False):
         """Load all the admin.py files in each part so that they can register with the admin"""
         for part in self.each_part(active_only):
             part.load("admin")
-    
+
     def models(self, active_only=False):
         """
             Get the models from each part and into one dictionary
@@ -63,7 +63,7 @@ class Parts(object):
             self._imported_parts = True
             self.import_parts()
         return self.parts
-    
+
     def each_part(self, active_only=False):
         """
             An iter that determines whether to go through all sections
@@ -77,7 +77,7 @@ class Parts(object):
         """Import all the parts"""
         for part in self.parts:
             part.do_import(self.package)
-    
+
     def site(self, name, active_only=True):
         """
             Create and return a site object that holds each section.
@@ -107,25 +107,25 @@ class Part(object):
         self.name = name
         self.active = active
         self.kwargs = kwargs
-        
+
         # Add include_as if there is none already
         if type(name) in (str, unicode) and kwargs.get('include_as', None) is None:
             if not kwargs.get('first'):
                 kwargs['include_as'] = self.name
-    
+
     def do_import(self, package):
         """Get the package we are representing"""
         if type(self.name) not in (str, unicode):
             self.pkg = self.name
-        
+
         elif type(package) not in (str, unicode):
             self.pkg = getattr(package, self.name)
-        
+
         else:
             # We want an error from this to propagate
             pkg = __import__(package, globals(), locals(), [self.name], -1)
             self.pkg = getattr(pkg, self.name)
-    
+
     def load(self, name):
         """Get a module from this package"""
         if not hasattr(self.pkg, name):
@@ -145,6 +145,6 @@ class Part(object):
                 else:
                     # We don't care if there isn't anything to import
                     pass
-        
+
         if hasattr(self.pkg, name):
             return getattr(self.pkg, name)

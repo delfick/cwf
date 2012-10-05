@@ -18,7 +18,7 @@ class Empty(object): pass
 ########################
 ###   OPTIONS
 ########################
-    
+
 class Options(object):
     def __init__(self):
         # Some flags to determine what to show
@@ -32,7 +32,7 @@ class Options(object):
         self.active = True
         self.exists = True
         self.display = True
-        
+
         # Some settings for determining view
         # kls: The view class. Can be the kls itself or a string name of the kls
         # module: Where to find the kls if the kls is specified as a string. (can be object or location)
@@ -48,7 +48,7 @@ class Options(object):
         # Some options for having a section as a django include
         self.app_name = None
         self.namespace = None
-        
+
         # Determine what to show in the menu
         # alias: what appears in the menu
         # match: Determine if this part of the url should be given to the view as a keyword argument
@@ -68,14 +68,14 @@ class Options(object):
     ########################
     ###   SETTERS
     ########################
-        
+
     def setters(self):
         '''Determine each setter method and required args for that method'''
         for method in ('set_conditionals', 'set_view', 'set_urlname', 'set_menu'):
             func = getattr(self, method)
             required = list(arg for arg in inspect.getargspec(func).args if arg != 'self')
             yield func, required
-    
+
     def set_everything(self, **kwargs):
         '''
             Call the setters using one method
@@ -88,17 +88,17 @@ class Options(object):
             for arg in required:
                 if arg in taken:
                     raise ConfigurationError("%s takes argument (%s) already taken elsewhere..." % (method, arg))
-                
+
                 if arg in kwargs:
                     taken.append(arg)
                     values[arg] = kwargs[arg]
             method(**values)
-        
+
         leftover = set(kwargs.keys()) - set(taken)
         if leftover:
             leftover = ', '.join("'%s'" % name for name in sorted(leftover))
             raise ConfigurationError("Arguments provided into set_everything that wasn't consumed (%s)" % leftover)
-    
+
     def set_conditionals(self, admin=Empty, active=Empty, exists=Empty, display=Empty):
         '''
             Set conditionals
@@ -113,26 +113,26 @@ class Options(object):
                     raise ConfigurationError(
                         "Conditionals must be boolean or callable(request), not %s (%s=%s)" % (type(val), name, val)
                         )
-                
+
                 if callable(val):
                     if hasattr(val, 'im_func'):
                         needed = 2
                     else:
                         needed = 1
-                    
+
                     check = val
                     if not inspect.isfunction(check) and not inspect.ismethod(check):
                         check = getattr(val, '__call__')
-                    
+
                     args = inspect.getargspec(check).args
                     num_args = len(args)
                     if num_args != needed:
                         raise ConfigurationError(
                             "Conditionals as callables must only accept one argument, not %s (%s)" % (num_args, args)
                             )
-                    
+
                 setattr(self, name, val)
-    
+
     def set_view(self, kls=Empty, module=Empty, target=Empty, redirect=Empty, extra_context=Empty):
         '''Set options for specifying the view'''
         vals = (
@@ -150,7 +150,7 @@ class Options(object):
                             )
                         )
                 setattr(self, name, val)
-    
+
     def set_menu(self
         , alias=Empty, match=Empty, values=Empty, needs_auth=Empty
         , propogate_display=Empty, promote_children=Empty
@@ -164,7 +164,7 @@ class Options(object):
         for name, val in vals:
             if val is not Empty:
                 setattr(self, name, val)
-        
+
         if values is not Empty and values is not None and (not hasattr(values, 'get_info') or not callable(values.get_info)):
             raise ConfigurationError(
                 "Values must have a get_info method to get information from. %s does not" % self.values
@@ -180,7 +180,7 @@ class Options(object):
     ########################
     ###   URL PATTERN
     ########################
-    
+
     def create_pattern(self, url_parts):
         '''
             Determine pattern for this url
@@ -195,22 +195,22 @@ class Options(object):
         if pattern is None:
             # No url_parts, give anything pattern
             pattern = '.*'
-        
+
         # Removing leading slash
         # Already deduplicated slashes    
         if pattern and pattern[0] == '/':
             pattern = pattern[1:]
-        
+
         if pattern == '':
             pattern = '^$'
         else:
             pattern = "^%s" % pattern
-            
+
             if pattern[-1] != '/':
                 pattern = "%s/$" % pattern
-        
+
         return pattern
-    
+
     def string_from_url_parts(self, url_parts):
         """
             Get a string from url_parts that is joined by slashes and has no multiple slashes
@@ -218,7 +218,7 @@ class Options(object):
         """
         if type(url_parts) not in (list, tuple):
             url_parts = [url_parts]
-        
+
         # Pattern was nothing, make anything url
         if len(url_parts) is 1 and url_parts[0] is None:
             return None
@@ -228,32 +228,32 @@ class Options(object):
                 pattern = ''
             else:
                 pattern = '/'.join(url_parts)
-                
+
             # Remove duplicate slashes
             return regexes['multiSlash'].sub('/', pattern)
 
     ########################
     ###   URL VIEW
     ########################
-    
+
     def url_view(self, section):
         """
             Return url view for these options
             If redirect is specified, return redirect view
             If target is already callable, return target along with extra_content
-            
+
             Otherwise, determine view kls
             and return dispatcher as view, along with kls, target, section and extra_content
         """
         if self.redirect:
             # Redirect overrides other options
             return self.redirect_view(self.redirect)
-        
+
         target = self.target
         if callable(target):
             # Target already a callable
             return target, self.extra_context
-        
+
         if target:
             kls = self.get_view_kls()
             view = dispatcher
@@ -271,44 +271,44 @@ class Options(object):
         '''
         from django.views.generic.simple import redirect_to
         from django.http import Http404
-        
+
         def redirector(request, redirect=redirect, **kwargs):
             url = redirect
             if callable(redirect):
                 url = redirect(request)
-            
+
             if url is None:
                 raise Http404
-             
+
             if not url.startswith('/'):
                 url = '%s%s' % (request.path, url)
                 url = regexes['multiSlash'].sub('/', url)
-            
+
             return redirect_to(request, url)
-        
+
         # Return view that redirects, and extra_context
         return redirector, self.extra_context
-        
+
     def get_view_kls(self):
         '''Determine view kls by looking at module and kls'''
         if not self.kls and not self.module:
             # No view to be determined
             return None
-        
+
         if self.kls is not None and type(self.kls) not in (str, unicode):
             # kls is already an object
             return self.kls
-        
+
         kls = self.clean_module_name(self.kls)
         if not self.module:
             # No module, return kls as a string
             return kls
-        
+
         if type(self.module) in (str, unicode):
             # Module is a string, concatenate with kls
             module = self.clean_module_name(self.module)
             return "%s.%s" % (module, kls)
-        
+
         else:
             # Module is an object
             # getattr each part of kls from it
@@ -320,14 +320,14 @@ class Options(object):
     ########################
     ###   HELPERS
     ########################
-    
+
     def reachable(self, request):
         """Determine if options say this exists and has permissions for this request"""
         if not self.conditional('exists', request) or not self.conditional('active', request):
             # Not active or doesn't exist
             return False
         return self.has_permissions(request.user)
-    
+
     def clone(self, all=False, **kwargs):
         """
             Return a copy of this object with new options.
@@ -337,7 +337,7 @@ class Options(object):
         passon = []
         for _, required in self.setters():
             passon.extend(required)
-        
+
         if all:
             no_propogate = ()
         else:
@@ -352,7 +352,7 @@ class Options(object):
 
         values = dict((arg, getattr(self, arg)) for arg in passon if arg not in no_propogate)
         values.update(kwargs)
-        
+
         cloned = Options()
         cloned.set_everything(**values)
         return cloned
@@ -360,7 +360,7 @@ class Options(object):
     ########################
     ###   UTILITY
     ########################
-    
+
     def conditional(self, name, request):
         '''Return conditional. If conditional is callable, return result of calling with request'''
         val = getattr(self, name)
@@ -368,13 +368,13 @@ class Options(object):
             return val(request)
         else:
             return val
-    
+
     def has_permissions(self, user):
         '''Determine if user has permissions given these options'''
         needs_auth = self.needs_auth
         if not needs_auth:
             return True
-        
+
         # Determine if user is authenticated
         authenticated = user.is_authenticated()
         if type(needs_auth) is bool:
@@ -386,9 +386,9 @@ class Options(object):
                         yield auth
                 else:
                     yield needs_auth
-            
+
             return authenticated and all(user.has_perm(auth) for auth in iterAuth())
-    
+
     def clean_module_name(self, name):
         '''
             * Remove dots from beginning and end of the string
@@ -396,17 +396,17 @@ class Options(object):
         '''
         while name.startswith('.'):
             name = name[1:]
-        
+
         while name.endswith('.'):
             name = name[:-1]
-        
+
         if ' ' in name:
             raise ConfigurationError("'%s' is not a valid import location (has spaces)" % name)
-        
+
         for part in name.split('.'):
             if not regexes['valid_import'].match(part):
                 raise ConfigurationError(
                     "'%s' is not a valid import location ('%s' isn't a valid variable name)" % (name, part)
                 )
-        
+
         return name

@@ -100,7 +100,7 @@ describe "Button":
 
             button = self.make_button(save_on_click=True, for_all=False)
             button.determine_html() |should| be(safe_html)
-    
+
     describe "Getting link as an input":
         it "returns submit input with name as tool_<self.url> and value as self.desc":
             expected = '<input type="submit" name="tool_%s" value="%s"/>' % (self.url, self.desc)
@@ -112,7 +112,7 @@ describe "Button":
             self.button.save_on_click = False
             self.url.expects("startswith").with_args('/').returns(True)
             self.button.link_as_anchor() |should| equal_to(expected)
-    
+
         it "adds kls as a html class":
             expected = '<a href="%s" class="blah and things">%s</a>' % (self.url, self.desc)
             self.button.save_on_click = False

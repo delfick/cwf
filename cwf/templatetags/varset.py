@@ -7,7 +7,7 @@ class VarSetter(template.Node):
     def __init__(self, nodelist, varname):
         self.varname = varname
         self.nodelist = nodelist
-        
+
     def render(self, context):
         variable = self.nodelist.render(context).strip()
         context[self.varname] = SafeString(variable)

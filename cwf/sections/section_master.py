@@ -30,7 +30,7 @@ def make_memoizer(calculator, *namespaces):
     for value in namespaces:
         results[value] = {}
         attrs[value] = memoizer(value)
-    
+
     attrs['results'] = results
     attrs['memoized'] = memoized
     attrs['calculator'] = calculator
@@ -47,24 +47,24 @@ class SectionMaster(object):
         self.memoized = make_memoizer(self
             , 'admin', 'url_parts', 'active', 'exists', 'display', 'selected'
             )()
-        
+
     ########################
     ###   MEMOIZED VALUES
     ########################
-    
+
     def url_parts_value(self, section):
         '''Determine list of url parts of parent and this section'''
         urls = []
         if not section:
             return []
-        
+
         if hasattr(section, 'parent') and section.parent:
             urls.extend(self.memoized.url_parts(section.parent))
-        
+
         url = section.url
         if type(url) in (str, unicode) and url.startswith("/"):
             url = url[1:]
-        
+
         if not urls or urls[-1] != '' or url != '':
             urls.append(url)
 
@@ -72,7 +72,7 @@ class SectionMaster(object):
             urls.insert(0, '')
 
         return urls
-    
+
     def admin_value(self, section):
         '''Determine if section is only seen via admin priveleges'''
         if hasattr(section, 'parent') and section.parent:
@@ -88,14 +88,14 @@ class SectionMaster(object):
             if not self.memoized.active(section.parent):
                 return False
         return section.options.conditional('active', self.request)
-    
+
     def exists_value(self, section):
         '''Determine if section and parent exists'''
         if hasattr(section, 'parent') and section.parent:
             if not self.memoized.exists(section.parent):
                 return False
         return section.options.conditional('exists', self.request)
-    
+
     def display_value(self, section):
         '''Determine if section and parent can be displayed'''
         if hasattr(section, 'parent') and section.parent:
@@ -103,7 +103,7 @@ class SectionMaster(object):
             if not display and propogate:
                 return False, True
         return section.can_display(self.request)
-    
+
     def selected_value(self, section, path):
         """Return True and rest of path if selected else False and no path."""
         url = section.url
@@ -137,7 +137,7 @@ class SectionMaster(object):
                 return True, path
             else:
                 return False, []
-        
+
     ########################
     ###   INFO
     ########################
@@ -152,7 +152,7 @@ class SectionMaster(object):
         if not section.options.conditional('active', self.request):
             # Section not even active
             return
-        
+
         if section.options.values:
             # We determine the parent url parts to give to the values
             parent_url_definition = self.memoized.url_parts(section.parent)
@@ -170,7 +170,7 @@ class SectionMaster(object):
             if include_as:
                 url = include_as
             yield url, section.alias
-    
+
     def get_info(self, section, include_as, path, parent=None):
         '''
             Yield Info objects for this section
@@ -184,7 +184,7 @@ class SectionMaster(object):
         """Closure to yield info for a url, alias pair"""
         info = Info(url, alias, section, parent)
         path_copy = list(path)
-        
+
         # Use SectionMaster logic to keep track of parent_url and parent_selected
         # By giving it the info instead of section
         admin = lambda : self.memoized.admin(info)
@@ -192,7 +192,7 @@ class SectionMaster(object):
         display = lambda : self.memoized.display(info)[0]
         selected = lambda : self.memoized.selected(info, path=path_copy)
         url_parts = lambda: self.memoized.url_parts(info)
-        
+
         # Give lazily loaded stuff to info and yield it
         info.setup(admin, appear, display, selected, url_parts)
         yield info
@@ -209,7 +209,7 @@ class Info(object):
         self.parent = parent or section.parent
         self.section = section
         self.options = section.options
-    
+
     def setup(self, admin, appear, display, selected, url_parts):
         self.admin = admin
         self.appear = appear

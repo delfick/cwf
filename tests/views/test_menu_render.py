@@ -95,7 +95,7 @@ describe "Rendering the menu":
             menu = type("Menu", (Menu, ), {'path' : path.split('/')})(self.request, section)
             rendered = menu.render(menu.global_nav(), 'menu/base.html', ignore_children=True)
             self.assertHTMLEqual(desired, rendered)
-                
+
         it 'makes a global menu with base selected':
             self.lookat_global(self.section, "/", """
                 <ul>
@@ -105,7 +105,7 @@ describe "Rendering the menu":
                     <li><a href="/4">4</a></li>
                 </ul>
             """)
-        
+
         it 'makes a global menu with section other than base selected':
             self.lookat_global(self.section, "/one/", """
                 <ul>
@@ -115,7 +115,7 @@ describe "Rendering the menu":
                     <li><a href="/4">4</a></li>
                 </ul>
                 """)
-        
+
         it 'is case insensitive':
             self.lookat_global(self.section, "/oNe/", """
                 <ul>
@@ -125,7 +125,7 @@ describe "Rendering the menu":
                     <li><a href="/4">4</a></li>
                 </ul>
                 """)
-        
+
         it 'makes global menu when the url is longer than selected section':
             self.lookat_global(self.section, "/one/some/", """
                 <ul>
@@ -155,17 +155,17 @@ describe "Rendering the menu":
                     <li><a href="/one/3_url">alias_3</a></li>
                 </ul>
                 """)
-            
+
         it 'makes a heirarchial menu with values':
             site = Section(name='site')
 
             blah = site.add('blah')
             meh = blah.first().configure(alias='latest')
-            
+
             b = blah.add('meh')
             b2 = b.add('\d{4}').configure(match='year', values=Values([2010, 2009], as_set=False))
             h = b2.add('\d+').configure(match='asdf', values=Values([1]))
-            
+
             self.lookat_side(site, '/blah/meh/2010/1/', """
                 <ul>
                     <li><a href="/blah/">latest</a></li>
@@ -195,7 +195,7 @@ describe "Rendering the menu":
                     <li><a href="/one/3_url">alias_3</a></li>
                 </ul>
                 """)
-                
+
         it "doesn't include children when parent isn't selected":
             self.lookat_side(self.section, '/2/', """
                 <ul>
@@ -203,7 +203,7 @@ describe "Rendering the menu":
                     <li><a href="/2/1">1</a></li>
                 </ul>
                 """)
-                
+
         it 'does include children when parent is selected':
             self.lookat_side(self.section, '/2/1/3/4/', """
                 <ul>
@@ -221,7 +221,7 @@ describe "Rendering the menu":
                     </li>
                 </ul>
                 """)
-        
+
         it "doesn't show sections that have display set to False":
             self.lookat_side(self.section, '/3/', "")
 

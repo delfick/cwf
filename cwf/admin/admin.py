@@ -48,7 +48,7 @@ class ButtonPatterns(object):
     def button_url(self, button):
         """Get the url for this button"""
         return r'^(.+)/tool_%s/$' % button.url
-    
+
     def button_name(self, button):
         """Get the view name for this button"""
         info = self.model._meta.app_label, self.model._meta.module_name
@@ -60,7 +60,7 @@ class ButtonPatterns(object):
         def wrapper(*args, **kwargs):
             return self.admin_view(view)(*args, **kwargs)
         return update_wrapper(wrapper, view)
-    
+
     def button_pattern(self, button):
         """Return pattern for this button"""
         loc = self.button_url(button)
@@ -77,17 +77,17 @@ class ButtonAdminMixin(object):
     def button_urls(self):
         """Return extra patterns for each button"""
         return ButtonPatterns(self.buttons, self.model, self.admin_site.admin_view, self.button_view).patterns
-    
+
     def button_view(self, request, object_id, button):
         """Action taken when a button is pressed"""
         obj = get_object_or_404(self.model, pk=object_id)
         result = self.button_result(request, obj, button)
-    
+
         if type(result) in (tuple, list) and len(result) == 2:
             template, extra = result
         else:
             return result
-        
+
         context = self.button_view_context(obj, button, extra)
         return renderer.render(request, template, context)
 
@@ -109,7 +109,7 @@ class ButtonAdminMixin(object):
             context.update(extra)
 
         return context
-        
+
     def button_result(self, request, obj, button):
         """
             Get result for button by finding a function for it and executing it
@@ -132,9 +132,9 @@ class ButtonAdminMixin(object):
                 # And redirect
                 url = AdminView.change_view(obj)
                 return renderer.redirect(request, url, no_processing=True)
-        
+
         return func(request, obj, button)
-    
+
     def button_response_context(self, request, response):
         """Add the buttons to the response if there are any defined"""
         if hasattr(self, 'buttons') and self.buttons:
@@ -169,19 +169,19 @@ class ButtonAdmin(admin.ModelAdmin, ButtonAdminMixin):
             return self.button_urls() + self.get_urls()
         else:
             return self.get_urls()
-    
+
     def changelist_view(self, request, *args, **kwargs):
         """Add buttons to changelist view"""
         response = super(ButtonAdmin, self).changelist_view(request, *args, **kwargs)
         self.button_response_context(request, response)
         return response
-    
+
     def render_change_form(self, request, *args, **kwargs):
         """Add buttons to change view"""
         response = super(ButtonAdmin, self).render_change_form(request, *args, **kwargs)
         self.button_response_context(request, response)
         return response
-    
+
     def response_change(self, request, obj):
         """
             Change response to a change
@@ -191,7 +191,7 @@ class ButtonAdmin(admin.ModelAdmin, ButtonAdminMixin):
         for key in request.POST.keys():
             if key.startswith("tool_"):
                 redirect = key
-        
+
         if redirect:
             return renderer.redirect(request, redirect, no_processing=True)
         else:

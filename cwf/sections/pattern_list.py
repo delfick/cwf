@@ -8,14 +8,14 @@ class PatternList(object):
         self.section = section
         self.include_as = include_as
         self.without_include = without_include
-        
+
         if stop_at is None:
             stop_at = self.section
         self.stop_at = stop_at
-    
+
     def __iter__(self):
         return self.pattern_list()
-    
+
     def pattern_list(self):
         """Return list of url patterns for this section and its children"""
         for item in self.section.url_children:
@@ -45,7 +45,7 @@ class PatternList(object):
         else:
             for pattern_tuple in pattern_list:
                 yield pattern_tuple
-    
+
     def pattern_tuple(self):
         """Return arguments for django pattern object for this section"""
         pattern = self.create_pattern(self.determine_url_parts())
@@ -63,11 +63,11 @@ class PatternList(object):
     ########################
     ###   URL UTILITY
     ########################
-    
+
     def create_pattern(self, url_parts):
         """Use create_pattern on section.url_options to create a url pattern"""
         return self.section.url_options.create_pattern(url_parts)
-    
+
     def url_view(self):
         """Return (view, kwargs) for this section"""
         view_info = self.section.url_options.url_view(self.section)
@@ -75,14 +75,14 @@ class PatternList(object):
             view, kwargs = view_info
             view = self.section.make_view(view, self.section)
             return view, kwargs
-    
+
     def url_part(self):
         """Get url part for this section"""
         part = self.section.url
         match = self.section.url_options.match
         if match:
             part = "(?P<%s>%s)" % (match, part)
-        
+
         return part
 
     def determine_url_parts(self):
@@ -98,7 +98,7 @@ class PatternList(object):
                 url_parts.append(url_part)
             self._url_parts = url_parts
         return self._url_parts    
-    
+
     def parent_url_parts(self):
         """Get url_parts from parent"""
         parts = []

@@ -7,7 +7,7 @@ class Wrapper(template.Node):
         self.nodelist = nodelist
         self._attributes = attributes
         self.wrap_element = wrap_element
-    
+
     def determine_attributes(self, context):
         if not self._attributes:
             return ''

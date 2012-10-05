@@ -39,22 +39,22 @@ class Section(object):
         self.url  = url
         self.name = name
         self.parent = parent
-        
+
         self._base = None
         self._children = []
-        
+
         self._pattern = None
         self._options = None
-        
+
     ########################
     ###   USAGE
     ########################
-    
+
     def add(self, url, match=None, name=None, first=False):
         """Creates a new section and uses add_child to add it as a child"""
         if not url:
             raise ConfigurationError("Use section.first() to add a section with same url as parent")
-        
+
         section = self.make_section(url, match, name)
         self.add_child(section, first=first)
         return section
@@ -63,11 +63,11 @@ class Section(object):
         """Creates a new section and adds it as a base with add_child(first=True)"""
         if name is None:
             name = self.name
-        
+
         section = self.make_section(url, match, name)
         self.add_child(section, first=True)
         return section
-        
+
     def configure(self, *_, **kwargs):
         """
             Extends self.options with the given keywords.
@@ -82,11 +82,11 @@ class Section(object):
         """
         self.options.set_everything(**kwargs)
         return self
-        
+
     ########################
     ###   SECTION ADDERS
     ########################
-    
+
     def make_section(self, url, match, name):
         """
             Create a new section based on current one
@@ -97,12 +97,12 @@ class Section(object):
         section = Section(url=url, name=name, parent=self)
         section.options = self.options.clone(match=match)
         return section
-    
+
     def adopt(self, *sections, **options):
         '''
             Adopt zero or more sections as it's own
             Will also replace this section's parent with itself
-            
+
             If clone is specified as a keyword argument to be True then section is copied
             Otherwise, sections will just have their parent overriden and added as a child
         '''
@@ -117,9 +117,9 @@ class Section(object):
             else:
                 section.parent=self
                 self.add_child(section, **options)
-        
+
         return self
-    
+
     def merge(self, section, take_base=False):
         '''
             Copy children from a section into this section.
@@ -127,12 +127,12 @@ class Section(object):
         '''
         if take_base and section._base:
             self._base = section._base.clone(parent=self)
-        
+
         for item in section._children:
             self._children.append(item.clone(parent=self))
-        
+
         return self
-    
+
     def add_child(self, section, first=False, **options):
         """
             Add a child to the section
@@ -146,7 +146,7 @@ class Section(object):
         else:
             self._children.append(new_item)
         return section
-    
+
     def copy(self, section, first=False, **kwargs):
         """Create a clone of the given section, merge clone with original; and add clone as a child"""
         options = {key:val for key, val in kwargs.items() if key in ('consider_for_menu', 'include_as')}
@@ -155,18 +155,18 @@ class Section(object):
         self.add_child(cloned, first=first, **options)
         cloned.merge(section, take_base=True)
         return self
-        
+
     ########################
     ###   SPECIAL
     ########################
-    
+
     @property
     def options(self):
         """Options is a lazily loaded Options object"""
         if not self._options:
             self._options = Options()
         return self._options
-    
+
     @options.setter
     def options(self, val):
         """Setter to not lazily load Options object if we already have an object to use"""
@@ -183,7 +183,7 @@ class Section(object):
             return self._base.section.options
         else:
             return self.options
-    
+
     @property
     def alias(self):
         """
@@ -194,7 +194,7 @@ class Section(object):
         if not alias and self.url:
             alias = self.url.capitalize()
         return alias
-    
+
     @property
     def children(self):
         """
@@ -203,10 +203,10 @@ class Section(object):
         """
         if self._base:
             yield self._base
-        
+
         for item in self._children:
             yield item
-    
+
     @property
     def url_children(self):
         """
@@ -217,7 +217,7 @@ class Section(object):
             yield item
         if not self._base:
             yield Item(self)
-    
+
     @property
     def menu_children(self):
         """
@@ -228,7 +228,7 @@ class Section(object):
         if self._base and self._base.consider_for_menu:
             for promoted in self._base.section.promoted_menu_children(self._base):
                 yield promoted
-        
+
         for item in self._children:
             if item.consider_for_menu:
                 for promoted in item.section.promoted_menu_children(item):
@@ -246,19 +246,19 @@ class Section(object):
             for item in self.menu_children:
                 for promoted in item.section.promoted_menu_children(item):
                     yield promoted
-    
+
     @property
     def has_children(self):
         """Return whether section has children"""
         return bool(any(self.children))
-    
+
     def __iter__(self):
         """Return self followed by all children"""
         yield self
         for section in self.children:
             for sect in section:
                 yield sect
-    
+
     def __unicode__(self):
         if self.name:
             return "<CWF Section %s>" % '%s : %s' % (self.name, self.url)
@@ -267,7 +267,7 @@ class Section(object):
 
     def __repr__(self):
         return unicode(self)
-        
+
     ########################
     ###   URL PATTERNS
     ########################
@@ -291,11 +291,11 @@ class Section(object):
                 raise Http404
             return view(request, *args, **kwargs)
         return view_wrap
-    
+
     ########################
     ###   UTILITY
     ########################
-    
+
     def clone(self, **kwargs):
         """
             Create a clone of this section
@@ -307,7 +307,7 @@ class Section(object):
         new = Section(**kwargs)
         new.options = self.options.clone(all=True)
         return new
-    
+
     def root_ancestor(self):
         """Find ancestor that has no parent"""
         result = self
@@ -316,7 +316,7 @@ class Section(object):
             parents.append(result.parent)
             result = result.parent
         return result
-    
+
     def reachable(self, request):
         """Determine if this view is reachable for this request"""
         if self.parent and not self.parent.reachable(request):

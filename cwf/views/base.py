@@ -53,14 +53,14 @@ class View(object):
             template, extra = result
         else:
             return result
-        
+
         # Return extra as is if template is None
         if template is None:
             return extra
-        
+
         # Return the response
         return self.renderer.render(request, template, extra)
-    
+
     ########################
     ###   GETTING A RESULT
     ########################
@@ -84,7 +84,7 @@ class View(object):
 
         # We have the target, get result from it
         result = self.execute(target, request, args, kwargs)
-            
+
         # If the result is callable, call it with request and return
         if callable(result):
             return result(request)
@@ -119,7 +119,7 @@ class View(object):
             while item.endswith("/"):
                 item = item[:-1]
         return item
-    
+
     ########################
     ###   STATE
     ########################

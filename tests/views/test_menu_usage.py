@@ -121,7 +121,7 @@ describe "Menu":
                 , ['Seven', ['', 'five', 'seven']]
                 ]
             )
-    
+
     describe "Side Nav":
         it "returns a list of info objects for the selected top nav":
             request, section, menu = self.get_info('/three/other/')

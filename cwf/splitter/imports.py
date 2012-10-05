@@ -31,7 +31,7 @@ def steal(*filenames, **kwargs):
     for name, val in [('folder', folder), ('globals', glbls), ('locals', lcls)]:
         if val is None:
             raise Exception("Please supply %s in kwargs" % name)
-    
+
     # Exec the specified files into the globals and locals provided
     for filename in filenames:
         location = os.path.join(folder, "%s.py" % filename)
@@ -40,7 +40,7 @@ def steal(*filenames, **kwargs):
 ########################
 ###   INJECTING VARIABLES
 ######################## 
-    
+
 def inject(obj, *names):
     """
         Inject obj into import space
@@ -73,7 +73,7 @@ class FileFaker(object):
     def __init__(self, names, value):
         self.names = names
         self._value = value
-        
+
     def find_module(self, fullname, path=None):
         """Return self if trying to import one of the names we are masquerading"""
         if fullname in self.names:
@@ -82,7 +82,7 @@ class FileFaker(object):
     def load_module(self, fullname):
         """Create and return a module"""
         path, filename = self.path_from_fullname(fullname)
- 
+
         # Get the existing module or create a new one (for reload to work)
         module = sys.modules.setdefault(fullname, imp.new_module(fullname))
         module.__file__ = os.path.join(path, '%s.py' % filename)
@@ -94,9 +94,9 @@ class FileFaker(object):
             module.__dict__.update(vals)
         else:
             module.__dict__['value'] = vals
-            
+
         return module
-    
+
     @property
     def value(self):
         """
@@ -146,7 +146,7 @@ class FileFaker(object):
 ########################
 ###   FAILED IMPORTS
 ########################
-        
+
 def install_failed_import_handler():
     """
         Custom __import__ function that records failed imports
@@ -160,22 +160,22 @@ def install_failed_import_handler():
         if type(name) not in (str, unicode) and len(args) > 0:
             args = list(args)
             name = args.pop(0)
-        
+
         failed = None
         try:
             return original_import(name, *args, **kwargs)
-        
+
         except SyntaxError, s:
             # Record failed import and propogate error
             failed = (name, s.filename)
             raise
-        
+
         except Exception, i:
             if not isinstance(i, ImportError):
                 # ImportError is probably a legitimate fail
                 failed = (name, inspect.trace()[-1][1])
             raise
-        
+
         finally:
             if failed:
                 # Import failed, put in fake module so that werkzeug knows to see if it's been changed

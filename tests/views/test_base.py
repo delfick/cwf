@@ -245,7 +245,7 @@ describe "View":
             spec = [0, 1, None, True, False, (), (1, ), [], [1], {}, {1:2}, fudge.Fake("obj"), lambda : func]
             for original in spec:
                 self.view.clean_view_kwarg(key, original) |should| be(original)
-    
+
     describe "getting state":
         before_each:
             self.menu = fudge.Fake("menu")
@@ -314,7 +314,7 @@ describe "View":
                 )
 
             self.view.get_state(self.request, self.target) |should| be(result)
-        
+
         @fudge.patch("cwf.views.base.Menu", "cwf.views.base.DictObj")
         it "doesn't pop start of path if base url isn't an empty string but path doesn't start with ''", fakeMenu, fakeDictObj:
             path = ['asdf', 'weouri']

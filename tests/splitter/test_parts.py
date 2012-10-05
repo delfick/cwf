@@ -175,7 +175,7 @@ describe "Parts Collection":
             self.p3.has_attr(active=True)
             with fudge.patched_context(self.parts, 'imported_parts', imported_parts):
                 list(self.parts.each_part(active_only=True)) |should| equal_to([self.p2, self.p3])
-    
+
     describe "Importing parts":
         before_each:
             self.parts = Parts(self.package)

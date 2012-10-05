@@ -33,7 +33,7 @@ class Debugger(object):
         run_simple(self.host, self.port, app
             , use_debugger=True, use_reloader=True, setup_func=setup_func
             )
-    
+
     ########################
     ###   SETUP
     ########################
@@ -54,7 +54,7 @@ class Debugger(object):
         """Alter the path where to find the application"""
         os.environ['DJANGO_SETTINGS_MODULE'] = '{0}.settings'.format(project)
         self.setup_project(project)
-    
+
     ########################
     ###   UTILITY
     ########################

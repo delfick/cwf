@@ -101,7 +101,7 @@ describe "Part":
             part2.do_import("tests.splitter.website")
             not_there = part2.load("not_there")
             not_there |should| be(None)
-        
+
         it "raises errors if importing a module that has problems":
             part1 = Part("part1", True)
             part1.do_import("tests.splitter.website")

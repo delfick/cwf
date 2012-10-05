@@ -12,13 +12,13 @@ class AdminView(object):
         content_type = ContentType.objects.get_for_model(obj.__class__)
         format = cls.format(content_type, "change")
         return urlresolvers.reverse(format, args=(obj.id, ))
-        
+
     @classmethod
     def add_view(cls, obj):
         content_type = ContentType.objects.get_for_model(obj)
         format = cls.format(content_type, "add")
         return urlresolvers.reverse(format)
-    
+
     @classmethod
     def change_list(cls, obj):
         content_type = ContentType.objects.get_for_model(obj)

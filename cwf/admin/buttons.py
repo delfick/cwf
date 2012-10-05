@@ -49,12 +49,12 @@ class ButtonWrap(object):
         if self.needs_super_user:
             # Only get here if not super user
             return False
-        
+
         # Don't care about authorisation if we don't need to
         needs_auth = self.needs_auth
         if not needs_auth:
             return True
-        
+
         return self.has_auth(user, needs_auth)
 
     def has_auth(self, user, auth):
@@ -189,7 +189,7 @@ class Button(ButtonBase):
     def copy_for_request(self, request, original=None):
         """Set request and original on the button"""
         return ButtonWrap(self, request, original)
-    
+
     def determine_html(self):
         """Determine if we want an <input> or just an <a>"""
         if not self.save_on_click or self.for_all:
@@ -200,19 +200,19 @@ class Button(ButtonBase):
 
     def link_as_input(self):
         return u'<input type="submit" name="tool_%s" value="%s"/>' % (self.url, self.desc)
-    
+
     def link_as_anchor(self):
         url = self.url
         if self.save_on_click or not self.url.startswith('/'):
             url = "tool_%s" % self.url
-        
+
         options = []
         if self.kls:
             options.append(u'class="%s"' % self.kls)
-        
+
         if self.new_window:
             options.append(u'target="_blank"')
-        
+
         return u'<a href="%s" %s>%s</a>' % (url, ' '.join(options), self.desc)
 
 ########################

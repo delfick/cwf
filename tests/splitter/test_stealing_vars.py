@@ -7,7 +7,7 @@ import itertools
 import fudge
 
 describe "Stealing variables":
-    
+
     it "should complain if folder, globals or locals isn't supplied":
         value = fudge.Fake("value")
         for combination in itertools.combinations(['folder', 'globals', 'locals'], 2):

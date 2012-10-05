@@ -107,7 +107,7 @@ describe "Button Patterns":
 
             expected = '%s_%s_tool_%s' % (app_label, module_name, button_url)
             self.patterns.button_name(button) |should| equal_to(expected)
-    
+
     describe "Getting function for button view":
         @fudge.patch("cwf.admin.admin.update_wrapper")
         it "wraps up button_view in admin_view", fake_update_wrapper:

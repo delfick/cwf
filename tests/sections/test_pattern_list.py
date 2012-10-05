@@ -12,7 +12,7 @@ describe "PatternList":
             self.include_as = fudge.Fake("include_as")
             self.without_include = fudge.Fake("without_include")
             self.section.has_children = True
-        
+
         it "sets section, stop_at, include_as and without_include to what's passed in":
             lst = PatternList(self.section
                 , stop_at=self.stop_at, include_as=self.include_as, without_include=self.without_include
@@ -21,18 +21,18 @@ describe "PatternList":
             lst.section |should| be(self.section)
             lst.include_as |should| be(self.include_as)
             lst.without_include |should| be(self.without_include)
-        
+
         it "sets stop_at to section if passed in as None or not passed in":
             PatternList(self.section).stop_at |should| be(self.section)
             PatternList(self.section, stop_at=None).stop_at |should| be(self.section)
-    
+
     describe "iter":
         before_each:
             self.section = fudge.Fake("section")
             self.section.has_children = True
             self.fake_pattern_list = fudge.Fake("pattern_list")
             self.lst = type("Lst", (PatternList, ), {"pattern_list" : self.fake_pattern_list})(self.section)
-        
+
         @fudge.test
         it "returns result of pattern_list when iterating":
             one = fudge.Fake("one")
@@ -162,7 +162,7 @@ describe "PatternList":
             self.section = fudge.Fake("section")
             self.section.name = self.name
             self.section.has_children = False
-            
+
             self.fake_url_view = fudge.Fake("url_view")
             self.fake_create_pattern = fudge.Fake("create_pattern")
             self.fake_determine_url_parts = fudge.Fake("determine_url_parts")
@@ -172,24 +172,24 @@ describe "PatternList":
                 , 'determine_url_parts' : self.fake_determine_url_parts
                 }
             )(self.section)
-        
+
         @fudge.test
         it "gets pattern from self.create_pattern":
             url_parts = fudge.Fake("url_parts")
-            
+
             self.fake_determine_url_parts.expects_call().returns(url_parts)
             self.fake_create_pattern.expects_call().with_args(url_parts).returns(self.pattern)
             self.fake_url_view.expects_call().returns([1, 2])
             (pattern, _, _, _) = self.lst.pattern_tuple()
             pattern |should| be(self.pattern)
-            
+
         @fudge.test
         it "returns None if url_view returns None":
             self.fake_determine_url_parts.expects_call()
             self.fake_create_pattern.expects_call()
             self.fake_url_view.expects_call().returns(None)
             self.lst.pattern_tuple() |should| be(None)
-            
+
         @fudge.test
         it "gets view and kwargs from self.url_view()":
             self.fake_determine_url_parts.expects_call()
@@ -198,7 +198,7 @@ describe "PatternList":
             (_, view, kwargs, _) = self.lst.pattern_tuple()
             view |should| be(self.view)
             kwargs |should| be(self.kwargs)
-        
+
         @fudge.test
         it "gets name from self.section":
             self.fake_determine_url_parts.expects_call()
@@ -250,7 +250,7 @@ describe "PatternList":
             self.section = fudge.Fake("section").has_attr(url_options=self.url_options, has_children=False)
 
             self.lst = PatternList(self.section)
-        
+
         @fudge.test
         it "asks url_options to create patterns from the url_parts":
             pattern = fudge.Fake("pattern")
@@ -263,12 +263,12 @@ describe "PatternList":
             self.section = fudge.Fake("section").has_attr(url_options=self.url_options, has_children=False)
 
             self.lst = PatternList(self.section)
-        
+
         @fudge.test
         it "asks url_options to get the view for the url and returns nothing if get nothing":
             self.url_options.expects("url_view").with_args(self.section).returns(None)
             self.lst.url_view() |should| be(None)
-        
+
         @fudge.test
         it "asks url_options to get the view for the url, modifies view using the section and returns view, kwargs":
             view = fudge.Fake("view")
@@ -284,15 +284,15 @@ describe "PatternList":
             self.url_options = fudge.Fake("url_options")
             self.section = fudge.Fake("section").has_attr(url_options=self.url_options, url=self.url, has_children=False)
             self.lst = PatternList(self.section)
-        
+
         it "returns section.url if not a matching section":
             self.url_options.has_attr(match=False)
             self.lst.url_part() |should| be(self.url)
-        
+
         it "returns named captured group if a matching section":
             self.url_options.has_attr(match = fudge.Fake("thematch"))
             self.lst.url_part() |should| equal_to("(?P<fake:thematch>fake:url)")
-            
+
             self.section.has_attr(url='abc')
             self.url_options.has_attr(match='match')
             regex = self.lst.url_part()
@@ -309,13 +309,13 @@ describe "PatternList":
                 , 'parent_url_parts' : self.fake_parent_url_parts
                 }
                 )(self.section)
-        
+
         @fudge.test
         it "returns self._url_parts if already defined":
             url_parts = fudge.Fake("url_parts")
             self.lst._url_parts = url_parts
             self.lst.determine_url_parts() |should| be(url_parts)
-        
+
         @fudge.test
         it "returns parent url parts appended section's own url part if not already determined":
             p1 = fudge.Fake("p1")
@@ -364,16 +364,16 @@ describe "PatternList":
 
             self.section = fudge.Fake("section").has_attr(has_children=False)
             self.lst = PatternList(self.section, stop_at=self.stop_at)
-        
+
         it "returns nothing if no parent":
             self.section.parent = None
             self.lst.parent_url_parts() |should| be_empty
-        
+
         it "returns nothing if section is stop_at":
             self.section.parent = self.parent
             self.lst.stop_at = self.section
             self.lst.parent_url_parts() |should| be_empty
-        
+
         @fudge.patch("cwf.sections.pattern_list.PatternList")
         it "creates a new PatternList for the parent and returns result of determine_url_parts", fakePatternList:
             parts = fudge.Fake("parts")

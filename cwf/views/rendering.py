@@ -53,7 +53,7 @@ class Renderer(object):
 
         # Get the template and render it
         return RequestContext(request, context)
-    
+
     def raise404(self):
         """Raise a Http404"""
         raise Http404
