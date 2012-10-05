@@ -32,7 +32,7 @@ ROOT_URLCONF = 'tests.urls'
 LANGUAGE_CODE = 'en-us'
 LOG_FILE = 'messages.log'
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-NOSE_ARGS = [ 
+NOSE_ARGS = [
       '--with-spec'
     , '--spec-color'
     , '--with-noy'

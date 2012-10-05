@@ -43,7 +43,7 @@ describe "Section":
             @fudge.test
             it "creates new section and adds as child to the current section":
                 (self.fake_make_section.expects_call()
-                    .with_args(self.url, self.match, self.name).returns(self.new_section)                
+                    .with_args(self.url, self.match, self.name).returns(self.new_section)
                     )
 
                 # Make sure new section is added as a child
@@ -68,7 +68,7 @@ describe "Section":
             it "defaults url to empty string":
                 # Make section gets empty string
                 (self.fake_make_section.expects_call()
-                    .with_args("", self.match, self.name).returns(self.new_section)                
+                    .with_args("", self.match, self.name).returns(self.new_section)
                     )
 
                 # Make sure new section is added as a child
@@ -81,7 +81,7 @@ describe "Section":
                 self.section.name = original_name
 
                 (self.fake_make_section.expects_call()
-                    .with_args(self.url, self.match, original_name).returns(self.new_section)                
+                    .with_args(self.url, self.match, original_name).returns(self.new_section)
                     )
 
                 # Make sure new section is added as a child
@@ -91,7 +91,7 @@ describe "Section":
             @fudge.test
             it "creates section with provided url, match and name":
                 (self.fake_make_section.expects_call()
-                    .with_args(self.url, self.match, self.name).returns(self.new_section)                
+                    .with_args(self.url, self.match, self.name).returns(self.new_section)
                     )
 
                 # Make sure new section is added as a child
@@ -186,9 +186,9 @@ describe "Section":
                 )()
 
             @fudge.test
-            it "returns self": 
-                self.fake_copy.expects_call()   
-                self.fake_add_child.expects_call()         
+            it "returns self":
+                self.fake_copy.expects_call()
+                self.fake_add_child.expects_call()
                 self.section.adopt(self.section1) |should| be(self.section)
                 self.section.adopt(self.section2, clone=True) |should| be(self.section)
 
@@ -652,7 +652,7 @@ describe "Section":
 
             it "calls view if it can be reached and returns view result":
                 self.fake_reachable.expects_call().with_args(self.request).returns(True)
-                ret = self.section.make_view(self.view, self.section)(self.request, 1, 2, d=True, c=False) 
+                ret = self.section.make_view(self.view, self.section)(self.request, 1, 2, d=True, c=False)
                 ret |should| be(self.view_result)
 
     describe "Getting patterns":

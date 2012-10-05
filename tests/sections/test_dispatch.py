@@ -84,7 +84,7 @@ describe "Dispatcher":
 
         @fudge.test
         it "sets view and target on the dispatcher":
-            self.view.expects_call()            
+            self.view.expects_call()
             self.fake_get_view .expects_call().returns(self.view)
 
             self.dispatcher |should_not| respond_to("view")

@@ -197,7 +197,7 @@ class Options(object):
             pattern = '.*'
 
         # Removing leading slash
-        # Already deduplicated slashes    
+        # Already deduplicated slashes
         if pattern and pattern[0] == '/':
             pattern = pattern[1:]
 

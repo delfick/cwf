@@ -8,14 +8,14 @@ class StaffView(View):
         return staff_member_required(view)(request, *args, **kwargs)
 
 class LocalOnlyView(View):
-    def execute(self, target, request, args, kwargs):  
+    def execute(self, target, request, args, kwargs):
         ip = request.META.get('REMOTE_ADDR')
         if ip != '127.0.0.1':
             self.raise404()
         return super(LocalOnlyView, self).execute(target, request, args, kwargs)
 
 class JSView(View):
-    def execute(self, target, request, args, kwargs):  
+    def execute(self, target, request, args, kwargs):
         result = super(JSView, self).execute(target, request, args, kwargs)
         template, data = result
         return self.renderer.json(data)

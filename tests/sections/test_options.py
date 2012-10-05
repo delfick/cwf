@@ -29,7 +29,7 @@ describe "Options":
 
     describe "Determining if options has permission for a request":
         before_each:
-            self.user = fudge.Fake("user")            
+            self.user = fudge.Fake("user")
             self.options = Options()
 
         it "returns True if needsAuth is falsey":

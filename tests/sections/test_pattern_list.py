@@ -39,7 +39,7 @@ describe "PatternList":
             two = fudge.Fake("two")
             three = fudge.Fake("three")
             self.fake_pattern_list.expects_call().returns(iter([one, two, three]))
-            list(self.lst) |should| equal_to([one, two, three])    
+            list(self.lst) |should| equal_to([one, two, three])
 
     describe "Determining pattern list":
         before_each:
@@ -166,7 +166,7 @@ describe "PatternList":
             self.fake_url_view = fudge.Fake("url_view")
             self.fake_create_pattern = fudge.Fake("create_pattern")
             self.fake_determine_url_parts = fudge.Fake("determine_url_parts")
-            self.lst = type("Lst", (PatternList, ), 
+            self.lst = type("Lst", (PatternList, ),
                 { 'url_view' : self.fake_url_view
                 , 'create_pattern' : self.fake_create_pattern
                 , 'determine_url_parts' : self.fake_determine_url_parts

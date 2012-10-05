@@ -44,7 +44,7 @@ describe "Values":
         def get_info(self):
             return list(self.values.get_info(self.request, self.parent_url_parts, self.path))
 
-        @fudge.test        
+        @fudge.test
         it "yields all (alias, url) from result of get_values":
             val1 = fudge.Fake("val1")
             val2 = fudge.Fake("val2")

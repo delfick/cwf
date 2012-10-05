@@ -78,7 +78,7 @@ class SectionTesterBase(TestCase):
         """
         ret = self.client.get(url)
         ret.status_code |should| equal_to(200)
-        ret.content |should| equal_to(check)  
+        ret.content |should| equal_to(check)
 
     def refute(self, url):
         """

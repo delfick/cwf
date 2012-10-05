@@ -115,9 +115,9 @@ class ButtonAdminMixin(object):
             Get result for button by finding a function for it and executing it
             Looks for tool_<button.url> on self
             If it can't find that and button.execute_and_redirect is True then one is made
-        """     
+        """
         if not button.execute_and_redirect:
-            name = "tool_%s" % button.url   
+            name = "tool_%s" % button.url
             if not hasattr(self, name):
                 raise Exception("Admin (%s) doesn't have a function for %s" % (self, name))
             func = getattr(self, name)
@@ -154,7 +154,7 @@ class ButtonAdminMixin(object):
 ########################
 
 class ButtonAdmin(admin.ModelAdmin, ButtonAdminMixin):
-    """ 
+    """
         Unfortunately I can't add these to the mixin
         Due to how python inheritance works
         but I still want to have the mixin stuff as a mixin

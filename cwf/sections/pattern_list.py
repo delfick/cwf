@@ -97,7 +97,7 @@ class PatternList(object):
             if url_part != "":
                 url_parts.append(url_part)
             self._url_parts = url_parts
-        return self._url_parts    
+        return self._url_parts
 
     def parent_url_parts(self):
         """Get url_parts from parent"""

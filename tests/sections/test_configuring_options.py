@@ -37,7 +37,7 @@ describe "Configuring Options":
     it "has default values":
         options = Options()
         keys = [k for k, _ in self.defaults]
-        existing = [k for k, v in options.__dict__.items() if 
+        existing = [k for k, v in options.__dict__.items() if
             not k.startswith("_") and not callable(v)
         ]
 
@@ -61,7 +61,7 @@ describe "Configuring Options":
                 , Options.set_conditionals.im_func : ('admin', 'active', 'exists', 'display')
                 }
 
-        it "has a method that returns each setting function along with the arguments they require":      
+        it "has a method that returns each setting function along with the arguments they require":
             used = []
             options = Options()
             for func, required in list(options.setters()):
@@ -115,7 +115,7 @@ describe "Configuring Options":
                 self.options.set_everything(a=arg1, b=arg2, c=arg3, d=arg4)
 
             @fudge.test
-            it "takes None as a valid argument to pass along":                
+            it "takes None as a valid argument to pass along":
                 setter1 = fudge.Fake("setter1").expects_call().with_args(a=None, b=None)
                 setter2 = fudge.Fake('setter2').expects_call().with_args(c=None)
 

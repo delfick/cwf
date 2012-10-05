@@ -39,7 +39,7 @@ def steal(*filenames, **kwargs):
 
 ########################
 ###   INJECTING VARIABLES
-######################## 
+########################
 
 def inject(obj, *names):
     """
@@ -60,7 +60,7 @@ def inject(obj, *names):
 
     # Complain if no names passed in at all
     if not names:
-        raise Exception("Need atleast one name to inject the object into")      
+        raise Exception("Need atleast one name to inject the object into")
 
     # Inject!
     sys.meta_path.append(FileFaker(names, obj))

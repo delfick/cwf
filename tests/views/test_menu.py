@@ -125,7 +125,7 @@ describe "Menu":
             self.fake_navs_for = fudge.Fake("navs_for")
             self.menu_children = fudge.Fake("menu_children")
 
-            self.menu = type("Menu", (Menu, ), 
+            self.menu = type("Menu", (Menu, ),
                 { 'navs_for' : self.fake_navs_for
                 }
             )(self.request, self.section)

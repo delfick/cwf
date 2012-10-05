@@ -128,7 +128,7 @@ describe "Button Patterns":
                 """Make sure wrapped does what we want it to"""
                 resolved = wrapper(a, b, c=c, d=d)
                 resolved |should| be(result)
-                return resolved is result 
+                return resolved is result
             (fake_update_wrapper.expects_call()
                 .with_args(fudge_arg.passes_test(check_wrapper), self.button_view).returns(button_func)
                 )
