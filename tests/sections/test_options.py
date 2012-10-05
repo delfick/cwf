@@ -180,7 +180,10 @@ describe "Options":
             
             kwargs = {}
             for requirement in keys:
-                if requirement not in ('alias', 'match', 'values', 'promote_children', 'target', 'propogate_display'):
+                if requirement not in (
+                      'alias', 'match', 'values', 'redirect'
+                    , 'promote_children', 'target', 'propogate_display'
+                    ):
                     next = fudge.Fake(requirement)
                     setattr(self.options, requirement, next)
                     kwargs[requirement] = next

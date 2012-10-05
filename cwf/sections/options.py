@@ -341,7 +341,10 @@ class Options(object):
         if all:
             no_propogate = ()
         else:
-            no_propogate = ('alias', 'match', 'values', 'promote_children', 'target', 'propogate_display')
+            no_propogate = (
+                  'alias', 'match', 'values', 'target', 'redirect'
+                , 'promote_children', 'propogate_display'
+                )
 
         # Make sure display doesn't propogate if propogate_display is False
         if not self.propogate_display:
