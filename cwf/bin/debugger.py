@@ -1,8 +1,8 @@
 from django.core.handlers.wsgi import WSGIHandler
 from django.views import debug
 
-from werkzeug import run_simple, DebuggedApplication
 from paste.debug.prints import PrintDebugMiddleware
+from werkzeug import run_simple
 
 import sys
 import os
@@ -30,7 +30,7 @@ class Debugger(object):
         self.setup_path(self.project)
 
         app = self.setup_app()
-        run_simple(self.host, self.port, app, True)
+        run_simple(self.host, self.port, app, True, use_debugger=True)
     
     ########################
     ###   SETUP
@@ -40,7 +40,6 @@ class Debugger(object):
         """Create the application"""
         app = WSGIHandler()
         app = PrintDebugMiddleware(app)
-        app = DebuggedApplication(app, True)
         return app
 
     def setup_500(self):
