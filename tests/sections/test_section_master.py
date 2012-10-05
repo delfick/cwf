@@ -99,14 +99,14 @@ describe "SectionMaster":
             self.master.request |should| be(self.request)
         
         @fudge.test
-        it "creates a memoized class that memoizes url_parts, active, exists, display, selected with master as calculator":
+        it "creates a memoized class that memoizes admin, url_parts, active, exists, display, selected with master as calculator":
             kwa1 = fudge.Fake("kwa1")
             kwa2 = fudge.Fake("kwa2")
             obj1 = fudge.Fake("obj1")
             obj2 = fudge.Fake("obj2")
             fakes = {}
             values = {}
-            namespaces = ("url_parts", "active", "exists", "display", "selected")
+            namespaces = ("admin", "url_parts", "active", "exists", "display", "selected")
             
             for namespace in namespaces:
                 faked_namespace = fudge.Fake(namespace)
@@ -146,7 +146,47 @@ describe "SectionMaster":
         
         after_each:
             self.patched.restore()
-        
+
+        describe "Getting admin value":
+
+            @fudge.test
+            it "returns True if has parent and parent says yes":
+                (self.fake_memoized
+                    .expects("admin").with_args(self.parent).returns(True)
+                    )
+
+                self.section.parent = self.parent
+                self.master.admin_value(self.section) |should| be(True)
+
+            @fudge.test
+            it "says yes if either needs_auth or is admin":
+                (self.fake_memoized
+                    .expects('admin').with_args(self.parent).returns(False)
+                    )
+
+                (self.options.expects('conditional')
+                    .with_args('admin', self.request).returns(True)
+                    .next_call().with_args('admin', self.request).returns(False)
+                    )
+
+                self.section.parent = self.parent
+                self.section.options = self.options
+
+                self.options.has_attr(needs_auth=False)
+                self.master.admin_value(self.section) |should| be(True)
+
+                self.options.has_attr(needs_auth=True)
+                self.master.admin_value(self.section) |should| be(True)
+
+            @fudge.test
+            it "says no if doesn't need auth and isn't admin":
+                (self.options.expects('conditional')
+                    .with_args('admin', self.request).returns(False)
+                    )
+
+                self.section.options = self.options.has_attr(needs_auth=False)
+                self.master.admin_value(self.section) |should| be(False)
+
         describe "getting active and exists":
             before_each:
                 self.namespaces = ('active', 'exists')
@@ -478,6 +518,13 @@ describe "SectionMaster":
                     self.fake_memoized.expects("selected").with_args(info, path=[]).returns(result)
                     info.selected() |should| be(result)
                 
+                @fudge.test
+                it "gives info selected as method that says whether info is admin or not":
+                    info = self.get_info([])
+                    result = fudge.Fake("result")
+                    self.fake_memoized.expects("admin").with_args(info).returns(result)
+                    info.admin() |should| be(result)
+
                 @fudge.test
                 it "path given to selected is a copy of the path given to get_info":
                     path = [1, 2, 3]

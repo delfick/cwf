@@ -44,7 +44,9 @@ class SectionMaster(object):
     '''Determine information for sections for a given request'''
     def __init__(self, request):
         self.request = request
-        self.memoized = make_memoizer(self, 'url_parts', 'active', 'exists', 'display', 'selected')()
+        self.memoized = make_memoizer(self
+            , 'admin', 'url_parts', 'active', 'exists', 'display', 'selected'
+            )()
         
     ########################
     ###   MEMOIZED VALUES
@@ -71,6 +73,15 @@ class SectionMaster(object):
 
         return urls
     
+    def admin_value(self, section):
+        '''Determine if section is only seen via admin priveleges'''
+        if hasattr(section, 'parent') and section.parent:
+            if self.memoized.admin(section.parent):
+                return True
+
+        is_admin = section.options.conditional('admin', self.request)
+        return section.options.needs_auth or is_admin
+
     def active_value(self, section):
         '''Determine if section and parent are active'''
         if hasattr(section, 'parent') and section.parent:
@@ -176,13 +187,14 @@ class SectionMaster(object):
         
         # Use SectionMaster logic to keep track of parent_url and parent_selected
         # By giving it the info instead of section
+        admin = lambda : self.memoized.admin(info)
         appear = lambda : self.memoized.exists(info) and self.memoized.active(info)
         display = lambda : self.memoized.display(info)[0]
         selected = lambda : self.memoized.selected(info, path=path_copy)
         url_parts = lambda: self.memoized.url_parts(info)
         
         # Give lazily loaded stuff to info and yield it
-        info.setup(appear, display, selected, url_parts)
+        info.setup(admin, appear, display, selected, url_parts)
         yield info
 
 ########################
@@ -198,7 +210,8 @@ class Info(object):
         self.section = section
         self.options = section.options
     
-    def setup(self, appear, display, selected, url_parts):
+    def setup(self, admin, appear, display, selected, url_parts):
+        self.admin = admin
         self.appear = appear
         self.display = display
         self.selected = selected
