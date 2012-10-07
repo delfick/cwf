@@ -14,11 +14,12 @@ class Debugger(object):
     default_port = 8000
     default_host = '0.0.0.0'
 
-    def __init__(self, project=None, host=None, port=None, setup_project=None):
+    def __init__(self, project=None, host=None, port=None, setup_project=None, project_options=None):
         self.host = host or self.default_host
         self.port = port or self.default_port
         self.project = project
         self._setup_project = setup_project
+        self.project_options = project_options
 
     ########################
     ###   RUNNER
@@ -53,7 +54,10 @@ class Debugger(object):
     def setup_path(self, project):
         """Alter the path where to find the application"""
         os.environ['DJANGO_SETTINGS_MODULE'] = '{0}.settings'.format(project)
-        self.setup_project(project)
+        kwargs = {}
+        if self.project_options:
+          kwargs = self.project_options
+        self.setup_project(project, **kwargs)
 
     ########################
     ###   UTILITY

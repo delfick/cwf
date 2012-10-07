@@ -4,12 +4,17 @@ from manager import setup_project
 from debugger import Debugger
 
 import argparse
+import json
 import sys
 import os
 
 def make_parser():
     """Create an argparser to get things from the CLI"""
     parser = argparse.ArgumentParser(description="Start debugger instance of your website")
+
+    def valid_json(json_string):
+      return json.loads(json_string)
+
     parser.add_argument("project"
         , help = "The project you want to start up"
         )
@@ -25,6 +30,12 @@ def make_parser():
         , default = Debugger.default_host
         )
 
+    parser.add_argument("-o", "--options"
+        , help = "json string of options to parse into setup_project"
+        , type = valid_json
+        , default = None
+        )
+
     return parser
 
 def main(argv=None):
@@ -35,7 +46,10 @@ def main(argv=None):
     parser = make_parser()
     args = parser.parse_args(argv)
 
-    Debugger(project=args.project, host=args.host, port=args.port, setup_project=setup_project).run()
+    Debugger(
+          project=args.project, host=args.host, port=args.port
+        , setup_project=setup_project, project_options=args.options
+        ).run()
 
 if __name__ == '__name__':
     main()

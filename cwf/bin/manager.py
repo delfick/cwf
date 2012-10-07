@@ -2,7 +2,7 @@
 
 import os, sys
 
-def setup_project(project, expected=False):
+def setup_project(project, expected=False, **kwargs):
     """If project has a project_setup function, then execute it"""
     project_setup = None
     try:
@@ -14,7 +14,7 @@ def setup_project(project, expected=False):
         pass
 
     if project_setup:
-        project_setup()
+        project_setup(**kwargs)
 
 def manager(project):
     """
