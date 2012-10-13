@@ -1,5 +1,7 @@
 from errors import ConfigurationError
 
+class BadValues(Exception): pass
+
 class Values(object):
     '''Holds multiple values for a single section'''
     def __init__(self, values=None, each=None, sorter=False, as_set=True, sort_after_transform=True):
@@ -31,6 +33,7 @@ class Values(object):
         """Yield (alias, url) for each value"""
         # Get sorted values
         info = (request, parent_url_parts, path)
+
         values = self.get_values(info)
 
         # Yield some information
@@ -65,7 +68,13 @@ class Values(object):
             Otherwise turn values list of [v1, v2, v3] into [(v1, v1), (v2, v2), (v3, v3)]
         '''
         if self.each:
-            return list(self.each(info, value) for value in values)
+            result = []
+            for value in values:
+                try:
+                    result.append(self.each(info, value))
+                except Exception as error:
+                    raise BadValues(self.each, value, error)
+            return result
         else:
             return [(value, value) for value in values]
 
@@ -78,7 +87,10 @@ class Values(object):
         # Get a list of values
         values = self.values
         if callable(values):
-            values = list(values(info))
+            try:
+                values = list(values(info))
+            except Exception as error:
+                raise BadValues(values, error)
 
         # Remove duplicates
         if self.as_set:
