@@ -35,7 +35,7 @@ class ButtonWrap(object):
         condition = self.condition
         if callable(condition):
             condition = condition(self._button, self._original)
-        return not condition
+        return condition
 
     @property
     def has_permissions(self):
