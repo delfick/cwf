@@ -1,0 +1,21 @@
+{% extends "cloud/layout.html" %}
+
+{%- block header %}
+    <div class="relbar-top">
+        <div class="related">
+            <p id="site_title">
+                <a href="/">{{project}}</a>
+            </p>
+            <ul class="menu">
+            {%- for name, link, selected in toplinks %}
+                <li><a href="{{link}}" {%- if selected %}class="selected"{% endif %}>{{name}}</a></li>
+            {% endfor %}
+                <li>
+                    {%- include "searchbox.html" %}
+                </li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}
+
+{%- block relbar1 %}{% endblock %}
