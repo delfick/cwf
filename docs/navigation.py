@@ -10,5 +10,12 @@
     Condition: Regular expression that must match the path of the page being viewed for the button to be shown as selected
 """
 toplinks = [
-          ('Overview', '/index.html'    , '^index$')
+          ('Overview',      '/index.html',              '^(index|tests|installation)$')
+        , ('Sections',      '/sections/index.html',     '^sections')
+        , ('Views',         '/views/index.html',        '^views')
+        , ('Splitter',      '/splitter/index.html',     '^splitter')
+        , ('Binaries',      '/bin/index.html',          '^bin')
+        , ('Admin',         '/admin/index.html',        '^admin')
+        , ('Template Tags', '/templatetags/index.html', '^templatetags')
+        , ('Templates',     '/templates/index.html',    '^templates')
         ]
