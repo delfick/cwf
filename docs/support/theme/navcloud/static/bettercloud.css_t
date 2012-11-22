@@ -11,6 +11,26 @@
  
 @import url("cloud.css");
 
+html {
+    font-size: 76%;
+}
+
+body {
+    font-size: 1.3em!important;
+}
+
+.body {
+    background-color: #fff!important;
+    border-right: 1px solid {{theme_bodytrimcolor}};
+}
+
+div.highlight pre,
+div.highlight-python pre
+{
+    border-top: 1px solid {{theme_bodytrimcolor}};
+    border-bottom: 1px solid {{theme_bodytrimcolor}};
+}
+
 ul.menu {
     height: 20px;
     font-size: 1.4em;
@@ -70,7 +90,7 @@ div.body h6 {
     text-shadow: 0px 1px 0 white
 }
  
-div.body h1 { border-top: 20px solid #EEE; margin-top: 0; font-size: 200%; }
+div.body h1 { border-top: 20px solid #fff; margin-top: 0; font-size: 200%; }
 div.body h2 { font-size: 150%; background-color: #C8D5E3; }
 div.body h3 { font-size: 120%; background-color: #D8DEE3; }
 div.body h4 { font-size: 100%; background-color: #eeeeee; margin-top: 20px;}
