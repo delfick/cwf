@@ -2,3 +2,8 @@
 
 Sections
 ========
+
+.. _cwf_menus:
+
+Menus
+-----
