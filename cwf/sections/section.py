@@ -22,7 +22,7 @@ class Item(object):
         return cls(section, **options)
 
     def clone(self, parent):
-        """Convenience for making a clone of this itme"""
+        """Convenience for making a clone of this item"""
         old_section = self.section
         cloned_section = old_section.clone(parent=parent)
         cloned_section.merge(old_section, take_base=True)
@@ -299,7 +299,7 @@ class Section(object):
     def clone(self, **kwargs):
         """
             Create a clone of this section
-            Will keep references to old children, but not clone them
+            Will not transfer over references to children
         """
         for attr in ('url', 'name', 'parent'):
             if attr not in kwargs:
