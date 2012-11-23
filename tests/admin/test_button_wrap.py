@@ -96,16 +96,16 @@ describe "ButtonWrap":
 
     describe "Determining if should not show":
         it "returns if not button.condition":
-            self.button.has_attr(condition=True)
+            self.button.has_attr(condition=False)
             self.wrapper.noshow |should| be(False)
 
             self.button.has_attr(condition=False)
-            self.wrapper.noshow |should| be(True)
+            self.wrapper.noshow |should| be(False)
 
         it "calls button.condition with button and original if callable":
             condition = (fudge.Fake("condition").expects_call()
-                .with_args(self.button, self.original).returns(False)
-                .next_call().with_args(self.button, self.original).returns(True)
+                .with_args(self.button, self.original).returns(True)
+                .next_call().with_args(self.button, self.original).returns(False)
                 )
             self.button.has_attr(condition=condition)
 
