@@ -489,6 +489,9 @@ describe "Options":
             before_each:
                 self.options = Options()
 
+            it "returns None if name is None":
+                self.options.clean_module_name(None) |should| be(None)
+
             it "complains if any spaces are in the name":
                 caller = lambda : self.options.clean_module_name("asdf asdf")
                 caller |should| throw(ConfigurationError

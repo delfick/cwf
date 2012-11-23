@@ -394,6 +394,9 @@ class Options(object):
             * Remove dots from beginning and end of the string
             * Complain about spaces and non-ascii characters
         '''
+        if name is None:
+            return None
+
         while name.startswith('.'):
             name = name[1:]
 
