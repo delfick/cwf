@@ -4,7 +4,7 @@ Template Tags
 =============
 
 CWF contains two custom templatetags that it uses when it's constructing the
-template for the :ref:`menu generation <cwf_menus>` functionality provided.
+template for the :ref:`menu generation <sections_menus>` functionality provided.
 
 These are:
 
