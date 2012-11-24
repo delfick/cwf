@@ -22,7 +22,16 @@ Usage looks like:
 
     section.first(name="root").configure(target='base')
     section.add('login', name='login').configure(target='login')
-    section.add('logout', name='logout').configure( target='logout')
+    section.add('logout', name='logout').configure(target='logout')
+
+    numbers = section.add('numbers')
+    numbers.add("one").configure(target="one")
+    numbers.add("two").configure(target="two")
+
+    section.add('\d+').configure(''
+        , target='digits'
+        , match='digit'
+        )
 
     urlpatterns = section.patterns()
 
@@ -36,6 +45,9 @@ For this very simple case, it would be the same as:
         , (r'^$', 'webthing.views.base', name="root")
         , (r'^login/$', 'webthing.views.login', name="login")
         , (r'^logout/$', 'webthing.views.logout', name="logout")
+        , (r'^numbers/one/$', 'webthing.views.one')
+        , (r'^numbers/two/$', 'webthing.views.two')
+        , (r'^(?P<digit>\d+)/$', 'webthing.views.digits')
         )
 
 Each section has a ``url``, ``name``, ``parent``; and some ``options``.
@@ -45,6 +57,9 @@ You set the ``url``, ``name`` and ``parent`` when you create the section and the
 
 So in the example above, "Section()" created a section with the default ``url``
 of "/", no ``name`` and no ``parent``.
+
+.. note:: Any section that doesn't have a target configured doesn't appear in
+  the urlpatterns; but all it's children will.
 
 Adding child sections
 ---------------------
@@ -73,6 +88,8 @@ The "section.first" and "section.add" methods are shortcuts to
 
 "section.first" will also default url to an empty string, whereas "section.add"
 will complain if no url is provided.
+
+These functions will return the child that was added.
 
 .. _section_merge:
 
@@ -192,3 +209,27 @@ then it is replaced with '^$'.
 
 Otherwise, all duplicate slashes are remove
 , it is prefixed with a '^' and forced to end with '/$'.
+
+Finally, configure also provides the ``match`` option which will make that
+section appear as a named regex group in the url:
+
+.. code-block:: python
+
+    # This section here has configured match to "blah"
+    Section(r'\d+').configure(match="blah")
+
+So for this section, it's url part will look like:
+
+.. code-block:: python
+
+    r"(?P<blah>\d+)"
+
+.. note:: You can see what url part a section will have by doing:
+
+  .. code-block:: python
+
+    >>> from cwf.sections import Section
+    >>> from cwf.sections.pattern_list import PatternList
+    >>> section = Section("\d+").configure(match="blah")
+    >>> PatternList(section).url_part()
+    r'(?P<blah>\d+)'
