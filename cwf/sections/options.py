@@ -240,10 +240,10 @@ class Options(object):
         """
             Return url view for these options
             If redirect is specified, return redirect view
-            If target is already callable, return target along with extra_content
+            If target is already callable, return target along with extra_context
 
             Otherwise, determine view kls
-            and return dispatcher as view, along with kls, target, section and extra_content
+            and return dispatcher as view, along with kls, target, section and extra_context
         """
         if self.redirect:
             # Redirect overrides other options
