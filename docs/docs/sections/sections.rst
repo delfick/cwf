@@ -75,7 +75,7 @@ For example:
 
 There are options available for how the section appears in the
 :ref:`urlpatterns <section_configure_url>`
-; what :ref:`view <section_configure_url>` is used; and how it appears in the
+; what :ref:`view <section_configure_view>` is used; and how it appears in the
 :ref:`menu <section_configure_menu>` that can be generated.
 
 .. _section_children:
