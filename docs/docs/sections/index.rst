@@ -1,7 +1,8 @@
 .. toctree::
     :hidden:
 
-    urlpatterns
+    sections
+    urls
     views
     menus
 
@@ -23,8 +24,11 @@ to combine the sections into your website.
 
 The following pages guide you through what is possible here:
 
-    :doc:`urlpatterns`
-        How to define the url patterns themselves.
+    :doc:`sections`
+        An introduction to what a Section is.
+
+    :doc:`urls`
+        The options available to alter the url for a section.
 
     :doc:`views`
         How to say what views should be invoked by a url.
