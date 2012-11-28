@@ -209,6 +209,8 @@ Instead of::
   children are unable to contribute to the url and therefore, children of these
   sections cannot use the values used by the parent section.
 
+.. _section_menu_obj:
+
 Creating the menu
 -----------------
 
@@ -232,10 +234,10 @@ section for a particular request.
 Then in your template::
 
     # For the global navigation
-    {% include "cwf/menu/base.html" with menu=menu.global_nav children_template="menu/base.html" ignore_children='True' %}
+    {% include "cwf/menu/base.html" with menu=menu.global_nav children_template="cwf/menu/base.html" ignore_children='True' %}
 
     # For the side navigation
-    {% include "cwf/menu/base.html" with menu=menu.side_nav children_template="menu/base.html" %}
+    {% include "cwf/menu/base.html" with menu=menu.side_nav children_template="cwf/menu/base.html" %}
 
 To understand how to make these templates available and how to customise them
 , you should read the section on :ref:`templates_index`.

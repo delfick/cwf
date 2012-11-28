@@ -12,6 +12,20 @@ Templates
 CWF comes with some templates you can use alongside some of the other features
 that is provided.
 
+Available Templates
+-------------------
+
+Templates are provided for the following:
+
+    :doc:`admin`
+        Templates for adding buttons to the admin pages.
+
+    :doc:`menus`
+        Templates for displaying :ref:`sections_menus`.
+
+
+.. _template_availability:
+
 Including Templates
 -------------------
 
@@ -92,14 +106,3 @@ And add it to your template loaders:
 Which would mean that if 'cwf/menu/base.html' doesn't match for any of the other
 template loaders you have, then it will take the first part of that url
 (in this case, 'cwf') and find the template dir for that app and look in there.
-
-Available Templates
--------------------
-
-Templates are provided for the following:
-
-    :doc:`admin`
-        Templates for adding buttons to the admin pages.
-
-    :doc:`menus`
-        Templates for displaying :ref:`sections_menus`.
