@@ -161,3 +161,81 @@ Depending on the values in the database table being used here.
 
 Promoted Sections
 +++++++++++++++++
+
+CWF provides the ``promote_children`` :ref:`configuration <section_configure>`
+option for saying that the child of a section should appear in the menu at
+the same level as that section.
+
+So for example, say we want to have common settings grouped but keep everything
+at one level:
+
+.. code-block:: python
+
+    section = Section().configure(''
+        , target = 'base'
+        )
+
+    group1 = section.add("group1").configure(
+        , module="webthing.groupone"
+        , promote_children=True
+        )
+    group1.add("one").configure(target="one")
+    group1.add("two").configure(target="two")
+
+    group2 = section.add("group1").configure(''
+        , module="webthing.grouptwo"
+        , promote_children=True
+        )
+    group2.add("three").configure(target="three")
+    group2.add("four").configure(target="four")
+
+Then we'll get a menu that looks like::
+
+    one
+    two
+    three
+    four
+
+Instead of::
+
+    group1
+        one
+        two
+    group2
+        three
+        four
+
+.. note:: Currently there is a limitation that sections that promote their
+  children are unable to contribute to the url and therefore, children of these
+  sections cannot use the values used by the parent section.
+
+Creating the menu
+-----------------
+
+You use the ``cwf.views.menu:Menu`` class to generate the menu system from a
+section for a particular request.
+
+.. code-block:: python
+
+    from cwf.views.menu import Menu
+
+    def my_view_function(request):
+        menu = Menu(request, request.section)
+
+        # Add menu to your template context
+        # And do everything else as normal
+
+.. note:: If you add your views using Section, then the view you provide will be
+  wrapped in a function that attaches that ``section`` to the ``request`` object
+  before calling your original view
+
+Then in your template::
+
+    # For the global navigation
+    {% include "cwf/menu/base.html" with menu=menu.global_nav children_template="menu/base.html" ignore_children='True' %}
+
+    # For the side navigation
+    {% include "cwf/menu/base.html" with menu=menu.side_nav children_template="menu/base.html" %}
+
+To understand how to make these templates available and how to customise them
+, you should read the page on :ref:`menu_templates`.

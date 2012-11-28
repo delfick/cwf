@@ -2,3 +2,8 @@
 
 Templates
 =========
+
+.. _menu_templates:
+
+Menu Templates
+--------------
