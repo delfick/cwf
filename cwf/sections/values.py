@@ -6,7 +6,7 @@ class Values(object):
     '''Holds multiple values for a single section'''
     def __init__(self, values=None, each=None, sorter=False, as_set=True, sort_after_transform=True):
         # values: The values to use
-        #   Can be list or callable((request, path, parent_url_parts))->[]
+        #   Can be list or callable((request, parent_url_parts, path))->[]
         self.values = values
 
         # as_set: Determine if values should be considered a set to remove duplicates
