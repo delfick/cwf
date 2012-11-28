@@ -238,4 +238,4 @@ Then in your template::
     {% include "cwf/menu/base.html" with menu=menu.side_nav children_template="menu/base.html" %}
 
 To understand how to make these templates available and how to customise them
-, you should read the page on :ref:`menu_templates`.
+, you should read the section on :ref:`templates_index`.
