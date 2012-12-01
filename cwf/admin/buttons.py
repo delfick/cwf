@@ -231,3 +231,8 @@ class ButtonGroup(ButtonBase):
         """Return a button group with all it's buttons wrapped in a button wrap"""
         buttons = [b.copy_for_request(request, original) for b in self.buttons]
         return ButtonGroup(self.name, buttons)
+
+    @property
+    def show(self):
+        """Only show if we can show any of the buttons"""
+        return any(button.show for button in self.buttons)

@@ -18,6 +18,7 @@
         <fieldset class="grp-module grp-collapse grp-closed">
             <h2 class="grp-collapse-handler">{{ button.name }}</h2>
             {% for button in button.buttons %}
+            {% if button.show %}
             <div class="grp-row grp-cells-1 numReg ">
                 <div class="l-2c-fluid l-d-4">
                     <div class="c-1">
@@ -28,6 +29,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
             {% endfor %}
         </fieldset>
         {% else %}

@@ -23,6 +23,19 @@ describe "Button Group":
         self.group.name |should| be(self.name)
         self.group.buttons |should| be(self.buttons)
 
+    describe "Determining if a group can be shown":
+        it "says no if none of the children say yes":
+            child1 = fudge.Fake("child1").has_attr(show=False)
+            child2 = fudge.Fake("child2").has_attr(show=False)
+            child3 = fudge.Fake("child3").has_attr(show=False)
+            ButtonGroup(self.name, [child1, child2, child3]).show |should| be(False)
+
+        it "says yes if any of the children say yes":
+            child1 = fudge.Fake("child1").has_attr(show=False)
+            child2 = fudge.Fake("child2").has_attr(show=True)
+            child3 = fudge.Fake("child3").has_attr(show=False)
+            ButtonGroup(self.name, [child1, child2, child3]).show |should| be(True)
+
     describe "Copying for request":
         @fudge.patch("cwf.admin.buttons.ButtonGroup")
         it "returns a group with same name and copied buttons", fakeButtonGroup:
