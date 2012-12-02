@@ -58,7 +58,14 @@ describe "ButtonAdminMixin":
                 obj = fudge.Fake("object")
                 fake_get_object_or_404.expects_call().with_args(self.model, pk=self.object_id).returns(obj)
 
+                self.button.has_attr(for_all=False)
                 self.fake_button_result.expects_call().with_args(self.request, obj, self.button).returns(self.result)
+                self.mixin.button_view(self.request, self.object_id, self.button) |should| be(self.result)
+
+            @fudge.patch("cwf.admin.admin.get_object_or_404", "cwf.admin.admin.renderer")
+            it "doesn't look for an obj if the button is for all", fake_get_object_or_404, fake_renderer:
+                self.button.has_attr(for_all = True)
+                self.fake_button_result.expects_call().with_args(self.request, None, self.button).returns(self.result)
                 self.mixin.button_view(self.request, self.object_id, self.button) |should| be(self.result)
 
             @fudge.patch("cwf.admin.admin.get_object_or_404", "cwf.admin.admin.renderer")
@@ -78,6 +85,7 @@ describe "ButtonAdminMixin":
                     )
 
                 # Render the request with the template and the ctxt we constructed
+                self.button.has_attr(for_all=False)
                 fake_renderer.expects("render").with_args(self.request, self.template, ctxt).returns(render)
                 self.mixin.button_view(self.request, self.object_id, self.button) |should| be(render)
 

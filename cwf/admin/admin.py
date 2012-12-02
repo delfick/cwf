@@ -81,11 +81,13 @@ class ButtonAdminMixin(object):
         """Return extra patterns for each button"""
         return ButtonPatterns(self.buttons, self.model, self.admin_site.admin_view, self.button_view).patterns
 
-    def button_view(self, request, object_id, button):
+    def button_view(self, request, object_id=None, button=None):
         """Action taken when a button is pressed"""
-        obj = get_object_or_404(self.model, pk=object_id)
-        result = self.button_result(request, obj, button)
+        obj = None
+        if not button.for_all:
+            obj = get_object_or_404(self.model, pk=object_id)
 
+        result = self.button_result(request, obj, button)
         if type(result) in (tuple, list) and len(result) == 2:
             template, extra = result
         else:
