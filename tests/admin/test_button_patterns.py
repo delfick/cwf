@@ -84,7 +84,7 @@ describe "Button Patterns":
 
     describe "Getting url for a button":
         it "returns anything followed by tool_url/":
-            button = fudge.Fake("button").has_attr(url='bob')
+            button = fudge.Fake("button").has_attr(for_all=False, url='bob')
             pattern = self.patterns.button_url(button)
 
             pattern |should| equal_to(r'^(.+)/tool_bob/$')
@@ -93,6 +93,17 @@ describe "Button Patterns":
             assert     compiled.match("alskjlkj/asdfasdf/tool_bob/")
             assert not compiled.match("alskjlkj/asdfasdf/tool_bob")
             assert not compiled.match("alskjlkj/asdfasdf/tool_bob/adfasf")
+
+        it "returns just by tool_url/ if for_all":
+            button = fudge.Fake("button").has_attr(for_all=True, url='bob')
+            pattern = self.patterns.button_url(button)
+
+            pattern |should| equal_to(r'^tool_bob/$')
+            compiled = re.compile(pattern)
+
+            assert     compiled.match("tool_bob/")
+            assert not compiled.match("alskjlkj/tool_bob")
+            assert not compiled.match("tool_bob/adfasf")
 
     describe "Getting name for the button view":
         it "uses app label and module_name from the model and url from the button":

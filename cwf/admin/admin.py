@@ -47,7 +47,10 @@ class ButtonPatterns(object):
 
     def button_url(self, button):
         """Get the url for this button"""
-        return r'^(.+)/tool_%s/$' % button.url
+        template = r'^(.+)/tool_{}/$'
+        if button.for_all:
+            template = r'^tool_{}/$'
+        return template.format(button.url)
 
     def button_name(self, button):
         """Get the view name for this button"""
