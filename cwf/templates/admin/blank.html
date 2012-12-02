@@ -7,10 +7,16 @@
 {% block breadcrumbs %}
     {% if not is_popup %}
         <ul>
+        {% if object %}
             <li><a href="../../../../">{% trans 'Home' %}</a></li>
-            <li><a href="../../">{% trans app_label|capfirst|escape %}</a></li>
+            <li><a href="../../../">{% trans app_label|capfirst|escape %}</a></li>
             <li><a href="../../">{{ module_name }}</a></li>
             <li><a href="../">{{ object|truncatewords:"18" }}</a></li>
+        {% else %}
+            <li><a href="../../../">{% trans 'Home' %}</a></li>
+            <li><a href="../../">{% trans app_label|capfirst|escape %}</a></li>
+            <li><a href="../">{{ module_name }}</a></li>
+        {% endif %}
             <li>{{bread_title}}</li>
         </ul>
     {% endif %}
