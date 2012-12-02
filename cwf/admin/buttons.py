@@ -1,3 +1,4 @@
+from django.utils.encoding import force_unicode
 from django.utils.safestring import mark_safe
 
 ########################
@@ -179,6 +180,16 @@ class Button(ButtonBase):
         object.__setattr__(self, 'url', url)
         object.__setattr__(self, 'desc', desc)
         object.__setattr__(self, 'kwargs', kwargs)
+
+    def title(self, obj):
+        """
+            Title is the description of the button
+            Plus the unicode of the object if we are per instance
+        """
+        title = "{}".format(self.description)
+        if not self.for_all:
+            title = "{}: {}".format(title, force_unicode(obj))
+        return title
 
     @property
     def html(self):

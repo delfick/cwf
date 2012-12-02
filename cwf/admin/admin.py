@@ -102,7 +102,7 @@ class ButtonAdminMixin(object):
         app_label = opts.app_label
 
         context = {
-              'title': _('%s: %s') % (button.description, force_unicode(obj))
+              'title': _(button.title(obj))
             , 'object': obj
             , 'app_label': app_label
             , 'root_path': reverse('admin:index')

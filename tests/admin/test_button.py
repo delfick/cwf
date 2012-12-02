@@ -56,6 +56,25 @@ describe "Button":
             fakeButtonWrap.expects_call().with_args(self.button, request, original).returns(wrap)
             self.button.copy_for_request(request, original=original) |should| be(wrap)
 
+    describe "Determining title":
+        @fudge.patch("cwf.admin.buttons.force_unicode")
+        it "combines description and unicode of the object", fake_force_unicode:
+            obj = fudge.Fake("obj")
+            obj_unicode = fudge.Fake("obj_unicode")
+            description = fudge.Fake("description")
+            fake_force_unicode.expects_call().with_args(obj).returns(obj_unicode)
+
+            button = Button('a', 'b', description=description)
+            button.title(obj) |should| equal_to("{}: {}".format(description, obj_unicode))
+
+        @fudge.patch("cwf.admin.buttons.force_unicode")
+        it "only uses description if button is for all", fake_force_unicode:
+            obj = fudge.Fake("obj")
+            description = fudge.Fake("description")
+
+            button = Button('a', 'b', description=description, for_all=True)
+            button.title(obj) |should| equal_to("{}".format(description))
+
     describe "Determining html":
         before_each:
             self.fake_link_as_input = fudge.Fake("link_as_input")
