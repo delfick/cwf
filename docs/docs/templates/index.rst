@@ -6,8 +6,8 @@ Templates
 .. toctree::
     :hidden:
 
-    menus
     admin
+    menus
 
 CWF comes with some templates you can use alongside some of the other features
 that is provided.
