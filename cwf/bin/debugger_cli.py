@@ -51,5 +51,5 @@ def main(argv=None):
         , setup_project=setup_project, project_options=args.options
         ).run()
 
-if __name__ == '__name__':
+if __name__ == '__main__':
     main()
