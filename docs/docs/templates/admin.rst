@@ -63,15 +63,15 @@ admin/change_form.html
 This is the form that is used by django admin to display the form when you are
 adding or editing an instance of a model.
 
-The CWF version of this template will display the buttons
-that are :ref:`per instance <button_per_instance>`.
+The CWF version of this template will display the buttons that have the
+``for_all`` :ref:`option <button_options>` set to False.
 
 Those buttons that don't save the template when they are clicked are displayed
 at the top of the page and those that do save the form when they are clicked are
 displayed at the bottom of the page. See :ref:`button_clicking` for more
 information.
 
-:ref:`button_groups` are displayed in a collapsible panel of rows where each row
+``ButtonGroups`` are displayed in a collapsible panel of rows where each row
 has two columns: The button itself and it's description.
 
 All buttons are displayed using the :ref:`button html <button_html>`.
@@ -127,8 +127,8 @@ admin/change_list.html
 This is the form that is used by django admin to display the list of instances
 of a particular model.
 
-The CWF version of this template will display the buttons
-that are :ref:`per model <button_per_model>`.
+The CWF version of this template will display the buttons that have the
+``for_all`` :ref:`option <button_options>` set to True.
 
 They are displayed at the top of the page and doesn't support button groups.
 
