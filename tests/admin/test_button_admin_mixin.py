@@ -99,7 +99,7 @@ describe "ButtonAdminMixin":
         it "delegates to tool_<button_url>":
             url = fudge.Fake("url")
             result = fudge.Fake("result")
-            self.button.has_attr(url=url, execute_and_redirect=False)
+            self.button.has_attr(url=url, return_to_form=False)
             delegate = fudge.Fake("delegate").expects_call().with_args(self.request, self.obj, self.button).returns(result)
 
             name = "tool_%s" % url
@@ -110,32 +110,61 @@ describe "ButtonAdminMixin":
         it "complains if it can't find a delegate":
             url = fudge.Fake("url")
             result = fudge.Fake("result")
-            self.button.has_attr(url=url, execute_and_redirect=False)
+            self.button.has_attr(url=url, return_to_form=False)
 
             name = "tool_%s" % url
             with self.assertRaisesRegexp(Exception, "doesn't have a function for %s" % name):
                 self.mixin.button_result(self.request, self.obj, self.button) |should| be(result)
 
-        describe "When button has execute_and_redirect set":
-            @fudge.test
-            it "finds delegate from button.execute_and_redirect and complains if admin doesn't have that attribute":
-                self.button.has_attr(execute_and_redirect='func_to_execute')
-                self.obj |should_not| respond_to("func_to_execute")
-                with self.assertRaisesRegexp(Exception, "doesn't have a function for func_to_execute"):
-                    self.mixin.button_result(self.request, self.obj, self.button)
+        describe "When button has return_to_form set":
+            @fudge.patch("cwf.admin.admin.AdminView", "cwf.admin.admin.renderer")
+            it "returns back to the change_form if not for_all and should return_to_form", fakeAdminView, fake_renderer:
+                url = fudge.Fake("url")
+                btn_url = fudge.Fake("btn_url")
+
+                result = fudge.Fake("result")
+                redirect = fudge.Fake("redirect")
+
+                # We expect the delegate on the admin to get called somewhere
+                self.button.has_attr(url=btn_url, for_all=False, return_to_form=True)
+                delegate = (fudge.Fake("delegate").has_attr(__name__="delegate")
+                    .expects_call().with_args(self.request, self.obj, self.button).returns(result)
+                    )
+
+                # We expect to get redirected
+                fakeAdminView.expects("change_view").with_args(self.obj).returns(url)
+                fake_renderer.expects("redirect").with_args(self.request, url, no_processing=True).returns(redirect)
+
+                # Put our delegate on the class
+                name = "tool_{}".format(btn_url)
+                setattr(self.mixin, name, delegate)
+
+                self.mixin.button_result(self.request, self.obj, self.button) |should| be(redirect)
 
             @fudge.patch("cwf.admin.admin.AdminView", "cwf.admin.admin.renderer")
-            it "finds delegate from button.execute_and_redirect and redirects to change_view after executing it", fakeAdminView, fake_renderer:
-                func_to_execute = fudge.Fake("func_to_execute").expects_call()
-                self.button.has_attr(execute_and_redirect='func_to_execute')
-                self.obj.func_to_execute = func_to_execute
-
+            it "returns back to the change_list if for_all and should return_to_form", fakeAdminView, fake_renderer:
                 url = fudge.Fake("url")
-                result = fudge.Fake("result")
-                fakeAdminView.expects("change_view").with_args(self.obj).returns(url)
-                fake_renderer.expects("redirect").with_args(self.request, url, no_processing=True).returns(result)
+                btn_url = fudge.Fake("btn_url")
 
-                self.mixin.button_result(self.request, self.obj, self.button) |should| be(result)
+                result = fudge.Fake("result")
+                redirect = fudge.Fake("redirect")
+
+                # We expect the delegate on the admin to get called somewhere
+                self.button.has_attr(url=btn_url, for_all=True, return_to_form=True)
+                delegate = (fudge.Fake("delegate").has_attr(__name__="delegate")
+                    .expects_call().with_args(self.request, self.obj, self.button).returns(result)
+                    )
+
+                # We expect to get redirected
+                fakeAdminView.expects("change_list").with_args(self.model).returns(url)
+                fake_renderer.expects("redirect").with_args(self.request, url, no_processing=True).returns(redirect)
+
+                # Put our delegate on the class
+                name = "tool_{}".format(btn_url)
+                setattr(self.mixin, name, delegate)
+
+                self.mixin.model = self.model
+                self.mixin.button_result(self.request, self.obj, self.button) |should| be(redirect)
 
         describe "Adding buttons to the context of a respons":
             before_each:

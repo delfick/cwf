@@ -31,8 +31,8 @@ describe "Button properties":
             , ('needs_auth', None)
             , ('description', None)
             , ('save_on_click', True)
+            , ('return_to_form', False)
             , ('need_super_user', True)
-            , ('execute_and_redirect', False)
             ]
             )
         )

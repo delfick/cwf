@@ -10,6 +10,8 @@ from django.contrib import admin
 from cwf.views.admin_views import AdminView
 from cwf.views.rendering import renderer
 
+from functools import wraps
+
 ########################
 ###   BUTTON URLPATTERNS
 ########################
@@ -119,26 +121,31 @@ class ButtonAdminMixin(object):
         """
             Get result for button by finding a function for it and executing it
             Looks for tool_<button.url> on self
-            If it can't find that and button.execute_and_redirect is True then one is made
+
+            If button.return_to_form then it will wrap this function and ensure that
+            the user get's redirected to the form they came from.
         """
-        if not button.execute_and_redirect:
-            name = "tool_%s" % button.url
-            if not hasattr(self, name):
-                raise Exception("Admin (%s) doesn't have a function for %s" % (self, name))
-            func = getattr(self, name)
+        name = "tool_{}".format(button.url)
+        if not hasattr(self, name):
+            raise Exception("Admin ({}) doesn't have a function for {}".format(self, name))
+        func = getattr(self, name)
+
+        if not button.return_to_form:
+            return func(request, obj, button)
         else:
-            def func(request, obj, button):
-                # Execute
-                action = button.execute_and_redirect
-                if not hasattr(obj, action):
-                    raise Exception("Object (%s) doesn't have a function for %s" % (obj, action))
-                getattr(obj, action)()
+            @wraps(func)
+            def wrapped(request, obj, button):
+                """We want to redirect back to the form regardless of what the view does"""
+                # Do the normal view
+                func(request, obj, button)
 
-                # And redirect
-                url = AdminView.change_view(obj)
+                # Find where to redirect to and go there
+                if button.for_all:
+                    url = AdminView.change_list(self.model)
+                else:
+                    url = AdminView.change_view(obj)
                 return renderer.redirect(request, url, no_processing=True)
-
-        return func(request, obj, button)
+            return wrapped(request, obj, button)
 
     def button_response_context(self, request, response):
         """Add the buttons to the response if there are any defined"""
