@@ -83,6 +83,27 @@ So, given the following structure::
         wsgi/
             prod.py
 
+.. note:: For cwf to be able to put all your models under the
+    ``webthings_main.models`` namespace, all your models must have
+    ``Meta.app_label`` set:
+
+    .. code-block:: python
+
+        from django.db import models
+
+        class AwesomeModel(models.Model):
+            [..]
+
+            class Meta:
+                app_label = 'webthings_main'
+
+    And each ``__models__.py`` must have ``__all__`` explicitly set to all the
+    models contained within:
+
+    .. code-block:: python
+
+        __all__ = [AwesomeModel]
+
 ``webthings.__init__``
 
 .. code-block:: python
