@@ -12,7 +12,7 @@ theme_dir = os.path.join(this_dir, "theme")
 
 sys.path.extend([this_dir, os.path.join(this_dir, 'ext')])
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'nav', 'options', 'show_tests']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'nav']
 html_theme_path = [theme_dir, cloud_sptheme.get_theme_dir()]
 exclude_patterns = [build_dir]
 
