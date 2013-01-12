@@ -20,7 +20,6 @@ This means you can use CWF view as follows:
     
     # in webthing.somesection.views
 
-    
     from cwf.views import View
     class MyAwesomeView(View):
         def thing(self, request):
@@ -59,6 +58,18 @@ Or if you prefer a more manual approach to your urlpatterns:
 .. note:: You can create as many or as little instances of a View class as you
   wish as long as you don't put any state on the instance.
 
+Calling a view
+==============
+
+When an instance of the view class is called, it will do the following:
+
+    * Create :ref:`view state <views_view_state>`
+    * :ref:`Clean kwargs <views_view_kwargs>`
+    * Get a :ref:`result <views_view_result>` to render
+    * :ref:`Render <views_view_rendering>` the result and return.
+
+.. _views_view_state:
+
 View State
 ==========
 
@@ -86,6 +97,8 @@ When it's created, it is initialized with some values:
     ``base_url``
         ``request.META.get('SCRIPT_NAME', '')``
 
+.. _views_view_kwargs:
+
 Cleaning View kwargs
 ====================
 
@@ -94,3 +107,50 @@ All keyword arguments to the view will be cleaned as according to the
 
 By default this means any string keyword argument will be stripped of any
 trailing slashes.
+
+.. _views_view_result:
+
+Getting result for a view
+=========================
+
+The view has a ``get_result`` method that takes the ``request`` object
+, the ``target`` that is been called and any positional arguments and
+:ref:`cleaned <views_view_kwargs>` keyword arguments and returns a result that
+will be :ref:`rendered <views_view_rendering>`.
+
+If the view has an ``override`` method, then it will pass all those arguments
+in that function and return it's result.
+
+Otherwise, it will check if that target exists using the ``has_target`` method,
+which takes in the target and returns a ``True`` if the target exists or a
+``False`` if the target doesn't exist.
+
+If the target doesn't exist then an exception will be raised, otherwise it will
+get the result from passing all the arguments into ``self.execute``.
+
+If the result of ``self.execute`` is a callable then it will return the result
+of calling this callable with the ``request`` object, otherwise it just returns
+the result.
+
+By default, the ``execute`` method will use ``self.get_target(target)`` to get
+a callable for that target and call it with the ``request`` object and those
+extra positional and keyword arguments.
+
+By default, the ``get_target`` method just does a ``getattr`` on the instance.
+
+.. _views_view_rendering:
+
+Rendering a view
+================
+
+If the result being rendered is ``None``, then a ``Http404`` will be raised.
+
+If the result is a list or tuple of two items, then it assumes this list
+represents ``(template, extra)`` where ``template`` is the name of the template
+to render and ``extra`` is any extra context to render the template with.
+
+If ``template`` is None, then ``extra`` is returned, otherwise it uses the
+:ref:`renderer object <views_rendering>` to render the template and context.
+
+If the result to render is not a two item tuple or list, then it just returns
+it as is.
