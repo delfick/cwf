@@ -7,13 +7,12 @@ class Website(object):
         Insert <package>.<urls>, <package>.<models> and load all admin.
 
         Use like:
-        website = Website(settings, 'main', Part(...), Part(...))
+        website = Website('main', Part(...), Part(...))
         website.configure()
     """
-    def __init__(self, settings, package, *parts, **kwargs):
+    def __init__(self, package, *parts, **kwargs):
         self.parts = parts
         self.package = package
-        self.settings = settings
 
         self.prefix = kwargs.get("prefix", None)
         self.include_default_urls = kwargs.get("include_default_urls", False)
@@ -32,16 +31,15 @@ class Website(object):
     def config(self):
         """
             Create a Parts objects from the parts specified
-            And memoize it in settings.PARTCONFIG[package]
+            And memoize it in self._partconfig[package]
         """
         package = self.package
-        settings = self.settings
-        if not hasattr(settings, 'PARTCONFIG'):
-            settings.PARTCONFIG = {}
+        if not hasattr(self, '_partconfig'):
+            self._partconfig = {}
 
-        if package not in settings.PARTCONFIG:
-            settings.PARTCONFIG[package] = Parts(package, *self.parts)
-        return settings.PARTCONFIG[package]
+        if package not in self._partconfig:
+            self._partconfig[package] = Parts(package, *self.parts)
+        return self._partconfig[package]
 
     def load_admin(self):
         """Load all the admin for the parts specified"""
