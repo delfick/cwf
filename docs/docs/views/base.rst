@@ -59,3 +59,38 @@ Or if you prefer a more manual approach to your urlpatterns:
 .. note:: You can create as many or as little instances of a View class as you
   wish as long as you don't put any state on the instance.
 
+View State
+==========
+
+To assist with keeping state off the instance of the class, the call method of
+the View will create a ``state`` object that is added to request.
+
+This is a special object that behaves like a javascript object (supports both
+dot notation and array notation for accessing and setting variables).
+
+When it's created, it is initialized with some values:
+
+    ``menu``
+        If we got here via a CWF Section, then we will be able to create
+        a Menu object from that section.
+
+    ``path``
+        The path of the request with no leading, trailing; or duplicate slashes.
+
+    ``target``
+        The target being reached on the class.
+
+    ``section``
+        The CWF section that is executing this view (if one was used)
+
+    ``base_url``
+        ``request.META.get('SCRIPT_NAME', '')``
+
+Cleaning View kwargs
+====================
+
+All keyword arguments to the view will be cleaned as according to the
+``clean_view_kwarg`` method before being passed into the target.
+
+By default this means any string keyword argument will be stripped of any
+trailing slashes.
