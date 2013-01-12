@@ -41,7 +41,7 @@ class Parts(object):
                         result[thing] = getattr(models, thing)
         return result
 
-    def urls(self, active_only=False, include_defaults=False):
+    def urls(self, active_only=True, include_defaults=False):
         """
             Get a an object that holds the sections from each part
             Along with urlpatterns from this site
@@ -78,7 +78,7 @@ class Parts(object):
         for part in self.parts:
             part.do_import(self.package)
 
-    def site(self, name, active_only=True):
+    def site(self, name, active_only):
         """
             Create and return a site object that holds each section.
             Options for the add_child function is kept as self.kwargs in each part

@@ -55,7 +55,7 @@ class Website(object):
     @property
     def urls(self):
         """Return a function to be uses as <package>.<urls>"""
-        return lambda : self.config.urls(include_defaults=self.include_default_urls)
+        return lambda : self.config.urls(active_only=True, include_defaults=self.include_default_urls)
 
     def names_for(self, name):
         """

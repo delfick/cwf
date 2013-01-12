@@ -123,7 +123,7 @@ describe "Website":
         describe "Getting urls":
             it "returns a function that calls config.urls with self.include_default_urls":
                 urls = fudge.Fake("urls")
-                self.config.expects("urls").with_args(include_defaults=self.include_default_urls).returns(urls)
+                self.config.expects("urls").with_args(active_only=True, include_defaults=self.include_default_urls).returns(urls)
                 url_getter = self.website.urls
                 url_getter() |should| be(urls)
 
