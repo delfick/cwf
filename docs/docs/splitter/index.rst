@@ -97,7 +97,7 @@ So, given the following structure::
             class Meta:
                 app_label = 'webthings_main'
 
-    And each ``__models__.py`` must have ``__all__`` explicitly set to all the
+    And each ``models.py`` must have ``__all__`` explicitly set to all the
     models contained within:
 
     .. code-block:: python
@@ -157,7 +157,7 @@ So, given the following structure::
     ########################
 
     # Create the website object to specify each part of the website
-    website = Website(settings, 'webthings_main'
+    website = Website('webthings_main'
           , P('index', first=True)
           , P('news')
           , P('events')
@@ -197,7 +197,7 @@ So, given the following structure::
     settings_dir = os.path.abspath(os.path.join(this_dir, '..', 'settings'))
     steal('inclusions', 'logging', 'testing', 'other'
         , folder=settings_dir, globals=globals(), locals=locals()
-      )
+        )
 
     if DEBUG:
         LOGGING['loggers']['']['level'] = 'DEBUG'

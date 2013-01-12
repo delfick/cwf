@@ -88,6 +88,9 @@ What this means is that you can write something like:
 .. note:: There is a limitation to this in that all packages leading up your new
  import path must already exist and be folders.
 
+ (The limitation is an implementation detail that I haven't found the time to
+ rectify yet)
+
  So if you inject into "blah.things", then "blah" must already exist in your
  PYTHONPATH and be a folder with an ``__init__.py`` for this to work.
 
