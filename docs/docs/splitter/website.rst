@@ -69,8 +69,8 @@ eventually used when the part is used as a :ref:`section <section_children>`.
 This object will know how to import the section (part.do_import)
 and load urls, admin and models from it (part.load('urls'), etc).
 
-The website object will create a ``Parts`` object that will hold the operate
-on the collection of ``Part`` objects provided.
+The website object will create a ``Parts`` object that will hold the collection
+of ``Part`` objects provided.
 
 The Parts collection has three main responsibilities:
 
@@ -97,6 +97,12 @@ The Parts collection has three main responsibilities:
 
             It will then return {'site':site, 'urlpatterns':site.patterns()}
             where ``site`` is the root ``Section`` it just created.
+
+            .. _section_include:
+
+            .. note:: These sections will be added to the urlpatterns using the
+              Django `include <https://docs.djangoproject.com/en/dev/ref/urls/#django.conf.urls.include>`_
+              function.
 
 Website will use this functionality to import the admin logic,
 :ref:`inject <splitter_inject>` the ``models`` into ``package.models`` and

@@ -38,7 +38,7 @@ You can affect how the section is added via an
 `include <https://docs.djangoproject.com/en/dev/ref/urls/#django.conf.urls.include>`_
 via the ``app_name`` and ``namespace`` options into "section.configure"
 
-See :ref:`section_include` for when that would happen.
+See the :ref:`Splitter section <section_include>` for when that would happen.
 
 Configure also provides the ``match`` option which will make that
 section appear as a named regex group in the url:
