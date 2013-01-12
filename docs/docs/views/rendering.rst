@@ -2,3 +2,8 @@
 
 Rendering Helper
 ================
+
+.. _views_rendering_json:
+
+Rendering Json
+--------------
