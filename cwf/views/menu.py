@@ -3,10 +3,11 @@ from rendering import renderer
 
 class Menu(object):
     """
-        Object that knows about Section and SectionMaster
-        To retrieve information necessary to create menus
+        Knows how to get the information required to render the
+        navigation from a :ref:`section <sections_index>`.
 
         Assumes a top nav with one selected item.
+
         And a side nav that is everything under the selected top nav item
     """
     def __init__(self, request, section):
@@ -16,11 +17,23 @@ class Menu(object):
         self.master = SectionMaster(self.request)
 
     def global_nav(self):
+        """
+            Find the root ancestor of the current section and return a list of
+            navs for just the top level sections.
+        """
         if not hasattr(self, '_global_nav'):
             self._global_nav = list(self.navs_for(self.section.root_ancestor().menu_children))
         return self._global_nav
 
     def side_nav(self):
+        """
+            Find the top nav of the current section and return the list of navs
+            representing the children for that top nav.
+
+            These children will recursively have ``children`` of their own that
+            will go as far down as the section itself and any siblings of this
+            sections' parent.
+        """
         if not hasattr(self, '_side_nav'):
             selected = self.selected_top_nav
             if selected:

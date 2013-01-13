@@ -170,7 +170,7 @@ class View(object):
 
                 ``menu``
                     If we got here via a CWF Section, then we will be able to create
-                    a Menu object from that section.
+                    a :py:class:`cwf.views.menu.Menu` object from that section.
 
                 ``path``
                     The path of the request with no leading, trailing; or duplicate slashes.
