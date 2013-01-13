@@ -3,7 +3,5 @@
 Rendering Helper
 ================
 
-.. _views_rendering_json:
-
-Rendering Json
---------------
+.. autoclass:: cwf.views.rendering.Renderer
+    :members:

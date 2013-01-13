@@ -5,6 +5,8 @@
 import cloud_sptheme
 import sys, os
 
+os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.settings'
+
 # Add _ext and support folders to sys.path
 this_dir = os.path.abspath(os.path.dirname(__file__))
 build_dir = os.path.join(this_dir, "build")

@@ -6,9 +6,13 @@ from redirect_address import RedirectAddress
 import json
 
 class Renderer(object):
-    """Class that holds django logic for rendering things"""
+    """
+        Stateless class that simplifies usage of Django machinary for creating HttpResponse objects
+
+        An instantiated instance of this class is provided from ``cwf.views.rendering.renderer``
+    """
     def simple_render(self, template, extra):
-        """Very simple render with no request context"""
+        """Return the string from rendering specified template with a normal Context object"""
         t = loader.get_template(template)
         c = Context(extra)
         return t.render(c)
@@ -17,12 +21,10 @@ class Renderer(object):
         """
             Create a template, give it context and display as some mime type
 
-            Will get context from request.state after updating with extra
+            Using a RequestContext object provided by ``self.request_context``
 
-            Mime defaults to 'text/plain'
-
-            If modify is provided and is callable
-            , it is used to modify the rendered template before creating the resposen
+            If modify is provided and is callable then it will be used
+            to modify the rendered template before creating the HttpResponse object
         """
         context = self.request_context(request, extra)
         template_obj = loader.get_template(template)
@@ -36,9 +38,10 @@ class Renderer(object):
 
     def request_context(self, request, extra):
         """
-            Get context from request.state or empty dictionary
-            Update with extra
-            Return request context
+            Create a RequestContext object from the request and extra context provided.
+
+            If request has a ``state`` member, that will be used as default context
+            , otherwise an empty dictionary is used, which is updated with the ``extra`` context provided.
         """
         # Get context from request.state
         # Or just a dictionary if request has no state
@@ -59,19 +62,15 @@ class Renderer(object):
         raise Http404
 
     def http(self, *args, **kwargs):
-        """Shortcut to avoid having to import HttpResponse everywhere."""
+        """Return a HttpResponse object with the args and kwargs passed in"""
         return HttpResponse(*args, **kwargs)
 
     def xml(self, data):
-        """Shortcut to render xml."""
+        """Return HttpResponse object with data and a 'application/xml' mimetype"""
         return HttpResponse(data, mimetype="application/xml")
 
     def json(self, data):
-        """
-            Shortcut to render json
-            If data is a string, then assume it's already json
-            Otherwise use json.dumps
-        """
+        """Return HttpResponse object with data dumped as a json string and a 'application/javascript' mimetype"""
         if type(data) not in (str, unicode):
             data = json.dumps(data)
         return HttpResponse(data, mimetype='application/javascript')

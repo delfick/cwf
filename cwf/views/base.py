@@ -21,8 +21,12 @@ class View(object):
 
     def __call__(self, request, target, *args, **kwargs):
         """
-            Called by dispatch
-            determines what to call, calls it, creates template and renders it.
+            When an instance of the view class is called, it will do the following:
+
+                * Create :ref:`view state <views_view_state>`
+                * :ref:`Clean kwargs <views_view_kwargs>`
+                * Get a :ref:`result <views_view_result>` to render
+                * :ref:`Render <views_view_rendering>` the result and return.
         """
         # Get state to put onto the request
         request.state = self.get_state(request, target)
@@ -38,12 +42,17 @@ class View(object):
 
     def rendered_from_result(self, request, result):
         """
-            If result is None, then raise 404
+            If the result being rendered is ``None``, then a ``Http404`` will be raised.
 
-            Get either (template, extra) tuple from result and render that
-                If template is None, then just return extra
+            If the result is a list or tuple of two items, then it assumes this list
+            represents ``(template, extra)`` where ``template`` is the name of the template
+            to render and ``extra`` is any extra context to render the template with.
 
-            Or if result isn't a two item tuple, just return it as is
+            If ``template`` is None, then ``extra`` is returned, otherwise it uses the
+            :py:meth:`cwf.views.rendering.Renderer.render` to render the template and context.
+
+            If the result to render is not a two item tuple or list, then it just returns
+            it as is.
         """
         # No result to render, raise 404
         if result is None:
@@ -67,12 +76,24 @@ class View(object):
 
     def get_result(self, request, target, args, kwargs):
         """
-            Given a request and cleaned args and kwargs
-            Look at the class to determine where target is
-            And use it to get a result
+            Takes the ``request`` object, the ``target`` that is been called
+            and any positional arguments and :ref:`cleaned <views_view_kwargs>` keyword arguments
+            and returns a result that will be :ref:`rendered <views_view_rendering>`.
 
-            Raise Exception if can't find target
-            raise 404 if we find a target but it returns nothing
+            If the instance has an ``override`` method
+            , then it will pass all those arguments in that function and return it's result.
+
+            Otherwise:
+
+            Use :py:meth:`View.has_target` to check if the ``target`` exists on the instance
+            and raise an exception if it does not exist.
+
+            If the ``target`` does exist, then pass it into :py:meth:`View.execute`
+            along with the ``request``, ``args`` and cleaned ``kwargs`` to get a result.
+
+            If the result is a callable then call it with the ``request`` and return what that gives back.
+
+            Otherwise, return the result as is.
         """
         # If class has override method, use that instead
         if hasattr(self, 'override'):
@@ -92,19 +113,32 @@ class View(object):
             return result
 
     def execute(self, target, request, args, kwargs):
-        """Execute target with the request, args and kwargs"""
+        """
+            Execute target with the request, args and kwargs.
+
+            By default this means getting a callable for the ``target`` using :py:meth:`View.get_target`
+            and calling it with the ``request``, ``*args`` and ``**kwargs``.
+        """
         return self.get_target(target)(request, *args, **kwargs)
 
     def has_target(self, target):
-        """Says whether view has specified target"""
+        """
+            Return whether view has specified target
+
+            By default, just use hasattr on the instance
+        """
         return hasattr(self, target)
 
     def get_target(self, target):
-        """Gets specified target from the view"""
+        """
+            Return callable for the ``target`` from this instance.
+
+            By default, just use getattr on the instance.
+        """
         return getattr(self, target)
 
     def clean_view_kwargs(self, kwargs):
-        """Clean kwargs that are to be sent to the target view"""
+        """Replace all kwargs with the result of passing them through ``clean_view_kwarg``"""
         for key, item in kwargs.items():
             kwargs[key] = self.clean_view_kwarg(key, item)
         return kwargs
@@ -112,8 +146,9 @@ class View(object):
     def clean_view_kwarg(self, key, item):
         """
             Clean a single view kwarg
+
             If it's a string, make sure it has no trailing slashes
-            Otherwise just return
+            , otherwise just return it as is.
         """
         if type(item) in (str, unicode):
             while item.endswith("/"):
@@ -125,7 +160,30 @@ class View(object):
     ########################
 
     def get_state(self, request, target):
-        """Get a state object for this request"""
+        """
+            Return an object that can be used to store state for a request.
+
+            For convenience, this object behaves like a Javascript object (supports both
+            dot notation and array notation for accessing and setting variables).
+
+            When it's created, it is initialized with some values:
+
+                ``menu``
+                    If we got here via a CWF Section, then we will be able to create
+                    a Menu object from that section.
+
+                ``path``
+                    The path of the request with no leading, trailing; or duplicate slashes.
+
+                ``target``
+                    The target being reached on the class.
+
+                ``section``
+                    The CWF section that is executing this view (if one was used)
+
+                ``base_url``
+                    ``request.META.get('SCRIPT_NAME', '')``
+        """
         path = self.path_from_request(request)
         section = self.get_section(request, path)
         base_url = self.base_url_from_request(request)
