@@ -8,8 +8,13 @@ regexes = {
 
 class RedirectAddress(object):
     """
-        Helper to determine where to redirect to
-        Given a request and address and some other options
+        Helper to determine where to redirect to.
+
+        :param request: Object representing current Django request.
+        :param address: String representing the address to modify into a redirect url
+        :param relative: If we should be redirecting relative to the current page we're on
+        :param carry_get: If we should use the GET parameters from the current request in our redirect
+        :param ignore_get: List of GET parameters that should be ignored if carry_get is True
     """
     def __init__(self, request, address, relative=True, carry_get=False, ignore_get=None):
         self.request = request
@@ -24,15 +29,18 @@ class RedirectAddress(object):
 
     @property
     def modified(self):
-        """Return modified version of unicode(self.address)"""
+        """Returns the result of ``self.modify(unicode(self.address))``"""
         return self.modify(unicode(self.address))
 
     def modify(self, address):
         """
-            Determine address to redirect to
-            * Join address with either base_url or request.path as necessary
-            * Make sure address has no multiple slashes
-            * And has GET params if required
+            Return a modified version of the address passed in as the redirect url.
+
+            Uses the following methods in a pipeline of sorts (in this order):
+
+            * :py:meth:`joined_address`
+            * :py:meth:`strip_multi_slashes`
+            * :py:meth:`add_get_params`
         """
         address = self.joined_address(address)
         address = self.strip_multi_slashes(address)
@@ -47,8 +55,9 @@ class RedirectAddress(object):
     @property
     def base_url(self):
         """
-            Get base url from request.state
-            Or from request.META if request has no state
+            Get base url from request.state if request has an attached ``state``.
+
+            Otherwise, return ``request.META.get('SCRIPT_NAME', '')``
         """
         if hasattr(self.request, 'state'):
             return self.request.state.base_url
@@ -58,9 +67,11 @@ class RedirectAddress(object):
     @property
     def params(self):
         """
-            Return dictionary of key value for GET params from request
-            If not any ignoreable keys then just return request.GET
-            Otherwise return dict with everything in request.GET except things in ignoreable
+            Return dictionary of key value for GET params from ``self.request``.
+
+            If not ``self.ignore_get`` then just return ``request.GET``
+
+            Otherwise, return ``request.GET`` minus any values whose key is in ``self.ignore_get``
         """
         if not self.ignore_get:
             return self.request.GET
@@ -85,8 +96,10 @@ class RedirectAddress(object):
 
     def add_get_params(self, address):
         """
-            If carry_get is true then add get params from the request
-            Otherwise just return address as is
+            If ``self.carry_get`` is False, then just return the address as is.
+
+            Otherwise, urlencode the result of :py:attr:`params` and
+            return a string that joins address and the parameters.
         """
         if not self.carry_get:
             return address
@@ -96,9 +109,11 @@ class RedirectAddress(object):
 
     def joined_address(self, address):
         """
-            If address is a root address then join with base_url
-            If self.redirect then get address releative to the path of the request
-            Otherwise just return address
+            If address is a :py:meth:`root_url`, then :py:meth:`join <url_join>` the address with base_url.
+
+            Otherwise, if ``self.relative``, then :py:meth:`join <url_join>` the address with ``self.request.path``
+
+            If the address is not a root url and ``self.relative`` is False, then return as is
         """
         if self.root_url(address):
             address = self.url_join(self.base_url, address)
@@ -109,7 +124,7 @@ class RedirectAddress(object):
         return address
 
     def url_join(self, a, b):
-        """Helper to join two urls"""
+        """Helper to join two urls such that there is only one ``/`` between them."""
         if not a or not b:
             return '%s%s' % (a, b)
         elif b[0] == '/' or a[-1] == '/':
