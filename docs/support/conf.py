@@ -9,23 +9,22 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.settings'
 
 # Add _ext and support folders to sys.path
 this_dir = os.path.abspath(os.path.dirname(__file__))
-parent_dir = os.path.join(this_dir, '..')
+docs_dir = os.path.join(this_dir, '..', 'docs')
+project_dir = os.path.join(this_dir, '..', '..')
 
 ext_dir = os.path.join(this_dir, 'ext')
 build_dir = os.path.join(this_dir, "build")
 theme_dir = os.path.join(this_dir, "theme")
+rtd_build_dir = os.path.join(docs_dir, '_build')
 
-sys.path.extend([this_dir, ext_dir, parent_dir])
+sys.path.extend([this_dir, ext_dir, project_dir])
 
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'nav']
 html_theme_path = [theme_dir, cloud_sptheme.get_theme_dir()]
-exclude_patterns = [build_dir]
+exclude_patterns = [build_dir, rtd_build_dir]
 
 master_doc = 'index'
 source_suffix = '.rst'
 
 html_theme = 'navcloud'
 pygments_style = 'pastie'
-
-# Add options specific to this project
-execfile(os.path.join(this_dir, '../conf.py'), globals(), locals())

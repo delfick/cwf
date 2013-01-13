@@ -15,4 +15,4 @@ if [[ $1 = "--clean" ]]; then
     rm -rf _build
 fi
 
-sphinx-build -b html -c ./support -d _build/doctrees docs _build/html
+sphinx-build -b html -c . -d _build/doctrees docs _build/html
