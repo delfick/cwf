@@ -19,6 +19,7 @@ setup(
         ]
 
     # metadata for upload to PyPI
+    , url = "https://cwf.readthedocs.org"
     , author = "Stephen Moore"
     , author_email = "stephen@delfick.com"
     , description = "Library that sits between django and a website"
