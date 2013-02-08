@@ -30,7 +30,7 @@ class LocalOnlyView(View):
         """
         ip = request.META.get('REMOTE_ADDR')
         if ip != '127.0.0.1':
-            self.raise404()
+            self.renderer.raise404()
         return super(LocalOnlyView, self).execute(target, request, args, kwargs)
 
 class JSView(View):
