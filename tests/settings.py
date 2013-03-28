@@ -58,3 +58,6 @@ TEMPLATE_DIRS = (
 	  os.path.join(this_dir, 'templates')
 	, os.path.join(this_dir, '..', 'cwf', 'templates')
     )
+
+SECRET_KEY = 'supersecret'
+
