@@ -265,29 +265,31 @@ class Options(object):
 
     def redirect_view(self, redirect):
         '''
-            Return function to be used for redirection
+            Return view to be used for redirection
             If url is relative, it will make it absolute by joining with request.path
             If no url, a 404 will be raised
         '''
-        from django.views.generic.simple import redirect_to
+        from django.views.generic import RedirectView
         from django.http import Http404
 
-        def redirector(request, redirect=redirect, **kwargs):
-            url = redirect
-            if callable(redirect):
-                url = redirect(request)
+        class Redirector(RedirectView):
+            """Our customization on the redirect view"""
+            def get_redirect_url(self, **kwargs):
+                url = self.url
+                if callable(url):
+                    url = url(self.request)
 
-            if url is None:
-                raise Http404
+                if url is None:
+                    raise Http404
 
-            if not url.startswith('/'):
-                url = '%s%s' % (request.path, url)
-                url = regexes['multiSlash'].sub('/', url)
+                if not url.startswith('/'):
+                    url = '%s%s' % (self.request.path, url)
+                    url = regexes['multiSlash'].sub('/', url)
 
-            return redirect_to(request, url)
+                return url
 
         # Return view that redirects, and extra_context
-        return redirector, self.extra_context
+        return Redirector.as_view(url=redirect), self.extra_context
 
     def get_view_kls(self):
         '''Determine view kls by looking at module and kls'''

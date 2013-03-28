@@ -384,9 +384,13 @@ describe "Options":
 
         describe "returned callable":
             before_each:
-                self.request = fudge.Fake("request")
+                self.request = fudge.Fake("request").has_attr(method="GET")
                 self.redirect = fudge.Fake("redirect")
                 self.options = Options()
+
+            def assertRedirectsTo(self, redirect, destination):
+                redirect.status_code |should| equal_to(301)
+                redirect.get('Location') |should| equal_to(destination)
 
             @fudge.test
             it "raises 404 if redirect is None":
@@ -401,40 +405,30 @@ describe "Options":
                 caller = lambda : redirector(self.request)
                 Http404 |should| be_thrown_by(caller)
 
-            @fudge.patch("django.views.generic.simple.redirect_to")
-            it "uses self.redirect_to with url if it starts with /", fake_redirect_to:
-                url = fudge.Fake("url").expects("startswith").with_args("/").returns(True)
+            @fudge.test
+            it "uses self.redirect with url if it starts with /":
+                url = '/somewhere/nice'
                 result = fudge.Fake("result")
                 self.redirect.expects_call().with_args(self.request).returns(url)
 
-                (fake_redirect_to.expects_call()
-                    .with_args(self.request, url).returns(result)
-                    .next_call().with_args(self.request, '/stuff/asdf').returns(result)
-                    )
-
                 redirector, _ = self.options.redirect_view(self.redirect)
-                redirector(self.request) |should| be(result)
+                self.assertRedirectsTo(redirector(self.request), url)
 
                 redirector2, _ = self.options.redirect_view('/stuff/asdf')
-                redirector2(self.request) |should| be(result)
+                self.assertRedirectsTo(redirector2(self.request), '/stuff/asdf')
 
-            @fudge.patch("django.views.generic.simple.redirect_to")
-            it "joins with request.path and removes multiple slashes if not starts with /", fake_redirect_to:
+            @fudge.test
+            it "joins with request.path and removes multiple slashes if not starts with /":
                 result = fudge.Fake("result")
                 self.redirect.expects_call().with_args(self.request).returns('one/two')
 
-                (fake_redirect_to.expects_call()
-                    .with_args(self.request, '/asdf/hla/one/two').returns(result)
-                    .next_call().with_args(self.request, '/asdf/hla/stuff/asdf').returns(result)
-                    )
-
                 redirector, _ = self.options.redirect_view(self.redirect)
                 self.request.path = '/asdf/hla/'
-                redirector(self.request) |should| be(result)
+                self.assertRedirectsTo(redirector(self.request), '/asdf/hla/one/two')
 
                 redirector2, _ = self.options.redirect_view('stuff/asdf')
                 self.request.path = '/asdf/hla/'
-                redirector2(self.request) |should| be(result)
+                self.assertRedirectsTo(redirector2(self.request), '/asdf/hla/stuff/asdf')
 
         describe "Getting view kls":
             before_each:
