@@ -47,7 +47,7 @@ class ButtonWrap(object):
         if user.is_superuser:
             return True
 
-        if self.needs_super_user:
+        if self.need_super_user:
             # Only get here if not super user
             return False
 

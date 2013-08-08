@@ -134,16 +134,16 @@ describe "ButtonWrap":
                 ]
 
             self.request.has_attr(user=user)
-            for needs_auth, needs_super_user in spec:
+            for needs_auth, need_super_user in spec:
                 self.wrapper.needs_auth = needs_auth
-                self.wrapper.needs_super_user = needs_super_user
+                self.wrapper.need_super_user = need_super_user
                 self.wrapper.has_permissions |should| be(True)
 
         @fudge.test
         it "returns False if wrapper needs super user and request.user is not a superuser":
             user = fudge.Fake("user").has_attr(is_superuser=False)
             self.request.has_attr(user=user)
-            self.wrapper.needs_super_user = True
+            self.wrapper.need_super_user = True
             self.wrapper.has_permissions |should| be(False)
 
         @fudge.test
@@ -152,7 +152,7 @@ describe "ButtonWrap":
             self.request.has_attr(user=user)
 
             self.wrapper.needs_auth = False
-            self.wrapper.needs_super_user = False
+            self.wrapper.need_super_user = False
             self.wrapper.has_permissions |should| be(True)
 
         @fudge.test
@@ -161,7 +161,7 @@ describe "ButtonWrap":
             self.request.has_attr(user=user)
 
             self.wrapper.needs_auth = False
-            self.wrapper.needs_super_user = True
+            self.wrapper.need_super_user = True
             self.wrapper.has_permissions |should| be(False)
 
         @fudge.test
@@ -174,7 +174,7 @@ describe "ButtonWrap":
             self.fake_has_auth.expects_call().with_args(user, needs_auth).returns(result)
 
             self.wrapper.needs_auth = needs_auth
-            self.wrapper.needs_super_user = False
+            self.wrapper.need_super_user = False
             self.wrapper.has_permissions |should| be(result)
 
     describe "Determining if user has specified auth":
