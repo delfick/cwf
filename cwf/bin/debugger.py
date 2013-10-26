@@ -4,7 +4,6 @@ from django.views import debug
 from paste.debug.prints import PrintDebugMiddleware
 from werkzeug import run_simple
 
-import sys
 import os
 
 class Debugger(object):
