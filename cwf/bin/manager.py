@@ -7,7 +7,7 @@ def setup_project(project, expected=False, **kwargs):
     project_setup = None
     try:
         imported = __import__(project, globals(), locals(), ['project_setup'], -1)
-        project_setup = getattr(imported, 'project_setup')
+        project_setup = getattr(imported, 'project_setup', None)
     except ImportError:
         if expected:
             raise
