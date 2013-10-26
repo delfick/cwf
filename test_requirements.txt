@@ -1,5 +1,5 @@
 nose
-noseOfYeti
+noseOfYeti>=1.4.7
 fudge
 django_nose
 pinocchio

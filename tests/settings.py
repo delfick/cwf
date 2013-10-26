@@ -41,6 +41,8 @@ NOSE_ARGS = [
     , '--noy-ignore-kls=TransactionTestCase'
     , '--noy-default-kls=TestCase'
     , '--noy-extra-import=from django.test import TestCase'
+    , '--noy-with-default-imports'
+    , '--noy-with-should-dsl'
     ]
 
 ########################
