@@ -18,3 +18,16 @@ Documentation can be found on readthedocs: https://cwf.readthedocs.org
 Install from pypi::
 
     pip install cwf
+
+Changelog
+---------
+
+    1.1 - 26th October 2013
+        - Updated noseOfYeti
+        - cwf-debugger now doesn't fail on projects without a project_setup
+        - Update to work with newer Django
+        - Minor typo
+
+    1.0 - 13th January 2013
+        - First public release after many years and a complete rewrite
+
