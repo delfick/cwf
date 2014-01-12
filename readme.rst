@@ -22,6 +22,9 @@ Install from pypi::
 Changelog
 ---------
 
+    1.1.1 - 12th January 2014
+        - Make cwf-debugger tell you about https://github.com/mitsuhiko/werkzeug/issues/220
+
     1.1 - 26th October 2013
         - Updated noseOfYeti
         - cwf-debugger now doesn't fail on projects without a project_setup

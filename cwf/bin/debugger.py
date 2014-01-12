@@ -30,9 +30,17 @@ class Debugger(object):
             self.setup_500()
             self.setup_path(self.project)
         app = self.setup_app()
-        run_simple(self.host, self.port, app
-            , use_debugger=True, use_reloader=True, setup_func=setup_func
-            )
+        try:
+            run_simple(self.host, self.port, app
+                , use_debugger=True, use_reloader=True, setup_func=setup_func
+                )
+        except TypeError as error:
+            if error.message == "run_simple() got an unexpected keyword argument 'setup_func'":
+                import traceback
+                import sys
+                traceback.print_exc()
+                sys.exit("Please support https://github.com/mitsuhiko/werkzeug/issues/220")
+            raise
 
     ########################
     ###   SETUP
