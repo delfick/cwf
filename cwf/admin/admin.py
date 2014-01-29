@@ -1,5 +1,8 @@
-from django.conf.urls.defaults import patterns, url
-from django.utils.functional import update_wrapper
+try:
+    from django.conf.urls.defaults import patterns, url
+except ImportError:
+    from django.conf.urls import patterns, url
+
 from django.utils.translation import ugettext as _
 from django.utils.encoding import force_unicode
 from django.shortcuts import get_object_or_404
@@ -64,7 +67,7 @@ class ButtonPatterns(object):
         view = self.button_view
         def wrapper(*args, **kwargs):
             return self.admin_view(view)(*args, **kwargs)
-        return update_wrapper(wrapper, view)
+        return wraps(view)(wrapper)
 
     def button_pattern(self, button):
         """Return pattern for this button"""

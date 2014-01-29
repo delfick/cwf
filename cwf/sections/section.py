@@ -1,4 +1,8 @@
-from django.conf.urls.defaults import patterns as django_patterns
+try:
+    from django.conf.urls.defaults import patterns as django_patterns
+except ImportError:
+    from django.conf.urls import patterns as django_patterns
+
 from django.http import Http404
 from functools import wraps
 
