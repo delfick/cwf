@@ -1,6 +1,7 @@
 #!/usr/bin/evn python
 
-import os, sys
+import sys
+import os
 
 def setup_project(project, expected=False, **kwargs):
     """If project has a project_setup function, then execute it"""
@@ -27,9 +28,6 @@ def manager(project):
         This function also accepts a function, that is given the name of your project.
             The function should then return a list of any extra paths to give to sys.path
     """
-    import sys
-    import os
-
     # Find the project and set DJANGO_SETTINGS_MODULE
     os.environ['DJANGO_SETTINGS_MODULE'] = '{0}.settings'.format(project)
     setup_project(project)
