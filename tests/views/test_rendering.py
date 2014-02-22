@@ -50,7 +50,7 @@ describe TestCase, "Rendering helper":
 
             # Our result is a HttpResponse object
             result = fudge.Fake("result")
-            fakeHttpResponse.expects_call().with_args(render, mimetype=self.mime).returns(result)
+            fakeHttpResponse.expects_call().with_args(render, content_type=self.mime).returns(result)
 
             self.helper.render(self.request, self.template, extra=self.extra, mime=self.mime) |should| be(result)
 
@@ -73,7 +73,7 @@ describe TestCase, "Rendering helper":
                 )
 
             # Our result is a HttpResponse object
-            fakeHttpResponse.expects_call().with_args(modified, mimetype=self.mime).returns(result)
+            fakeHttpResponse.expects_call().with_args(modified, content_type=self.mime).returns(result)
 
             self.helper.render(self.request, self.template
                 , extra=self.extra, mime=self.mime, modify=modify
@@ -123,28 +123,28 @@ describe TestCase, "Rendering helper":
 
     describe "Shortcut to render xml":
         @fudge.patch("cwf.views.rendering.HttpResponse")
-        it "returns HttpResponse with application/xml mimetype", fakeHttpResponse:
+        it "returns HttpResponse with application/xml content_type", fakeHttpResponse:
             data = fudge.Fake("data")
             result = fudge.Fake("result")
-            fakeHttpResponse.expects_call().with_args(data, mimetype="application/xml").returns(result)
+            fakeHttpResponse.expects_call().with_args(data, content_type="application/xml").returns(result)
             self.helper.xml(data) |should| be(result)
 
     describe "shortcut to render json":
         @fudge.patch("cwf.views.rendering.HttpResponse", "json.dumps")
-        it "returns HttpResponse with application/javascript mimetype after converting data to json string", fakeHttpResponse, fake_dumps:
+        it "returns HttpResponse with application/javascript content_type after converting data to json string", fakeHttpResponse, fake_dumps:
             data = fudge.Fake("data")
             json = fudge.Fake("json")
             fake_dumps.expects_call().with_args(data).returns(json)
 
             result = fudge.Fake("result")
-            fakeHttpResponse.expects_call().with_args(json, mimetype="application/javascript").returns(result)
+            fakeHttpResponse.expects_call().with_args(json, content_type="application/javascript").returns(result)
             self.helper.json(data) |should| be(result)
 
         @fudge.patch("cwf.views.rendering.HttpResponse", "json.dumps")
         it "assumes data is already json if passed in as a string", fakeHttpResponse, fake_dumps:
             json = '{"a":"b"}'
             result = fudge.Fake("result")
-            fakeHttpResponse.expects_call().with_args(json, mimetype="application/javascript").returns(result)
+            fakeHttpResponse.expects_call().with_args(json, content_type="application/javascript").returns(result)
             self.helper.json(json) |should| be(result)
 
     describe "Getting a redirect":

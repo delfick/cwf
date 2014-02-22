@@ -34,7 +34,7 @@ class Renderer(object):
         if modify and callable(modify):
             render = modify(render)
 
-        return HttpResponse(render, mimetype=mime)
+        return HttpResponse(render, content_type=mime)
 
     def request_context(self, request, extra):
         """
@@ -66,14 +66,14 @@ class Renderer(object):
         return HttpResponse(*args, **kwargs)
 
     def xml(self, data):
-        """Return HttpResponse object with data and a 'application/xml' mimetype"""
-        return HttpResponse(data, mimetype="application/xml")
+        """Return HttpResponse object with data and a 'application/xml' content_type"""
+        return HttpResponse(data, content_type="application/xml")
 
     def json(self, data):
-        """Return HttpResponse object with data dumped as a json string and a 'application/javascript' mimetype"""
+        """Return HttpResponse object with data dumped as a json string and a 'application/javascript' content_type"""
         if type(data) not in (str, unicode):
             data = json.dumps(data)
-        return HttpResponse(data, mimetype='application/javascript')
+        return HttpResponse(data, content_type='application/javascript')
 
     def redirect(self, request, address, *args, **kwargs):
         """Return a HttpResponseRedirect object"""
