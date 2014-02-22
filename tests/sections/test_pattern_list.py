@@ -1,10 +1,17 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should
+from django.test import TestCase
+
 from cwf.sections.pattern_list import PatternList
 import fudge
 import re
 
-describe "PatternList":
+# Make the errors go away
+be, equal_to, be_empty = None, None, None
+
+describe TestCase, "PatternList":
     describe "Initialization":
         before_each:
             self.stop_at = fudge.Fake("stop_at")

@@ -1,5 +1,9 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp, noy_sup_tearDown
+from should_dsl import should
+from django.test import TestCase
+
 from cwf.sections.section_master import (
       memoized, memoizer, make_memoizer
     , SectionMaster, Info
@@ -7,7 +11,10 @@ from cwf.sections.section_master import (
 
 import fudge
 
-describe "Memoize logic":
+# Make the errors go away
+be, equal_to, have = None, None, None
+
+describe TestCase, "Memoize logic":
     describe "memoized":
         before_each:
             self.typ = fudge.Fake("typ")

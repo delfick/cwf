@@ -1,15 +1,20 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.sections.dispatch import Dispatcher, dispatcher
 
-from django.http import Http404
 import fudge
 
-describe "dispatcher":
+# Make the errors go away
+be, equal_to, be_empty, respond_to = None, None, None, None
+
+describe TestCase, "Dispatcher":
     it "is an instance of Dispatcher":
         type(dispatcher) |should| be(Dispatcher)
 
-describe "Dispatcher":
     describe "Getting view":
         before_each:
             self.view = fudge.Fake("view")
@@ -89,6 +94,7 @@ describe "Dispatcher":
 
             self.dispatcher |should_not| respond_to("view")
             self.dispatcher |should_not| respond_to("target")
-            result = self.dispatcher(self.request, self.kls, self.target)
+
+            self.dispatcher(self.request, self.kls, self.target)
             self.dispatcher.view |should| be(self.view)
             self.dispatcher.target |should| be(self.target)

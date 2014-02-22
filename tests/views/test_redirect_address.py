@@ -1,10 +1,17 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should
+from django.test import TestCase
+
 from cwf.views.redirect_address import RedirectAddress
 
 import fudge
 
-describe "RedirectAddress":
+# Make the errors go away
+be, equal_to = None, None
+
+describe TestCase, "RedirectAddress":
     before_each:
         self.request = fudge.Fake("request")
         self.address = fudge.Fake("address")

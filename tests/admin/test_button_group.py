@@ -1,8 +1,14 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should
+
 from cwf.admin.buttons import ButtonGroup
 
 import fudge
+
+# Make the errors go away
+be = None
 
 describe "Button Group":
     before_each:

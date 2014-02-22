@@ -1,10 +1,17 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.admin.buttons import ButtonBase, ButtonProperties
 
 import fudge
 
-describe "Button properties":
+# Make the errors go away
+be, respond_to, equal_to, contain = None, None, None, None
+
+describe TestCase, "Button properties":
     it "makes sure save_on_click is False if for_all is True":
         properties = ButtonProperties({'for_all':True})
         properties._kwargs |should| equal_to({'for_all':True, 'save_on_click':False})
@@ -68,7 +75,7 @@ describe "Button properties":
 
         properties._kwargs |should| equal_to(dict(one=one, two=two))
 
-describe "Button Base":
+describe TestCase, "Button Base":
     before_each:
         self.button = ButtonBase()
 

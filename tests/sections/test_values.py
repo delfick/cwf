@@ -1,11 +1,18 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.sections.errors import ConfigurationError
 from cwf.sections.values import Values
 
 import fudge
 
-describe "Values":
+# Make the errors go away
+be, equal_to, be_thrown_by, be_kind_of = None, None, None, None
+
+describe TestCase, "Values":
     describe "initialisation":
         it "doesn't complain with default values":
             Values()

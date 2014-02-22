@@ -1,5 +1,9 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should
+from django.test import TestCase
+
 from cwf.admin.buttons import Button, ButtonGroup
 from cwf.admin.admin import ButtonPatterns
 
@@ -7,7 +11,10 @@ from fudge.inspector import arg as fudge_arg
 import fudge
 import re
 
-describe "Button Patterns":
+# Make the errors go away
+be, equal_to = None, None
+
+describe TestCase, "Button Patterns":
     before_each:
         self.model = fudge.Fake("model")
         self.buttons = fudge.Fake("buttons")
@@ -120,32 +127,33 @@ describe "Button Patterns":
             self.patterns.button_name(button) |should| equal_to(expected)
 
     describe "Getting function for button view":
-        @fudge.patch("cwf.admin.admin.update_wrapper")
-        it "wraps up button_view in admin_view", fake_update_wrapper:
+        @fudge.patch("cwf.admin.admin.wraps")
+        it "Creates a function that pretends to be self.button_view but wraps view in admin_view", fake_wraps:
             a = fudge.Fake("a")
             b = fudge.Fake("b")
             c = fudge.Fake("c")
             d = fudge.Fake("d")
             result = fudge.Fake("result")
-            wrapped = fudge.Fake("wrapped")
-            button_func = fudge.Fake("button_func")
+            final_wrapped = fudge.Fake("final_wrapped")
 
-            # Wrapped should call the function that is returned
-            # From decorating button_view with admiN_view
-            self.admin_view.expects_call().with_args(self.button_view).returns(wrapped)
-            wrapped.expects_call().with_args(a, b, c=c, d=d).returns(result)
+            # Wraps makes the returned function pretend to be button_view
+            def pretend_to_wrap(view):
+                """Pretend to call wraps"""
+                def wrapped(func):
+                    """Our wrapper just returns the function it was given"""
+                    return func
+                return wrapped
+            fake_wraps.expects_call().with_args(self.button_view).calls(pretend_to_wrap)
 
-            def check_wrapper(wrapper):
-                """Make sure wrapped does what we want it to"""
-                resolved = wrapper(a, b, c=c, d=d)
-                resolved |should| be(result)
-                return resolved is result
-            (fake_update_wrapper.expects_call()
-                .with_args(fudge_arg.passes_test(check_wrapper), self.button_view).returns(button_func)
-                )
+            # Admin_view gets called with button_view to produce something that is called
+            self.admin_view.expects_call().with_args(self.button_view).returns(final_wrapped)
+
+            # We expect final_wrapped to be called with particular args and kwargs
+            final_wrapped.expects_call().with_args(a, b, c=c, d=d).returns(result)
 
             # Should get back button_func from updating wrapper with button_view
-            self.patterns.button_func() |should| be(button_func)
+            # and calling it should eventually get to our final_wrapped and get us the result
+            self.patterns.button_func()(a, b, c=c, d=d) |should| be(result)
 
     describe "Getting pattern for the button":
         before_each:

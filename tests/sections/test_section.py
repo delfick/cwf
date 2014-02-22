@@ -1,5 +1,9 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.sections.errors import ConfigurationError
 from cwf.sections.section import Section, Item
 
@@ -7,7 +11,10 @@ from contextlib import contextmanager
 from django.http import Http404
 import fudge
 
-describe "Section":
+# Make the errors go away
+be, equal_to, be_empty, respond_to = None, None, None, None
+
+describe TestCase, "Section":
     describe "Initialisation":
         it "takes in the url, name and parent it is given":
             url = fudge.Fake("url")
@@ -862,7 +869,6 @@ describe "Section":
         @fudge.test
         it "it can't display if neither permissions nor options.can_display":
             user = fudge.Fake("user")
-            has_permissions = fudge.Fake("has_permissions")
             propogate_display = fudge.Fake("propogate_display")
 
             self.request.user = user

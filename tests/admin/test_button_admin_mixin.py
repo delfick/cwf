@@ -1,11 +1,18 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.admin.admin import ButtonAdminMixin
 from cwf.admin.buttons import Button
 
 import fudge
 
-describe "ButtonAdminMixin":
+# Make the errors go away
+be, respond_to, equal_to = None, None, None
+
+describe TestCase, "ButtonAdminMixin":
     before_each:
         self.model = fudge.Fake("model")
         self.mixin = ButtonAdminMixin()

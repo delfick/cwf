@@ -1,9 +1,13 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from django.test import TestCase
+
 from cwf.sections.section import Section
 from cwf.sections.values import Values
 from cwf.views.menu import Menu
 
+from django.http import HttpResponse
 import fudge
 
 # Function to make a view that returns response
@@ -83,7 +87,7 @@ sect4_4_2 = sect4_4.add('blah').configure(target=make_view("/4/more/blah/"))
 ###   TESTS
 ########################
 
-describe "Rendering the menu":
+describe TestCase, "Rendering the menu":
     before_each:
         self.section = section
         self.request = fudge.Fake("request")
@@ -160,11 +164,11 @@ describe "Rendering the menu":
             site = Section(name='site')
 
             blah = site.add('blah')
-            meh = blah.first().configure(alias='latest')
+            blah.first().configure(alias='latest')
 
             b = blah.add('meh')
             b2 = b.add('\d{4}').configure(match='year', values=Values([2010, 2009], as_set=False))
-            h = b2.add('\d+').configure(match='asdf', values=Values([1]))
+            b2.add('\d+').configure(match='asdf', values=Values([1]))
 
             self.lookat_side(site, '/blah/meh/2010/1/', """
                 <ul>

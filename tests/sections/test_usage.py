@@ -1,10 +1,15 @@
 # coding: spec
 
+from should_dsl import should
+from django.test import TestCase
+
 from noseOfYeti.tokeniser.containers import acceptable
-from django.conf.urls import patterns
 from django.http import HttpResponse
 
 from cwf.sections.section import Section
+
+# Make the errors go away
+equal_to = None
 
 # Function to make a view that returns response
 def make_view(response):

@@ -1,11 +1,18 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.admin.buttons import ButtonWrap
 
 from contextlib import contextmanager
 import fudge
 
-describe "ButtonWrap":
+# Make the errors go away
+be, respond_to = None, None
+
+describe TestCase, "ButtonWrap":
     before_each:
         self.button = fudge.Fake("button")
         self.request = fudge.Fake("request")
@@ -189,7 +196,6 @@ describe "ButtonWrap":
         @fudge.test
         it "returns wheter user.has_perm(auth) if auth is not a list or tuple":
             auth = fudge.Fake("auth")
-            authenticated = fudge.Fake("authenticated")
 
             user = (fudge.Fake("user").expects("has_perm")
                 .with_args(auth).returns(True)

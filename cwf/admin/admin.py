@@ -65,9 +65,10 @@ class ButtonPatterns(object):
     def button_func(self):
         """Wrapper to make a view for the button"""
         view = self.button_view
+        @wraps(view)
         def wrapper(*args, **kwargs):
             return self.admin_view(view)(*args, **kwargs)
-        return wraps(view)(wrapper)
+        return wrapper
 
     def button_pattern(self, button):
         """Return pattern for this button"""

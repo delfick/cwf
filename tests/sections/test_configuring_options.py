@@ -1,11 +1,18 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.sections.errors import ConfigurationError
 from cwf.sections.options import Options
 
 import fudge
 
-describe "Configuring Options":
+# Make the errors go away
+be, equal_to, include, throw = None, None, None, None
+
+describe TestCase, "Configuring Options":
     before_each:
         self.defaults = (
             # Conditionals
@@ -87,19 +94,6 @@ describe "Configuring Options":
             before_each:
                 self.fake_setters = fudge.Fake("setters")
                 self.options = type("Options", (Options, ), {'setters' : self.fake_setters})()
-
-            @fudge.test
-            it "looks at self.setters to determine what from kwargs to give to which setter":
-                arg1 = fudge.Fake("arg1")
-                arg2 = fudge.Fake("arg2")
-                arg3 = fudge.Fake("arg3")
-                arg4 = fudge.Fake("arg4")
-
-                setter1 = fudge.Fake("setter1").expects_call().with_args(a=arg1, b=arg2)
-                setter2 = fudge.Fake("setter2").expects_call().with_args(c=arg3, d=arg4)
-
-                self.fake_setters.expects_call().returns([(setter1, ['a', 'b']), (setter2, ['c', 'd'])])
-                self.options.set_everything(a=arg1, b=arg2, c=arg3, d=arg4)
 
             @fudge.test
             it "looks at self.setters to determine what from kwargs to give to which setter":

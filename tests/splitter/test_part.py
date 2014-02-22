@@ -1,11 +1,18 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.splitter.parts import Part
 
 import fudge
 import types
 
-describe "Part":
+# Make the errors go away
+be, equal_to, respond_to, contain = None, None, None, None
+
+describe TestCase, "Part":
     it "gets name, active and kwargs":
         name = fudge.Fake("name")
         active = fudge.Fake("active")

@@ -1,10 +1,17 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should
+from django.test import TestCase
+
 from cwf.splitter.parts import Parts
 
 import fudge
 
-describe "Parts Collection":
+# Make the errors go away
+be, equal_to = None, None
+
+describe TestCase, "Parts Collection":
     before_each:
         self.p1 = fudge.Fake("p1")
         self.p2 = fudge.Fake("p2")
@@ -20,11 +27,9 @@ describe "Parts Collection":
     describe "Getting things":
         before_each:
             self.fake_each_part = fudge.Fake("each_part")
-            self.fake_add_url_defaults = fudge.Fake("add_url_defaults")
 
             self.parts = type("Parts", (Parts, )
                 , { 'each_part' : self.fake_each_part
-                  , 'add_url_defaults' : self.fake_add_url_defaults
                   }
                 )(self.package)
 
@@ -109,24 +114,6 @@ describe "Parts Collection":
 
                 with fudge.patched_context(self.parts, 'site', fake_site):
                     self.parts.urls(self.active_only) |should| equal_to(dict(site=site, urlpatterns=patterns))
-
-            @fudge.test
-            it "adds default url objects from django if include_defaults is True":
-                site = fudge.Fake("site")
-                patterns = fudge.Fake("patterns")
-                defaults = fudge.Fake("defaults")
-
-                fake_site = fudge.Fake("site").expects_call().with_args(self.package, self.active_only).returns(site)
-                site.expects("patterns").returns(patterns)
-
-                def add_defaults(urls):
-                    urls['defaults'] = defaults
-                self.fake_add_url_defaults.expects_call().calls(add_defaults)
-
-                with fudge.patched_context(self.parts, 'site', fake_site):
-                    self.parts.urls(self.active_only, include_defaults=True) |should| equal_to(
-                        dict(site=site, urlpatterns=patterns, defaults=defaults)
-                    )
 
     describe "Getting imported parts":
         before_each:
@@ -247,18 +234,3 @@ describe "Parts Collection":
             fakeSection.expects_call().with_args(self.name).returns(section)
             self.parts.site(self.name, self.active_only) |should| be(site)
 
-    describe "Adding url defaults":
-        @fudge.patch("django.conf.urls.defaults")
-        it "adds all non private things from django.conf.urls.defaults to the provided dictionary", fake_defaults:
-            fake_defaults.a = 'a'
-            fake_defaults.b = 'b'
-            fake_defaults._c = 'c'
-            fake_defaults._d = 'd'
-            fake_defaults.__name__ = 'defaults'
-
-            fake_dir = fudge.Fake("dir").expects_call().with_args(fake_defaults).returns(['a', 'b', '_c', '_d', '__name__'])
-
-            urls = {}
-            with fudge.patched_context("__builtin__", "dir", fake_dir):
-                Parts(self.package).add_url_defaults(urls)
-            urls |should| equal_to(dict(a='a', b='b'))

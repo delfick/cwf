@@ -1,8 +1,14 @@
 # coding: spec
 
+from should_dsl import should
+from django.test import TestCase
+
 from cwf.views.base import DictObj
 
-describe "DictObj":
+# Make the errors go away
+be, equal_to = None, None
+
+describe TestCase, "DictObj":
     it "starts as an empty dictionary":
         d = DictObj()
         d.keys() |should| equal_to([])

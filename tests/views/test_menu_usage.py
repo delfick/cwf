@@ -1,11 +1,16 @@
 # coding: spec
 
+from should_dsl import should
+from django.test import TestCase
+
 from cwf.sections.section import Section
 from cwf.sections.values import Values
 from cwf.views.menu import Menu
 
 from django.http import HttpResponse
-import fudge
+
+# Make the errors go away
+be, equal_to = None, None
 
 # Function to make a view that returns response
 def make_view(response):
@@ -54,7 +59,7 @@ seven_v11 = seven_v1.add('\d+').configure(''
 ###   TESTS
 ########################
 
-describe "Menu":
+describe TestCase, "Menu":
     urls = root.patterns()
 
     def get_info(self, path):

@@ -1,12 +1,19 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should
+from django.test import TestCase
+
 from django.http import Http404
 
 from cwf.views.rendering import Renderer, renderer
 
 import fudge
 
-describe "Rendering helper":
+# Make the errors go away
+be, equal_to = None, None
+
+describe TestCase, "Rendering helper":
     before_each:
         self.helper = renderer
 
@@ -38,7 +45,6 @@ describe "Rendering helper":
             # Loader gives us a template object
             # Which is used to get us the render
             render = fudge.Fake("render")
-            template = fudge.Fake("template")
             template_obj = fudge.Fake("template_obj").expects("render").with_args(ctxt).returns(render)
             fake_loader.expects("get_template").with_args(self.template).returns(template_obj)
 
@@ -56,7 +62,6 @@ describe "Rendering helper":
             # Loader gives us a template object
             # Which is used to get us the render
             render = fudge.Fake("render")
-            template = fudge.Fake("template")
             template_obj = fudge.Fake("template_obj").expects("render").with_args(ctxt).returns(render)
             fake_loader.expects("get_template").with_args(self.template).returns(template_obj)
 

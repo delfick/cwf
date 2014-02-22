@@ -1,12 +1,18 @@
 # coding: spec
 
+from should_dsl import should
+from django.test import TestCase
+
 from cwf.splitter.imports import steal
 import stolen_vars
 
 import itertools
 import fudge
 
-describe "Stealing variables":
+# Make the errors go away
+equal_to = None
+
+describe TestCase, "Stealing variables":
 
     it "should complain if folder, globals or locals isn't supplied":
         value = fudge.Fake("value")

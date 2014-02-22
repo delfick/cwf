@@ -1,16 +1,22 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should
+from django.test import TestCase
+
 from cwf.splitter.imports import FileFaker, steal, inject
 import stolen_vars
 
 import fudge
 import imp
-import sys
 import os
+
+# Make the errors go away
+be, equal_to, be_greater_than = None, None, None
 
 src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'cwf'))
 
-describe "Injecting modules":
+describe TestCase, "Injecting modules":
     def check_cant_import(self, name):
         try:
             __import__(name)
@@ -87,7 +93,7 @@ describe "Injecting modules":
             mod.__name__ |should| equal_to("cwf.hurmph")
             mod.value |should| be(val)
 
-describe "FileFaker":
+describe TestCase, "FileFaker":
     before_each:
         self.names = fudge.Fake("names")
         self.value = fudge.Fake("value")

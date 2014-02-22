@@ -1,10 +1,17 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.admin.admin import ButtonAdmin
 
 import fudge
 
-describe "ButtonAdmin":
+# Make the errors go away
+be, respond_to, equal_to = None, None, None
+
+describe TestCase, "ButtonAdmin":
     before_each:
         self.meta = fudge.Fake("meta")
         self.model = fudge.Fake("model").has_attr(_meta=self.meta)

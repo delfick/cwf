@@ -1,11 +1,18 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.views.rendering import Renderer
 from cwf.views.base import View
 
 import fudge
 
-describe "View":
+# Make the errors go away
+be, equal_to, respond_to = None, None, None
+
+describe TestCase, "View":
     before_each:
         self.view = View()
 
@@ -63,7 +70,7 @@ describe "View":
 
         @fudge.test
         it "returns result as is if not a two item tuple or list":
-            for result in (0, 1, True, False, [], [1], [1, 2, 3], (), (1), (1, 2, 3), lambda:true, fudge.Fake("obj")):
+            for result in (0, 1, True, False, [], [1], [1, 2, 3], (), (1), (1, 2, 3), lambda:True, fudge.Fake("obj")):
                 self.view.rendered_from_result(self.request, result) |should| be(result)
 
         @fudge.test
@@ -242,7 +249,7 @@ describe "View":
 
         it "item is not a string, it is left alone":
             key = fudge.Fake("key")
-            spec = [0, 1, None, True, False, (), (1, ), [], [1], {}, {1:2}, fudge.Fake("obj"), lambda : func]
+            spec = [0, 1, None, True, False, (), (1, ), [], [1], {}, {1:2}, fudge.Fake("obj"), lambda : True]
             for original in spec:
                 self.view.clean_view_kwarg(key, original) |should| be(original)
 

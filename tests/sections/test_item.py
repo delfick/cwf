@@ -1,10 +1,17 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should
+from django.test import TestCase
+
 from cwf.sections.section import Item
 
 import fudge
 
-describe "Item":
+# Make the errors go away
+be = None
+
+describe TestCase, "Item":
     before_each:
         self.section = fudge.Fake('section')
         self.include_as = fudge.Fake('include_as')

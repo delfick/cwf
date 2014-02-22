@@ -1,10 +1,17 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.splitter.website import Website
 
 import fudge
 
-describe "Website":
+# Make the errors go away
+be, equal_to, respond_to = None, None, None
+
+describe TestCase, "Website":
     before_each:
         self.p1 = fudge.Fake("p1")
         self.p2 = fudge.Fake("p2")
@@ -87,7 +94,6 @@ describe "Website":
         @fudge.patch("cwf.splitter.website.Parts")
         it "creates _partconfig if the website doesn't have it", fakeParts:
             config = fudge.Fake("config")
-            other_config = fudge.Fake("other_config")
 
             fakeParts.expects_call().with_args(self.package, self.p1, self.p2).returns(config)
             website = Website(self.package, self.p1, self.p2)

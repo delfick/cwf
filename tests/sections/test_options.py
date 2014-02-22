@@ -1,12 +1,19 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.sections.errors import ConfigurationError
 from cwf.sections.options import Options
 
 from django.http import Http404
 import fudge
 
-describe "Options":
+# Make the errors go away
+be, equal_to, throw, be_thrown_by = None, None, None, None
+
+describe TestCase, "Options":
     describe "Getting result of conditional for a request":
         before_each:
             self.result = fudge.Fake("result")
@@ -303,7 +310,7 @@ describe "Options":
         it "returns None if url_parts is None":
             self.options.string_from_url_parts(None) |should| be(None)
 
-        it "returns None if url_parts is [None]":
+        it "returns None if url_parts is array of [None]":
             self.options.string_from_url_parts([None]) |should| be(None)
 
         it "joins url_parts with / and removes multiple slashes if not None":
@@ -408,7 +415,6 @@ describe "Options":
             @fudge.test
             it "uses self.redirect with url if it starts with /":
                 url = '/somewhere/nice'
-                result = fudge.Fake("result")
                 self.redirect.expects_call().with_args(self.request).returns(url)
 
                 redirector, _ = self.options.redirect_view(self.redirect)
@@ -419,7 +425,6 @@ describe "Options":
 
             @fudge.test
             it "joins with request.path and removes multiple slashes if not starts with /":
-                result = fudge.Fake("result")
                 self.redirect.expects_call().with_args(self.request).returns('one/two')
 
                 redirector, _ = self.options.redirect_view(self.redirect)

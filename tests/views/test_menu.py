@@ -1,10 +1,17 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should
+from django.test import TestCase
+
 from cwf.views.menu import Menu
 
 import fudge
 
-describe "Menu":
+# Make the errors go away
+be, equal_to = None, None
+
+describe TestCase, "Menu":
     before_each:
         self.request = fudge.Fake("request")
         self.section = fudge.Fake("section")

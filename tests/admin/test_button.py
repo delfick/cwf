@@ -1,10 +1,17 @@
 # coding: spec
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from should_dsl import should, should_not
+from django.test import TestCase
+
 from cwf.admin.buttons import Button
 
 import fudge
 
-describe "Button":
+# Make the errors go away
+be, respond_to, equal_to = None, None, None
+
+describe TestCase, "Button":
     before_each:
         self.a = fudge.Fake("a")
         self.b = fudge.Fake("b")
