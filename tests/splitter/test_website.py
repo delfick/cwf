@@ -10,7 +10,6 @@ describe "Website":
         self.p2 = fudge.Fake("p2")
         self.prefix = fudge.Fake("prefix")
         self.package = fudge.Fake("package")
-        self.include_default_urls = fudge.Fake("include_default_urls")
 
     it "takes in package and parts":
         website = Website(self.package, self.p1, self.p2)
@@ -18,15 +17,12 @@ describe "Website":
         website.package |should| be(self.package)
 
         # Default prefix to None
-        # And include_defaults_urls to False
         website.prefix |should| be(None)
-        website.include_default_urls |should| be(False)
 
-    it "takes prefix and include_default_urls from kwargs":
-        website = Website(self.package, prefix=self.prefix, include_default_urls=self.include_default_urls)
+    it "takes prefix from kwargs":
+        website = Website(self.package, prefix=self.prefix)
         website.parts |should| equal_to(())
         website.prefix |should| be(self.prefix)
-        website.include_default_urls |should| be(self.include_default_urls)
 
     describe "Configuring website":
         before_each:
@@ -105,7 +101,7 @@ describe "Website":
             self.website = type("website", (Website, )
                 , { 'config' : self.config
                   }
-                )(self.package, include_default_urls=self.include_default_urls)
+                )(self.package)
 
         describe "Loading admin":
             it "calls load_admin on the config":
@@ -119,9 +115,9 @@ describe "Website":
                 self.website.models |should| be(models)
 
         describe "Getting urls":
-            it "returns a function that calls config.urls with self.include_default_urls":
+            it "returns a function that calls config.urls":
                 urls = fudge.Fake("urls")
-                self.config.expects("urls").with_args(active_only=True, include_defaults=self.include_default_urls).returns(urls)
+                self.config.expects("urls").with_args(active_only=True).returns(urls)
                 url_getter = self.website.urls
                 url_getter() |should| be(urls)
 

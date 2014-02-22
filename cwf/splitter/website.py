@@ -15,7 +15,6 @@ class Website(object):
         self.package = package
 
         self.prefix = kwargs.get("prefix", None)
-        self.include_default_urls = kwargs.get("include_default_urls", False)
 
     def configure(self):
         """
@@ -53,7 +52,7 @@ class Website(object):
     @property
     def urls(self):
         """Return a function to be uses as <package>.<urls>"""
-        return lambda : self.config.urls(active_only=True, include_defaults=self.include_default_urls)
+        return lambda : self.config.urls(active_only=True)
 
     def names_for(self, name):
         """

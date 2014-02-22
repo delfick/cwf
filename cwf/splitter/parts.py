@@ -41,16 +41,13 @@ class Parts(object):
                         result[thing] = getattr(models, thing)
         return result
 
-    def urls(self, active_only=True, include_defaults=False):
+    def urls(self, active_only=True):
         """
             Get a an object that holds the sections from each part
             Along with urlpatterns from this site
-            and optionally everything in django.conf.urls.defaults
         """
         site = self.site(self.package, active_only)
         urls = {'site' : site, 'urlpatterns' : site.patterns()}
-        if include_defaults:
-            self.add_url_defaults(urls)
         return urls
 
     ########################
@@ -89,13 +86,6 @@ class Parts(object):
             if urls and hasattr(urls, 'section'):
                 site.add_child(urls.section, **part.kwargs)
         return site
-
-    def add_url_defaults(self, urls):
-        """Add django.conf.urls.defaults things to a dictionary"""
-        from django.conf.urls import defaults
-        for d in dir(defaults):
-            if not d.startswith("_"):
-                urls[d] = getattr(defaults, d)
 
 ########################
 ###   PART
