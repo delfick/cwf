@@ -22,6 +22,9 @@ Install from pypi::
 Changelog
 ---------
 
+    1.1.2 - 22nd February 2014
+        - Support Django 1.6
+
     1.1.1 - 12th January 2014
         - Make cwf-debugger tell you about https://github.com/mitsuhiko/werkzeug/issues/220
 
