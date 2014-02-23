@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
       name = "cwf"
-    , version = "1.1.2"
+    , version = "1.1.3"
     , packages = ['cwf'] + ['cwf.%s' % pkg for pkg in find_packages('cwf')]
     , include_package_data = True
 

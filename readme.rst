@@ -22,6 +22,9 @@ Install from pypi::
 Changelog
 ---------
 
+    1.1.3 - 22nd February 2014
+        - HttpResponse takes content_type instead of mimetype in new Django
+
     1.1.2 - 22nd February 2014
         - Support Django 1.6
         - Removed some of the magic from the tests
