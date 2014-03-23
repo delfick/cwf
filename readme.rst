@@ -22,6 +22,10 @@ Install from pypi::
 Changelog
 ---------
 
+    1.1.4 - 23rd March 2014
+        - Fix docs to work with new version of cloud_sptheme
+        - Added catch_all option for url patterns
+
     1.1.3 - 22nd February 2014
         - HttpResponse takes content_type instead of mimetype in new Django
 
