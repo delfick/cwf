@@ -11,13 +11,18 @@
  
 @import url("cloud.css");
 
-html {
-    font-size: 76%;
-}
+{# helper for semi-standard css3 keywords, e.g. border-radius #}
+{% macro experimental(keyword, value) %}
+  -moz-{{keyword}}: {{value}};
+  -webkit-{{keyword}}: {{value}};
+  -o-{{keyword}}: {{value}};
+  -ms-{{keyword}}: {{value}};
+  {{keyword}}: {{value}};
+{% endmacro %}
 
-body {
-    font-size: 1.3em!important;
-}
+{% macro border_radius(value) -%}
+  {{experimental("border-radius", value)}}
+{% endmacro %}
 
 .body {
     background-color: #fff!important;
@@ -29,6 +34,20 @@ div.highlight-python pre
 {
     border-top: 1px solid {{theme_bodytrimcolor}};
     border-bottom: 1px solid {{theme_bodytrimcolor}};
+
+    padding: 10px;
+
+    background-color: #fff;
+    border-width: 1px 4px;
+    border-radius: 8px;
+    -moz-border-radius: 8px;
+    -webkit-border-radius: 8px;
+
+    font-family: "Droid Sans Mono", monospace;
+    font-size: 85%;
+    line-height: 133%;
+
+    color: #111111;
 }
 
 ul.menu {
@@ -36,7 +55,7 @@ ul.menu {
     font-size: 1.3em;
     color: {{theme_relbartextcolor}};
     background-color: #6BA81E;
-    padding: 0 0 20px 10px!important;
+    padding: 0 0 1.1em 10px!important;
 
     border-radius: .7em .7em 0 0;
     -moz-border-radius: .7em .7em 0 0;
@@ -101,6 +120,19 @@ div.body h6 { font-size: 100%; background-color: #eeeeee; margin-top: 20px;}
     padding: 0;
     background: #fff;
 }
+
+div.related a {
+    {{ border_radius("0") }}
+    text-shadow: none;
+    font-weight: normal;
+}
+
+ul.menu {
+  box-sizing: content-box;
+  -moz-box-sizing: content-box;
+  -webkit-box-sizing: content-box;
+}
+
 
 /* compiled css3-github-ribbon.styl (https://github.com/dciccale/css3-github-ribbon) */
 .github-ribbon{background-color:#121621;top:3.2em;right:-3.7em;-webkit-transform:rotate(45deg);-moz-transform:rotate(45deg);-ms-transform:rotate(45deg);-o-transform:rotate(45deg);transform:rotate(45deg);-webkit-box-shadow:0 0 0 1px #1d212e inset,0 0 2px 1px #fff inset,0 0 1em #888;-moz-box-shadow:0 0 0 1px #1d212e inset,0 0 2px 1px #fff inset,0 0 1em #888;-ms-box-shadow:0 0 0 1px #1d212e inset,0 0 2px 1px #fff inset,0 0 1em #888;-o-box-shadow:0 0 0 1px #1d212e inset,0 0 2px 1px #fff inset,0 0 1em #888;box-shadow:0 0 0 1px #1d212e inset,0 0 2px 1px #fff inset,0 0 1em #888;color:rgba(255,255,255,0.9);display:block;padding:.6em 3.5em;position:fixed;font:bold .82em sans-serif;text-align:center;text-decoration:none;text-shadow:1px -1px 8px rgba(0,0,0,0.6);-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;-o-user-select:none;user-select:none}
