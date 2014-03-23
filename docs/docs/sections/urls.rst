@@ -29,6 +29,9 @@ then it is replaced with '^$'.
 Otherwise, all duplicate slashes are remove
 , it is prefixed with a '^' and forced to end with '/$'.
 
+If you set ``catch_all`` to False, then it won't append the url with
+a ``/`` or ``$``
+
 .. _section_configure_url:
 
 Section url options

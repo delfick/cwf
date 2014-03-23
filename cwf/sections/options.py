@@ -33,6 +33,9 @@ class Options(object):
         self.exists = True
         self.display = True
 
+        # Flag for the pattern generation
+        self.catch_all = False
+
         # Some settings for determining view
         # kls: The view class. Can be the kls itself or a string name of the kls
         # module: Where to find the kls if the kls is specified as a string. (can be object or location)
@@ -71,7 +74,7 @@ class Options(object):
 
     def setters(self):
         '''Determine each setter method and required args for that method'''
-        for method in ('set_conditionals', 'set_view', 'set_urlname', 'set_menu'):
+        for method in ('set_conditionals', 'set_view', 'set_urlname', 'set_menu', 'set_urlpattern'):
             func = getattr(self, method)
             required = list(arg for arg in inspect.getargspec(func).args if arg != 'self')
             yield func, required
@@ -177,6 +180,13 @@ class Options(object):
             if val is not Empty:
                 setattr(self, name, val)
 
+    def set_urlpattern(self, catch_all=Empty):
+        """Set options for url pattern generation"""
+        vals = (('catch_all', catch_all), )
+        for name, val in vals:
+            if val is not Empty:
+                setattr(self, name, val)
+
     ########################
     ###   URL PATTERN
     ########################
@@ -201,13 +211,16 @@ class Options(object):
         if pattern and pattern[0] == '/':
             pattern = pattern[1:]
 
-        if pattern == '':
-            pattern = '^$'
-        else:
-            pattern = "^%s" % pattern
+        if not self.catch_all:
+            if pattern == '':
+                pattern = '^$'
+            elif pattern[-1] != '/':
+                pattern = '^%s/$' % pattern
+        elif pattern == '':
+            pattern = '^.*'
 
-            if pattern[-1] != '/':
-                pattern = "%s/$" % pattern
+        if not pattern.startswith("^"):
+            pattern = '^%s' % pattern
 
         return pattern
 

@@ -32,6 +32,9 @@ describe TestCase, "Configuring Options":
             , ('app_name', None)
             , ('namespace', None)
 
+            # Pattern stuff
+            , ('catch_all', False)
+
             # menu stuff
             , ('alias',  None)
             , ('match',  None)
@@ -65,6 +68,7 @@ describe TestCase, "Configuring Options":
                   Options.set_view.im_func : ('kls', 'module', 'target', 'redirect', 'extra_context')
                 , Options.set_menu.im_func : ('alias', 'match', 'values', 'needs_auth', 'propogate_display', 'promote_children')
                 , Options.set_urlname.im_func : ('app_name', 'namespace')
+                , Options.set_urlpattern.im_func : ('catch_all', )
                 , Options.set_conditionals.im_func : ('admin', 'active', 'exists', 'display')
                 }
 
@@ -328,3 +332,13 @@ describe TestCase, "Configuring Options":
                     self.setter(options, namespace=namespace, app_name=app_name)
                     options.app_name |should| be(app_name)
                     options.namespace |should| be(namespace)
+
+            describe "Setting url pattern options":
+                before_each:
+                    self.setter = Options.set_urlpattern.im_func
+
+                it "sets catch_all":
+                    catch_all = fudge.Fake("catch_all")
+                    options = Options()
+                    self.setter(options, catch_all=catch_all)
+                    options.catch_all |should| be(catch_all)

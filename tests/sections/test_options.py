@@ -270,6 +270,12 @@ describe TestCase, "Options":
             self.options.create_pattern(self.url_parts) |should| equal_to("^.*/$")
 
         @fudge.test
+        it "returns '^.*' without the dollar sign if no url and catch_all is true":
+            self.fake_string_from_url_parts.expects_call().with_args(self.url_parts).returns(None)
+            self.options.catch_all = True
+            self.options.create_pattern(self.url_parts) |should| equal_to("^.*")
+
+        @fudge.test
         it "returns '^$' if string_from_url_parts is '' or '/'":
             (self.fake_string_from_url_parts.expects_call()
                             .with_args(self.url_parts).returns('/')
@@ -277,6 +283,17 @@ describe TestCase, "Options":
                 )
 
             for expected in ('^$', '^$'):
+                self.options.create_pattern(self.url_parts) |should| equal_to(expected)
+
+        @fudge.test
+        it "returns '^.*' without dollar sign if string_from_url_parts is '' or '/' and self.catch_all":
+            (self.fake_string_from_url_parts.expects_call()
+                            .with_args(self.url_parts).returns('/')
+                .next_call().with_args(self.url_parts).returns('')
+                )
+
+            self.options.catch_all = True
+            for expected in ('^.*', '^.*'):
                 self.options.create_pattern(self.url_parts) |should| equal_to(expected)
 
         @fudge.test
@@ -301,6 +318,19 @@ describe TestCase, "Options":
                 )
 
             for expected in ('^asdf/$', '^jlkl/$', '^qwer/$', '^ghjd/$'):
+                self.options.create_pattern(self.url_parts) |should| equal_to(expected)
+
+        @fudge.test
+        it "returns with no trailing slash or dollar sign if catch_all":
+            (self.fake_string_from_url_parts.expects_call()
+                            .with_args(self.url_parts).returns('asdf')
+                .next_call().with_args(self.url_parts).returns('/jlkl')
+                .next_call().with_args(self.url_parts).returns('qwer')
+                .next_call().with_args(self.url_parts).returns("/ghjd")
+                )
+
+            self.options.catch_all = True
+            for expected in ('^asdf', '^jlkl', '^qwer', '^ghjd'):
                 self.options.create_pattern(self.url_parts) |should| equal_to(expected)
 
     describe "Getting string from url_parts":
