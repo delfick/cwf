@@ -1,5 +1,5 @@
+from django.template import loader, RequestContext, Context, Template
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-from django.template import loader, RequestContext, Context
 
 from redirect_address import RedirectAddress
 
@@ -27,7 +27,10 @@ class Renderer(object):
             to modify the rendered template before creating the HttpResponse object
         """
         context = self.request_context(request, extra)
-        template_obj = loader.get_template(template)
+        if isinstance(template, Template):
+            template_obj = template
+        else:
+            template_obj = loader.get_template(template)
         render = template_obj.render(context)
 
         # Modify render if we want to

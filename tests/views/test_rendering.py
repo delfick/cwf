@@ -4,6 +4,8 @@ from noseOfYeti.tokeniser.support import noy_sup_setUp
 from should_dsl import should
 from django.test import TestCase
 
+from django.template.loader import get_template_from_string
+from django.template import Template
 from django.http import Http404
 
 from cwf.views.rendering import Renderer, renderer
@@ -53,6 +55,22 @@ describe TestCase, "Rendering helper":
             fakeHttpResponse.expects_call().with_args(render, content_type=self.mime).returns(result)
 
             self.helper.render(self.request, self.template, extra=self.extra, mime=self.mime) |should| be(result)
+
+        @fudge.patch("cwf.views.rendering.HttpResponse", "cwf.views.rendering.loader")
+        it "uses template as is if it's a Template object", fakeHttpResponse, fake_loader:
+            ctxt = fudge.Fake("ctxt")
+            self.fake_request_context.expects_call().with_args(self.request, self.extra).returns(ctxt)
+
+            render_result = fudge.Fake("render_result")
+            render = fudge.Fake("render").expects_call().with_args(ctxt).returns(render_result)
+            template = get_template_from_string("<html></html>")
+
+            # Our result is a HttpResponse object
+            result = fudge.Fake("result")
+            fakeHttpResponse.expects_call().with_args(render_result, content_type=self.mime).returns(result)
+
+            with fudge.patched_context(template, 'render', render):
+                self.helper.render(self.request, template, extra=self.extra, mime=self.mime) |should| be(result)
 
         @fudge.patch("cwf.views.rendering.HttpResponse", "cwf.views.rendering.loader")
         it "modifies render before giving to HttpResponse if modify is callable", fakeHttpResponse, fake_loader:
