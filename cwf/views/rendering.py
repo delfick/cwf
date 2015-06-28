@@ -1,3 +1,4 @@
+from django.template.backends.django import Template as BackendTemplate
 from django.template import loader, RequestContext, Context, Template
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 
@@ -27,7 +28,7 @@ class Renderer(object):
             to modify the rendered template before creating the HttpResponse object
         """
         context = self.request_context(request, extra)
-        if isinstance(template, Template):
+        if isinstance(template, Template) or isinstance(template, BackendTemplate):
             template_obj = template
         else:
             template_obj = loader.get_template(template)
