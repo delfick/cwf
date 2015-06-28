@@ -59,7 +59,7 @@ class ButtonPatterns(object):
 
     def button_name(self, button):
         """Get the view name for this button"""
-        info = self.model._meta.app_label, self.model._meta.module_name
+        info = self.model._meta.app_label, self.model._meta.model_name
         return '%s_%s_tool_%%s' % info % button.url
 
     def button_func(self):
