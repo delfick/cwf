@@ -1,14 +1,10 @@
-try:
-    from django.conf.urls.defaults import patterns as django_patterns
-except ImportError:
-    from django.conf.urls import patterns as django_patterns
-
+from django.conf.urls import url
 from django.http import Http404
+
 from functools import wraps
 
 from errors import ConfigurationError
 from pattern_list import PatternList
-from dispatch import dispatcher
 from options import Options
 
 class Item(object):
@@ -279,7 +275,7 @@ class Section(object):
     def patterns(self, without_include=False):
         """Get urlpatterns for this section"""
         tuples = list(PatternList(self, without_include=without_include))
-        return django_patterns('', *tuples)
+        return [url(*tpl) for tpl in tuples]
 
     def make_view(self, view, section):
         """

@@ -667,20 +667,27 @@ describe TestCase, "Section":
             self.without_include = fudge.Fake("without_include")
             self.section = Section()
 
-        @fudge.patch("cwf.sections.section.PatternList", "cwf.sections.section.django_patterns")
-        it "creates a patternlist and passes result of that into a django patterns object", fakePatternList, fake_django_patterns:
-            tuple1 = fudge.Fake("tuple1")
-            tuple2 = fudge.Fake("tuple2")
-            tuple3 = fudge.Fake("tuple3")
+        @fudge.patch("cwf.sections.section.PatternList", "cwf.sections.section.url")
+        it "creates a patternlist and passes result of that into a django patterns object", fakePatternList, fake_url:
+            t1, t2, t3 = fudge.Fake("t1"), fudge.Fake("t2"), fudge.Fake("t3")
+            tuple1 = (fudge.Fake("tuple1"), )
+            tuple2 = (fudge.Fake("tuple2"), )
+            tuple3 = (fudge.Fake("tuple3"), )
             tuples = (tuple1, tuple2, tuple3)
 
             (fakePatternList.expects_call()
                 .with_args(self.section, without_include=self.without_include).returns(tuples)
                 )
 
-            result = fudge.Fake("result")
-            fake_django_patterns.expects_call().with_args('', tuple1, tuple2, tuple3).returns(result)
-            self.section.patterns(without_include=self.without_include) |should| be(result)
+            result = [t1, t2, t3]
+            (fake_url.expects_call()
+                .with_args(tuple1[0]).returns(t1)
+                .next_call().with_args(tuple2[0]).returns(t2)
+                .next_call().with_args(tuple3[0]).returns(t3)
+                )
+
+            result = [t1, t2, t3]
+            self.section.patterns(without_include=self.without_include) |should| equal_to(result)
 
     describe "Cloning":
         @fudge.test

@@ -2,6 +2,7 @@
 
 from should_dsl import should
 from django.test import TestCase
+from django.test.utils import override_settings
 
 from noseOfYeti.tokeniser.containers import acceptable
 from django.http import HttpResponse
@@ -96,6 +97,7 @@ class SectionTesterBase(TestCase):
         """
             Ensure that going to a url gets back a 301 Permanent Redirect
         """
+        print(url)
         ret = self.client.get(url)
         ret.status_code |should| equal_to(301)
         dict(ret.items())['Location'] |should| equal_to("http://testserver%s" % destination)
@@ -156,6 +158,7 @@ def describe_maker(name, urls, base="", extra_funcs=None, extra_instructions=Non
         funcs.update(extra_funcs)
 
     def make_test_func(func_name, test_name, instructions):
+        @override_settings(ROOT_URLCONF=type("urlconf", (object, ), {"urlpatterns": urls}))
         def test_func(tst):
             tst.ensure_list(getattr(tst, instructions)(), base=base)
 
@@ -163,7 +166,7 @@ def describe_maker(name, urls, base="", extra_funcs=None, extra_instructions=Non
         test_func.__testname__ = test_name
         return test_func
 
-    attrs = {'urls' : urls}
+    attrs = {}
     if extra_instructions:
         attrs.update(extra_instructions)
 

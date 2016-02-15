@@ -4,8 +4,8 @@ from noseOfYeti.tokeniser.support import noy_sup_setUp
 from should_dsl import should
 from django.test import TestCase
 
-from django.template.loader import get_template_from_string
 from django.template import Template
+from django.template import engines
 from django.http import Http404
 
 from cwf.views.rendering import Renderer, renderer
@@ -63,7 +63,7 @@ describe TestCase, "Rendering helper":
 
             render_result = fudge.Fake("render_result")
             render = fudge.Fake("render").expects_call().with_args(ctxt).returns(render_result)
-            template = get_template_from_string("<html></html>")
+            template = engines['django'].from_string("<html></html>")
 
             # Our result is a HttpResponse object
             result = fudge.Fake("result")
@@ -167,14 +167,14 @@ describe TestCase, "Rendering helper":
 
     describe "Getting a redirect":
         before_each:
-            self.address = fudge.Fake("address")
+            self.addr = fudge.Fake("address")
             self.request = fudge.Fake("request")
 
         @fudge.patch("cwf.views.rendering.HttpResponseRedirect")
         it "Returns if HttpResponseRedirect with no change to address if no_processing=True", fakeHttpResponseRedirect:
             result = fudge.Fake("result")
-            fakeHttpResponseRedirect.expects_call().with_args(self.address).returns(result)
-            self.helper.redirect(self.request, self.address, no_processing=True) |should| be(result)
+            fakeHttpResponseRedirect.expects_call().with_args(self.addr).returns(result)
+            self.helper.redirect(self.request, self.addr, no_processing=True) |should| be(result)
 
         @fudge.patch("cwf.views.rendering.HttpResponseRedirect", "cwf.views.rendering.RedirectAddress")
         it "modifies address before passing into HttpResponseRedirect if no_processing=False or not specified", fakeHttpResponseRedirect, fakeRedirectAddress:
@@ -190,8 +190,8 @@ describe TestCase, "Rendering helper":
             redirect2 = fudge.Fake("redirect2").has_attr(modified=modified2)
 
             (fakeRedirectAddress.expects_call()
-                .with_args(self.request, self.address, a, b, c=c, d=d).returns(redirect1)
-                .next_call().with_args(self.request, self.address, a, b, c=c, d=d).returns(redirect2)
+                .with_args(self.request, self.addr, a, b, c=c, d=d).returns(redirect1)
+                .next_call().with_args(self.request, self.addr, a, b, c=c, d=d).returns(redirect2)
                 )
 
             (fakeHttpResponseRedirect.expects_call()
@@ -199,5 +199,5 @@ describe TestCase, "Rendering helper":
                 .next_call().with_args(modified2).returns(result2)
                 )
 
-            self.helper.redirect(self.request, self.address, a, b, c=c, d=d) |should| be(result1)
-            self.helper.redirect(self.request, self.address, a, b, c=c, d=d, no_processing=False) |should| be(result2)
+            self.helper.redirect(self.request, self.addr, a, b, c=c, d=d) |should| be(result1)
+            self.helper.redirect(self.request, self.addr, a, b, c=c, d=d, no_processing=False) |should| be(result2)

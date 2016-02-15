@@ -52,7 +52,7 @@ class ButtonPatterns(object):
 
     def button_url(self, button):
         """Get the url for this button"""
-        template = r'^(.+)/change/?tool_{}/$'
+        template = r'^(.+)/change/tool_{}/$'
         if button.for_all:
             template = r'^tool_{}/$'
         return template.format(button.url)

@@ -94,12 +94,12 @@ describe TestCase, "Button Patterns":
             button = fudge.Fake("button").has_attr(for_all=False, url='bob')
             pattern = self.patterns.button_url(button)
 
-            pattern |should| equal_to(r'^(.+)/tool_bob/$')
+            pattern |should| equal_to(r'^(.+)/change/tool_bob/$')
             compiled = re.compile(pattern)
 
-            assert     compiled.match("alskjlkj/asdfasdf/tool_bob/")
+            assert     compiled.match("alskjlkj/asdfasdf/change/tool_bob/")
             assert not compiled.match("alskjlkj/asdfasdf/tool_bob")
-            assert not compiled.match("alskjlkj/asdfasdf/tool_bob/adfasf")
+            assert not compiled.match("alskjlkj/asdfasdf/change/tool_bob/adfasf")
 
         it "returns just by tool_url/ if for_all":
             button = fudge.Fake("button").has_attr(for_all=True, url='bob')
@@ -113,17 +113,17 @@ describe TestCase, "Button Patterns":
             assert not compiled.match("tool_bob/adfasf")
 
     describe "Getting name for the button view":
-        it "uses app label and module_name from the model and url from the button":
+        it "uses app label and model_name from the model and url from the button":
             app_label = fudge.Fake("app_label")
-            module_name = fudge.Fake("module_name")
+            model_name = fudge.Fake("model_name")
 
             button_url = fudge.Fake("button_url")
             button = fudge.Fake("button").has_attr(url=button_url)
 
-            meta = fudge.Fake("meta").has_attr(app_label=app_label, module_name=module_name)
+            meta = fudge.Fake("meta").has_attr(app_label=app_label, model_name=model_name)
             self.model.has_attr(_meta=meta)
 
-            expected = '%s_%s_tool_%s' % (app_label, module_name, button_url)
+            expected = '%s_%s_tool_%s' % (app_label, model_name, button_url)
             self.patterns.button_name(button) |should| equal_to(expected)
 
     describe "Getting function for button view":

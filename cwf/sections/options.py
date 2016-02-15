@@ -286,6 +286,8 @@ class Options(object):
         from django.http import Http404
 
         class Redirector(RedirectView):
+            permanent = True
+
             """Our customization on the redirect view"""
             def get_redirect_url(self, **kwargs):
                 url = self.url
@@ -296,8 +298,7 @@ class Options(object):
                     raise Http404
 
                 if not url.startswith('/'):
-                    url = '%s%s' % (self.request.path, url)
-                    url = regexes['multiSlash'].sub('/', url)
+                    url = self.request.build_absolute_uri(url)
 
                 return url
 

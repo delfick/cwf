@@ -1,7 +1,8 @@
 # coding: spec
 
 from should_dsl import should
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from django.contrib.sessions.middleware import SessionMiddleware
 
 from cwf.sections.section import Section
 from cwf.sections.values import Values
@@ -59,8 +60,8 @@ seven_v11 = seven_v1.add('\d+').configure(''
 ###   TESTS
 ########################
 
+@override_settings(ROOT_URLCONF=type("urlconf", (object, ), {"urlpatterns": root.patterns()}))
 describe TestCase, "Menu":
-    urls = root.patterns()
 
     def get_info(self, path):
         res = self.client.get(path)

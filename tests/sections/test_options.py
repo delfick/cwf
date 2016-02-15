@@ -9,6 +9,7 @@ from cwf.sections.options import Options
 
 from django.http import Http404
 import fudge
+import uuid
 
 # Make the errors go away
 be, equal_to, throw, be_thrown_by = None, None, None, None
@@ -454,16 +455,23 @@ describe TestCase, "Options":
                 self.assertRedirectsTo(redirector2(self.request), '/stuff/asdf')
 
             @fudge.test
-            it "joins with request.path and removes multiple slashes if not starts with /":
+            it "builds absolute uri if not starts with /":
                 self.redirect.expects_call().with_args(self.request).returns('one/two')
+
+                res = str(uuid.uuid1())
+                res2 = str(uuid.uuid1())
+                self.request.build_absolute_uri = (fudge.Fake("build_absolute_uri")
+                    .expects_call().with_args("one/two").returns(res)
+                    .next_call().with_args("stuff/asdf").returns(res2)
+                    )
 
                 redirector, _ = self.options.redirect_view(self.redirect)
                 self.request.path = '/asdf/hla/'
-                self.assertRedirectsTo(redirector(self.request), '/asdf/hla/one/two')
+                self.assertRedirectsTo(redirector(self.request), res)
 
                 redirector2, _ = self.options.redirect_view('stuff/asdf')
                 self.request.path = '/asdf/hla/'
-                self.assertRedirectsTo(redirector2(self.request), '/asdf/hla/stuff/asdf')
+                self.assertRedirectsTo(redirector2(self.request), res2)
 
         describe "Getting view kls":
             before_each:

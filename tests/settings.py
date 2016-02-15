@@ -34,9 +34,7 @@ LOG_FILE = 'messages.log'
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 NOSE_ARGS = [
       '--with-spec'
-    , '--spec-color'
     , '--with-noy'
-    , '--pdb'
     , '--noy-ignore-kls=TestCase'
     , '--noy-ignore-kls=TransactionTestCase'
     ]
@@ -50,12 +48,17 @@ NOSE_ARGS = [
 INSTALLED_APPS = (
       'cwf'
     , 'django_nose'
+    , 'django.contrib.auth'
+    , 'django.contrib.sessions'
+    , 'django.contrib.contenttypes'
     )
 
 TEMPLATE_DIRS = (
-	  os.path.join(this_dir, 'templates')
-	, os.path.join(this_dir, '..', 'cwf', 'templates')
+      os.path.join(this_dir, 'templates')
+    , os.path.join(this_dir, '..', 'cwf', 'templates')
     )
 
 SECRET_KEY = 'supersecret'
+
+MIDDLEWARE_CLASSES = ("django.contrib.sessions.middleware.SessionMiddleware", 'django.contrib.auth.middleware.AuthenticationMiddleware')
 

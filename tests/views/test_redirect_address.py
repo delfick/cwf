@@ -14,8 +14,8 @@ be, equal_to = None, None
 describe TestCase, "RedirectAddress":
     before_each:
         self.request = fudge.Fake("request")
-        self.address = fudge.Fake("address")
-        self.helper = RedirectAddress(self.request, self.address)
+        self.addr = fudge.Fake("address")
+        self.helper = RedirectAddress(self.request, self.addr)
 
     describe "defaults":
         it "defaults to relative being true":
@@ -33,10 +33,10 @@ describe TestCase, "RedirectAddress":
             self.helper = type("redirectaddress", (RedirectAddress, )
                 , { 'modify' : self.fake_modify
                   }
-                )(self.request, self.address)
+                )(self.request, self.addr)
 
         @fudge.test
-        it "modifies the unicode of self.address":
+        it "modifies the unicode of self.addr":
             modified = fudge.Fake("modified")
             self.helper.address = type("Address", (object, )
                 , {"__unicode__":lambda s : "unicode version of address"
@@ -55,7 +55,7 @@ describe TestCase, "RedirectAddress":
                   , 'add_get_params' : self.fake_add_get_params
                   , 'strip_multi_slashes' : self.fake_strip_multi_slashes
                   }
-                )(self.request, self.address)
+                )(self.request, self.addr)
 
         @fudge.test
         it "joines the address, removes slashes and adds GET params":
@@ -137,16 +137,16 @@ describe TestCase, "RedirectAddress":
     describe "Adding get params to an address":
         before_each:
             self.params = fudge.Fake("params")
-            self.address = fudge.Fake("address")
+            self.addr = fudge.Fake("address")
             self.helper = type("redirectaddress", (RedirectAddress, )
                 , { 'params' : self.params
                   }
-                )(self.request, self.address)
+                )(self.request, self.addr)
 
         @fudge.patch("cwf.views.redirect_address.urlencode")
         it "returns address as is if carry_get is False", fake_urlencode:
             self.helper.carry_get = False
-            self.helper.add_get_params(self.address) |should| be(self.address)
+            self.helper.add_get_params(self.addr) |should| be(self.addr)
 
         @fudge.patch("cwf.views.redirect_address.urlencode")
         it "returns combination of address and urlencoded params if carry_get is True", fake_urlencode:
@@ -154,7 +154,7 @@ describe TestCase, "RedirectAddress":
             fake_urlencode.expects_call().with_args(self.params).returns(encoded)
 
             self.helper.carry_get = True
-            self.helper.add_get_params(self.address) |should| equal_to("%s?%s" % (self.address, encoded))
+            self.helper.add_get_params(self.addr) |should| equal_to("%s?%s" % (self.addr, encoded))
 
     describe "Getting full url from address":
         before_each:
@@ -167,7 +167,7 @@ describe TestCase, "RedirectAddress":
                   , 'url_join' : self.fake_url_join
                   , 'root_url' : self.fake_root_url
                   }
-                )(self.request, self.address)
+                )(self.request, self.addr)
 
         @fudge.test
         it "joins with base_url if a root url":
