@@ -1,6 +1,6 @@
-from section import Section
-from options import Options
-from values import Values
+from .section import Section
+from .options import Options
+from .values import Values
 
 S = Section
 O = Options

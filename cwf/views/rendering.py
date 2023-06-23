@@ -2,7 +2,7 @@ from django.template.backends.django import Template as BackendTemplate
 from django.template import loader, RequestContext, Context, Template
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 
-from redirect_address import RedirectAddress
+from .redirect_address import RedirectAddress
 
 import json
 

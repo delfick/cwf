@@ -1,1 +1,1 @@
-from views import View, StaffView, LocalOnlyView, JSView
+from .views import View, StaffView, LocalOnlyView, JSView

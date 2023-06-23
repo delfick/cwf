@@ -1,5 +1,4 @@
-from django.contrib.contenttypes.models import ContentType
-from django.core import urlresolvers
+from django.urls import reverse
 
 class AdminView(object):
     """Stateless Object that knows how to get url to an admin view"""
@@ -10,20 +9,23 @@ class AdminView(object):
     @classmethod
     def change_view(cls, obj):
         """Admin change view for a particular instance of an object"""
+        from django.contrib.contenttypes.models import ContentType
         content_type = ContentType.objects.get_for_model(obj.__class__)
         format = cls.format(content_type, "change")
-        return urlresolvers.reverse(format, args=(obj.id, ))
+        return reverse(format, args=(obj.id, ))
 
     @classmethod
     def add_view(cls, obj):
         """Admin add view for a particular model"""
+        from django.contrib.contenttypes.models import ContentType
         content_type = ContentType.objects.get_for_model(obj)
         format = cls.format(content_type, "add")
-        return urlresolvers.reverse(format)
+        return reverse(format)
 
     @classmethod
     def change_list(cls, obj):
         """Admin list view for a particular model"""
+        from django.contrib.contenttypes.models import ContentType
         content_type = ContentType.objects.get_for_model(obj)
         format = cls.format(content_type, "changelist")
-        return urlresolvers.reverse(format)
+        return reverse(format)

@@ -1,4 +1,4 @@
-from errors import ConfigurationError
+from .errors import ConfigurationError
 
 class BadValues(Exception): pass
 

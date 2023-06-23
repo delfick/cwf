@@ -1,5 +1,5 @@
-from rendering import renderer
-from menu import Menu
+from .rendering import renderer
+from .menu import Menu
 
 import json
 import re
@@ -101,7 +101,7 @@ class View(object):
 
         # Complain if there is no target
         if not self.has_target(target):
-            raise Exception, "View object doesn't have a target : %s" % target
+            raise Exception("View object doesn't have a target : %s" % target)
 
         # We have the target, get result from it
         result = self.execute(target, request, args, kwargs)

@@ -6,7 +6,7 @@
     These classes overwrite this behaviour to restrict or modify the result of calling the target.
 """
 from django.contrib.admin.views.decorators import staff_member_required
-from base import View
+from .base import View
 
 class StaffView(View):
     """Restrict to staff members"""

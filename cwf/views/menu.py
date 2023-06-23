@@ -1,5 +1,5 @@
 from cwf.sections.section_master import SectionMaster
-from rendering import renderer
+from .rendering import renderer
 
 class Menu(object):
     """

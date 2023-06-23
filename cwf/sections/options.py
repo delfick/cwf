@@ -1,5 +1,5 @@
-from errors import ConfigurationError
-from dispatch import dispatcher
+from .errors import ConfigurationError
+from .dispatch import dispatcher
 
 import inspect
 import re

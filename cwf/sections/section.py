@@ -1,11 +1,11 @@
-from django.conf.urls import url
+from django.urls import re_path as url
 from django.http import Http404
 
 from functools import wraps
 
-from errors import ConfigurationError
-from pattern_list import PatternList
-from options import Options
+from .errors import ConfigurationError
+from .pattern_list import PatternList
+from .options import Options
 
 class Item(object):
     """
